@@ -1,35 +1,41 @@
-export type LicenseInfo = {
-  seatsTotal: number;
-  seatsUsed: number;
-  expiresAt: string;
-};
+import "server-only";
 
-export type SeatCheckResult = {
-  allowed: boolean;
-  reason?: "expired" | "quota_exceeded";
-  remaining: number;
-};
+import { createServiceClient } from "@/lib/supabase/admin";
+import type { LicenseInfo } from "@/modules/core/khatam/services/license.shared";
 
-export function checkSeat(license: LicenseInfo, now = new Date()): SeatCheckResult {
-  const total = Math.max(0, license.seatsTotal);
-  const used = Math.max(0, Math.min(license.seatsUsed, total));
-  const expiresAt = new Date(license.expiresAt);
-  const remaining = Math.max(0, total - used);
+export type { LicenseInfo } from "@/modules/core/khatam/services/license.shared";
 
-  if (Number.isNaN(expiresAt.getTime()) || expiresAt.getTime() <= now.getTime()) {
-    return { allowed: false, reason: "expired", remaining: 0 };
+export async function getLicense(congregationId: string): Promise<LicenseInfo | null> {
+  const supabase = createServiceClient();
+  if (!supabase) return null;
+
+  const { data: license, error: licenseError } = await supabase
+    .from("khatam_licenses")
+    .select("seats_total, expires_at")
+    .eq("congregation_id", congregationId)
+    .maybeSingle();
+
+  if (licenseError) {
+    if (licenseError.code !== "42P01" && licenseError.code !== "PGRST205") {
+      console.error("Khatam license load failed:", licenseError);
+    }
+    return null;
+  }
+  if (!license) return null;
+
+  const { count, error: membershipError } = await supabase
+    .from("memberships")
+    .select("user_id", { count: "exact", head: true })
+    .eq("congregation_id", congregationId);
+
+  if (membershipError) {
+    console.error("Khatam license usage load failed:", membershipError);
+    return null;
   }
 
-  if (used >= total) {
-    return { allowed: false, reason: "quota_exceeded", remaining };
-  }
-
-  return { allowed: true, remaining };
-}
-
-export function usagePercent(license: LicenseInfo): number {
-  const total = Math.max(1, license.seatsTotal);
-  const used = Math.max(0, Math.min(license.seatsUsed, total));
-  const value = (used / total) * 100;
-  return Math.min(100, Math.max(0, value));
+  return {
+    seatsTotal: license.seats_total,
+    seatsUsed: count ?? 0,
+    expiresAt: license.expires_at,
+  };
 }

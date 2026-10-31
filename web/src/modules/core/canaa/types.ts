@@ -1,13 +1,13 @@
-export type Role = "dev_master" | "pastor_local" | "tesoureiro" | "secretario";
+import type { Role } from "@/domain/access";
 
 export type ModuleName = "hiram" | "elias" | "enoch" | "sefer" | "khatam";
-export type ModuleHealth = "ok" | "degraded" | "down";
+export type ModuleHealth = "ok" | "degraded" | "down" | "unknown";
 
 export type ModuleTelemetry = {
   module: ModuleName;
   health: ModuleHealth;
   latencyMs?: number;
-  updatedAt: string;
+  updatedAt?: string;
 };
 
 export type CongregationNodeData = {
@@ -15,8 +15,6 @@ export type CongregationNodeData = {
   name: string;
   parentId: string | null;
   active: boolean;
-  seatsUsed: number;
-  seatsTotal: number;
 } & Record<string, unknown>;
 
 export type LocalOperator = {
@@ -25,11 +23,4 @@ export type LocalOperator = {
   email: string;
   role: Role;
   active: boolean;
-};
-
-export const HOME_BY_ROLE: Record<Role, string> = {
-  dev_master: "/noah-ops",
-  pastor_local: "/canaa",
-  tesoureiro: "/",
-  secretario: "/",
 };

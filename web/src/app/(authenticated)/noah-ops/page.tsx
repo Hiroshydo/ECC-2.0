@@ -1,17 +1,25 @@
+import { redirect } from "next/navigation";
+
 import { ModuleIcon } from "@/components/brand/ModuleIcon";
+import { isMasterAdmin } from "@/domain/access";
+import { createClient } from "@/lib/supabase/server";
 import { CongregationFlowMap } from "@/modules/core/canaa/components/CongregationFlowMap";
 import { NoahTelemetryGrid } from "@/modules/core/canaa/components/NoahTelemetryGrid";
 import type { ModuleTelemetry } from "@/modules/core/canaa/types";
 
 const telemetry: ModuleTelemetry[] = [
-  { module: "khatam", health: "ok", latencyMs: 42, updatedAt: new Date().toISOString() },
-  { module: "hiram", health: "degraded", latencyMs: 86, updatedAt: new Date().toISOString() },
-  { module: "elias", health: "ok", latencyMs: 58, updatedAt: new Date().toISOString() },
-  { module: "enoch", health: "ok", latencyMs: 51, updatedAt: new Date().toISOString() },
-  { module: "sefer", health: "down", latencyMs: 0, updatedAt: new Date().toISOString() },
+  { module: "khatam", health: "unknown" },
+  { module: "hiram", health: "unknown" },
+  { module: "elias", health: "unknown" },
+  { module: "enoch", health: "unknown" },
+  { module: "sefer", health: "unknown" },
 ];
 
-export default function NoahOpsPage() {
+export default async function NoahOpsPage() {
+  const { data: { user } } = await (await createClient()).auth.getUser();
+  if (!user) redirect("/login");
+  if (!isMasterAdmin(user)) redirect("/");
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24, paddingTop: 20, width: "100%" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 16 }}>

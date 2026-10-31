@@ -6,6 +6,7 @@ const healthPalette: Record<ModuleTelemetry["health"], { label: string; color: s
   ok: { label: "Operando", color: "#2d9f6d" },
   degraded: { label: "Atenção", color: "#d38a1b" },
   down: { label: "Indisponível", color: "#d64545" },
+  unknown: { label: "Sem telemetria", color: "#94a3a8" },
 };
 
 const moduleMap: Record<ModuleTelemetry["module"], BrandModule> = {
@@ -33,7 +34,7 @@ export function NoahTelemetryGrid({ modules = [] }: { modules?: ModuleTelemetry[
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <span style={{ width: 10, height: 10, borderRadius: "50%", background: palette.color, display: "inline-block" }} />
-              <span style={{ fontSize: 12, color: "#52645d" }}>{module.latencyMs ?? 0}ms</span>
+              {module.latencyMs !== undefined && module.health !== "unknown" ? <span style={{ fontSize: 12, color: "#52645d" }}>{module.latencyMs}ms</span> : null}
             </div>
           </div>
         );

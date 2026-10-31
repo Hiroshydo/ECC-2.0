@@ -49,6 +49,7 @@ export function can(membership: Membership, permission: Permission): boolean {
 
 export const DEV_MASTER_EMAIL = "renanmarianosd@hotmail.com";
 
+// TODO: Remove the email fallback after the Supabase app_metadata.role migration is confirmed.
 export function isMasterAdmin(user: { email?: string | null; app_metadata?: Record<string, unknown> } | null | undefined): boolean {
   const email = user?.email?.toLowerCase().trim();
   const appMetadata = user?.app_metadata ?? {};

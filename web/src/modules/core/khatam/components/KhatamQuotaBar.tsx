@@ -1,7 +1,19 @@
 import { ModuleIcon } from "@/components/brand/ModuleIcon";
-import { checkSeat, usagePercent, type LicenseInfo } from "@/modules/core/khatam/services/license.service";
+import { checkSeat, usagePercent, type LicenseInfo } from "@/modules/core/khatam/services/license.shared";
 
-export function KhatamQuotaBar({ license }: { license: LicenseInfo }) {
+export function KhatamQuotaBar({ license }: { license: LicenseInfo | null }) {
+  if (!license) {
+    return (
+      <div style={{ width: "100%", border: "1px solid #dfeae6", borderRadius: 16, background: "#fff", padding: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, letterSpacing: "0.08em", textTransform: "uppercase", color: "#52645d", fontWeight: 700 }}>
+          <ModuleIcon module="khatam" variant="icon" size={28} decorative />
+          <span>Khatam</span>
+        </div>
+        <p style={{ margin: "12px 0 0", color: "#52645d", fontSize: 13 }}>Licença não configurada.</p>
+      </div>
+    );
+  }
+
   const seatCheck = checkSeat(license, new Date());
   const usage = usagePercent(license);
   const red = usage >= 100 || seatCheck.reason === "expired";

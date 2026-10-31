@@ -5,7 +5,6 @@ import { cookies } from "next/headers";
 import { AuthenticatedShell } from "@/components/AuthenticatedShell";
 import { isMasterAdmin } from "@/domain/access";
 import { toMemberships } from "@/lib/auth/session";
-import { isPlatformAdminUserId } from "@/lib/admin/platform";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
@@ -60,5 +59,5 @@ export default async function AuthenticatedLayout({ children }: { children: Reac
 
   if (!user) redirect("/login");
 
-  return <AuthenticatedShell user={user} memberships={memberships} activeMembership={activeMembership} isPlatformAdmin={isPlatformAdminUserId(user.id)}>{children}</AuthenticatedShell>;
+  return <AuthenticatedShell user={user} memberships={memberships} activeMembership={activeMembership} isPlatformAdmin={isMasterAdmin(user)}>{children}</AuthenticatedShell>;
 }

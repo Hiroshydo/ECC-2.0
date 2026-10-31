@@ -6,13 +6,14 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { ModuleIcon } from "@/components/brand/ModuleIcon";
-import { can, isMasterAdmin, type Permission } from "@/domain/access";
+import { can, type Permission } from "@/domain/access";
 import { getVocabulary } from "@/domain/vocabulary";
 import type { AuthenticatedMembership } from "@/lib/auth/session";
+import type { BrandModule } from "@/lib/branding/modules";
 import { createClient } from "@/lib/supabase/client";
 
 type NavigationIcon = "dashboard" | "entries" | "expenses" | "transfers" | "cash" | "closing" | "adjustments" | "reversals" | "audit" | "reports" | "settings" | "terminal" | "canaa";
-type NavigationItem = { label: string; href: string; icon: NavigationIcon; permission?: Permission; adminOnly?: boolean; devOnly?: boolean };
+type NavigationItem = { label: string; href: string; icon: NavigationIcon; brand?: BrandModule; permission?: Permission; adminOnly?: boolean; devOnly?: boolean };
 
 const navigation: NavigationItem[] = [
   { label: "Dashboard", href: "/", icon: "dashboard", permission: "financial.read" },
@@ -28,6 +29,7 @@ const navigation: NavigationItem[] = [
   { label: "Relatórios", href: "/relatorios", icon: "reports", permission: "financial.read" },
   { label: "Configurações", href: "/configuracoes", icon: "settings" },
   { label: "Painel Dev / Gestão", href: "/admin", icon: "terminal", devOnly: true },
+  { label: "Noah Ops", href: "/noah-ops", icon: "terminal", brand: "noah", devOnly: true },
 ];
 
 function NavigationGlyph({ icon }: { icon: NavigationIcon }) {
@@ -81,16 +83,14 @@ export function Sidebar({ userName, membership, memberships, isPlatformAdmin, us
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const isMasterUser = isMasterAdmin({ email: userEmail ?? null });
+  const isMasterUser = isPlatformAdmin;
   const currentRole = membership?.role ?? "member";
   const roleText = isMasterUser ? "Dev Master" : (currentRole === "viewer" || userEmail?.toLowerCase() === "demo@ecclesia.com" ? "Visualizador" : "Membro");
   const terms = getVocabulary(membership?.congregation.organizationType);
   const visibleNavigation = navigation.filter((item) => {
     if (item.devOnly) return isMasterUser;
     if (item.adminOnly) return isPlatformAdmin;
-    if (item.href === "/canaa") {
-      return isMasterUser || currentRole === "congregation_admin" || currentRole === "treasurer" || userEmail?.toLowerCase() === "demo@ecclesia.com";
-    }
+    if (item.href === "/canaa") return isMasterUser || Boolean(membership && can(membership, "hierarchy.view"));
     return Boolean(membership && (item.permission ? can(membership, item.permission) : true));
   });
   const initials = userName.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase() || "U";
@@ -129,8 +129,8 @@ export function Sidebar({ userName, membership, memberships, isPlatformAdmin, us
             const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(`${item.href}/`));
             const label = item.icon === "entries" ? terms.dashboardEntries : item.icon === "transfers" ? terms.campaigns : item.label;
             const showDevBadge = item.devOnly;
-            const navBrandModule = item.href === "/canaa" ? "canaa-local" : item.href === "/auditoria" ? "enoch" : item.href === "/relatorios" ? "sefer" : item.href === "/fechamento" ? "elias" : null;
-            return <Link key={item.href} href={item.href} data-nav={item.icon} className={active ? "active group" : "group"} aria-current={active ? "page" : undefined} onClick={() => setMenuOpen(false)}><span className={`nav-icon${navBrandModule ? " nav-icon--brand" : ""}`} data-nav={item.icon} aria-hidden="true">{navBrandModule ? <ModuleIcon module={navBrandModule} size={24} decorative /> : <NavigationGlyph icon={item.icon} />}</span><span>{label}</span>{showDevBadge && <span className="dev-badge">DEV</span>}</Link>;
+            const navBrandModule = item.brand ?? (item.href === "/canaa" ? "canaa-local" : item.href === "/auditoria" ? "enoch" : item.href === "/relatorios" ? "sefer" : item.href === "/fechamento" ? "elias" : null);
+            return <Link key={item.href} href={item.href} data-nav={item.icon} className={active ? "active group" : "group"} aria-current={active ? "page" : undefined} onClick={() => setMenuOpen(false)}><span className={`nav-icon${navBrandModule ? " nav-icon--brand" : ""}`} data-nav={item.icon} aria-hidden="true">{navBrandModule ? <ModuleIcon module={navBrandModule} size={32} decorative /> : <NavigationGlyph icon={item.icon} />}</span><span>{label}</span>{showDevBadge && <span className="dev-badge">DEV</span>}</Link>;
           })}
         </nav>
         <div className="sidebar-footer">
