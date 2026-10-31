@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth/session";
+import { callUserFunction } from "@/lib/db/rpc";
 
 type MetricsRequest = {
   unitId: string;
@@ -10,13 +11,8 @@ type MetricsRequest = {
 };
 
 export async function GET(request: Request) {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) {
-    return NextResponse.json({ error: "supabase_not_configured" }, { status: 503 });
-  }
-
-  const supabase = await createClient();
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
-  if (userError || !user) return NextResponse.json({ error: "authentication_required" }, { status: 401 });
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "authentication_required" }, { status: 401 });
 
   const params = new URL(request.url).searchParams;
   const input: MetricsRequest = {
@@ -30,17 +26,18 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "unit_and_valid_date_range_required" }, { status: 400 });
   }
 
-  const { data, error } = await supabase.rpc("get_hierarchical_financial_metrics", {
-    p_user_id: user.id,
-    p_unit_id: input.unitId,
-    p_mode: input.mode,
-    p_start_date: input.startDate,
-    p_end_date: input.endDate,
-  });
-  if (error) {
-    const status = error.code === "42501" ? 403 : 400;
-    return NextResponse.json({ error: error.message }, { status, headers: { "Cache-Control": "no-store" } });
+  try {
+    const data = await callUserFunction(user.id, "get_hierarchical_financial_metrics", {
+      p_user_id: user.id,
+      p_unit_id: input.unitId,
+      p_mode: input.mode,
+      p_start_date: input.startDate,
+      p_end_date: input.endDate,
+    });
+    return NextResponse.json({ data }, { headers: { "Cache-Control": "no-store" } });
+  } catch (error) {
+    const status = typeof error === "object" && error !== null && "code" in error && error.code === "42501" ? 403 : 400;
+    console.error("Hierarchical financial metrics query failed:", error);
+    return NextResponse.json({ error: error instanceof Error ? error.message : "metrics_query_failed" }, { status, headers: { "Cache-Control": "no-store" } });
   }
-
-  return NextResponse.json({ data }, { headers: { "Cache-Control": "no-store" } });
 }

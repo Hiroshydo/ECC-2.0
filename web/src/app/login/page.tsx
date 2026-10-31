@@ -4,7 +4,6 @@ import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 
 import { ModuleIcon } from "@/components/brand/ModuleIcon";
-import { createClient } from "@/lib/supabase/client";
 
 const principles = [
   { text: "Cada um contribua segundo propôs no seu coração; não com tristeza, ou por necessidade; porque Deus ama ao que dá com alegria.", reference: "2 Coríntios 9:7" },
@@ -14,7 +13,6 @@ const principles = [
 ];
 
 export default function LoginPage() {
-  const supabaseConfigured = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -33,21 +31,26 @@ export default function LoginPage() {
     event.preventDefault();
     setLoading(true);
     setError(null);
-    if (!supabaseConfigured) { setError("O Supabase ainda não foi configurado neste ambiente."); setLoading(false); return; }
     try {
-      const supabase = createClient();
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-      if (signInError) {
-        setError("E-mail ou senha inválidos.");
-      } else if (!data.session) {
-        setError("A autenticação foi concluída sem criar uma sessão. Tente novamente.");
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      if (!response.ok) {
+        const result = await response.json() as { error?: string };
+        setError(response.status === 401
+          ? "E-mail ou senha inválidos."
+          : result.error === "local_auth_not_configured"
+            ? "Configure o PostgreSQL local e a chave de sessão."
+            : "Não foi possível autenticar. Verifique a conexão com o banco local.");
       } else {
         window.location.replace("/");
         return;
       }
     } catch (signInFailure) {
       console.error("Login failed:", signInFailure);
-      setError("Não foi possível concluir o login. Verifique a conexão e tente novamente.");
+      setError("Não foi possível concluir o login. Verifique a conexão com o banco local e tente novamente.");
     }
     setLoading(false);
   }
@@ -62,7 +65,6 @@ export default function LoginPage() {
           <p className="eyebrow login-eyebrow">CONTROLE COM TRANSPARÊNCIA</p>
           <h1 id="login-title">Entrar na sua administração</h1>
           <p className="login-copy">Acesse as congregações e os fechamentos financeiros permitidos para o seu usuário.</p>
-          {!supabaseConfigured && <div className="login-alert" role="alert"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.75 21 20.25H3L12 3.75Z" /><path d="M12 9v4.5m0 3h.01" /></svg><span>O Supabase não está configurado neste deploy. Revise as variáveis de ambiente do projeto na Vercel.</span></div>}
           <form onSubmit={handleSubmit}>
             <label className="login-field" htmlFor="login-email">E-mail
               <span className="login-input-wrap"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.75" y="5.25" width="16.5" height="13.5" rx="2" /><path d="m4.5 7 7.5 5.25L19.5 7" /></svg><input id="login-email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" required /></span>
@@ -71,7 +73,7 @@ export default function LoginPage() {
               <span className="login-input-wrap"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="10.25" width="15" height="10" rx="2" /><path d="M8 10.25V7a4 4 0 0 1 8 0v3.25m-4 4v2.5" /></svg><input id="login-password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required /></span>
             </label>
             {error && <p className="login-error" role="alert">{error}</p>}
-            <button className="login-submit" type="submit" disabled={loading || !supabaseConfigured} aria-busy={loading}>
+            <button className="login-submit" type="submit" disabled={loading} aria-busy={loading}>
               {loading && <svg className="login-spinner" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M21 12a9 9 0 0 0-9-9" /></svg>}
               {loading ? "Entrando..." : "Entrar"}
             </button>

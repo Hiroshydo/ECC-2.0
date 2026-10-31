@@ -1,14 +1,12 @@
 'use client';
 
-import type { User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { CongregationSwitcher } from "@/components/CongregationSwitcher";
 import { Sidebar } from "@/components/Sidebar";
 import { isMasterAdmin } from "@/domain/access";
-import type { AuthenticatedMembership } from "@/lib/auth/session";
-import { createClient } from "@/lib/supabase/client";
+import type { AppUser, AuthenticatedMembership } from "@/lib/auth/session";
 
 function LogoutButton({ compact = false }: { compact?: boolean }) {
   const router = useRouter();
@@ -19,9 +17,8 @@ function LogoutButton({ compact = false }: { compact?: boolean }) {
     setIsLoggingOut(true);
 
     try {
-      const supabase = createClient();
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      const response = await fetch("/api/auth/logout", { method: "POST" });
+      if (!response.ok) throw new Error(`logout_failed_${response.status}`);
       router.push("/login");
       router.refresh();
     } catch (error) {
@@ -40,7 +37,7 @@ function LogoutButton({ compact = false }: { compact?: boolean }) {
   );
 }
 
-export function AuthenticatedShell({ user, memberships, activeMembership, isPlatformAdmin, children }: { user: User; memberships: AuthenticatedMembership[]; activeMembership: AuthenticatedMembership | null; isPlatformAdmin: boolean; children: React.ReactNode }) {
+export function AuthenticatedShell({ user, memberships, activeMembership, isPlatformAdmin, children }: { user: AppUser; memberships: AuthenticatedMembership[]; activeMembership: AuthenticatedMembership | null; isPlatformAdmin: boolean; children: React.ReactNode }) {
   const userName: string = String(user.user_metadata?.full_name || user.user_metadata?.name || user.user_metadata?.display_name || user.email?.split("@")?.[0] || "Usuário");
   const initials = userName.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase() || "U";
   const currentRole = activeMembership?.role ?? "member";

@@ -10,7 +10,6 @@ import { can, type Permission } from "@/domain/access";
 import { getVocabulary } from "@/domain/vocabulary";
 import type { AuthenticatedMembership } from "@/lib/auth/session";
 import type { BrandModule } from "@/lib/branding/modules";
-import { createClient } from "@/lib/supabase/client";
 
 type NavigationIcon = "dashboard" | "entries" | "expenses" | "transfers" | "cash" | "closing" | "adjustments" | "reversals" | "audit" | "reports" | "settings" | "terminal" | "canaa";
 type NavigationItem = { label: string; href: string; icon: NavigationIcon; brand?: BrandModule; permission?: Permission; adminOnly?: boolean; devOnly?: boolean };
@@ -99,9 +98,8 @@ export function Sidebar({ userName, membership, memberships, isPlatformAdmin, us
     if (isLoggingOut) return;
     setIsLoggingOut(true);
     try {
-      const supabase = createClient();
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      const response = await fetch("/api/auth/logout", { method: "POST" });
+      if (!response.ok) throw new Error(`logout_failed_${response.status}`);
       router.push("/login");
       router.refresh();
     } catch (error) {

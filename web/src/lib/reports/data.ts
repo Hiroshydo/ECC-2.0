@@ -1,4 +1,4 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { withUserContext } from "@/lib/db/pool";
 
 export type ReportData = {
   organization: string;
@@ -24,35 +24,78 @@ export function periodBounds(period: string) {
   return { start, end };
 }
 
-export async function loadReportData(supabase: SupabaseClient, congregationId: string, period: string, responsible: string | null): Promise<ReportData> {
+export async function loadReportData(userId: string, congregationId: string, period: string, responsible: string | null): Promise<ReportData> {
   const { start, end } = periodBounds(period);
-  const [congregationResult, summaryResult, entriesResult, expensesResult, transfersResult, adjustmentsResult, reversalsResult, closingsResult, auditsResult, cashPeriodsResult] = await Promise.all([
-    supabase.from("congregations").select("name, city").eq("id", congregationId).maybeSingle(),
-    supabase.from("congregation_monthly_summary").select("opening_balance, entries, expenses, transfers, adjustments, closing_balance, closing_status").eq("congregation_id", congregationId).eq("reference_period", start).maybeSingle(),
-    supabase.from("entries").select("occurred_on, category, origin, payment_method, purpose, amount_cents").eq("congregation_id", congregationId).gte("occurred_on", start).lte("occurred_on", end).order("occurred_on"),
-    supabase.from("expenses").select("occurred_on, category, description, vendor, payment_method, purpose, cost_center, amount_cents, status").eq("congregation_id", congregationId).gte("occurred_on", start).lte("occurred_on", end).order("occurred_on"),
-    supabase.from("headquarters_transfers").select("occurred_on, destination_name, reference_period, reason, amount_sent_cents, amount_received_cents, status").eq("origin_congregation_id", congregationId).gte("reference_period", start).lte("reference_period", end).order("reference_period"),
-    supabase.from("financial_adjustments").select("created_at, reason, entity_type, amount_cents, created_by, status").eq("congregation_id", congregationId).eq("reference_period", start).order("created_at"),
-    supabase.from("financial_reversals").select("created_at, entity_type, entity_id, reason, amount_cents, created_by, status").eq("congregation_id", congregationId).eq("reference_period", start).order("created_at"),
-    supabase.from("monthly_closings").select("reference_period, status, closing_at:closed_at, submitted_by, approved_by").eq("congregation_id", congregationId).eq("reference_period", start).maybeSingle(),
-    supabase.from("audit_events").select("occurred_at, action, entity, entity_id, reason").eq("congregation_id", congregationId).gte("occurred_at", `${start}T00:00:00Z`).lte("occurred_at", `${end}T23:59:59Z`).order("occurred_at"),
-    supabase.from("physical_cash_periods").select("id, reference_period, opening_balance_cents, status, cash_register_id").eq("reference_period", start),
-  ]);
-  const results = [congregationResult, summaryResult, entriesResult, expensesResult, transfersResult, adjustmentsResult, reversalsResult, closingsResult, auditsResult, cashPeriodsResult];
-  const failed = results.find((result) => result.error);
-  if (failed?.error) throw new Error(failed.error.message);
-  const cashPeriodIds = (cashPeriodsResult.data ?? []).map((item) => item.id);
-  const cashMovementsResult = cashPeriodIds.length ? await supabase.from("physical_cash_movements").select("created_at, movement_type, reason, amount_cents, cash_period_id").in("cash_period_id", cashPeriodIds).order("created_at") : { data: [], error: null };
-  if (cashMovementsResult.error) throw new Error(cashMovementsResult.error.message);
-  const summary = summaryResult.data;
+  const reportRows = await withUserContext(userId, async (client) => {
+    const congregationResult = await client.query("select name, city from public.congregations where id = $1", [congregationId]);
+    const summaryResult = await client.query(
+      "select opening_balance, entries, expenses, transfers, adjustments, closing_balance, closing_status from public.congregation_monthly_summary where congregation_id = $1 and reference_period = $2",
+      [congregationId, start],
+    );
+    const entriesResult = await client.query(
+      "select occurred_on, category, origin, payment_method, purpose, amount_cents from public.entries where congregation_id = $1 and occurred_on between $2 and $3 order by occurred_on",
+      [congregationId, start, end],
+    );
+    const expensesResult = await client.query(
+      "select occurred_on, category, description, vendor, payment_method, purpose, cost_center, amount_cents, status from public.expenses where congregation_id = $1 and occurred_on between $2 and $3 order by occurred_on",
+      [congregationId, start, end],
+    );
+    const transfersResult = await client.query(
+      "select occurred_on, destination_name, reference_period, reason, amount_sent_cents, amount_received_cents, status from public.headquarters_transfers where origin_congregation_id = $1 and reference_period between $2 and $3 order by reference_period",
+      [congregationId, start, end],
+    );
+    const adjustmentsResult = await client.query(
+      "select created_at, reason, entity_type, amount_cents, created_by, status from public.financial_adjustments where congregation_id = $1 and reference_period = $2 order by created_at",
+      [congregationId, start],
+    );
+    const reversalsResult = await client.query(
+      "select created_at, entity_type, entity_id, reason, amount_cents, created_by, status from public.financial_reversals where congregation_id = $1 and reference_period = $2 order by created_at",
+      [congregationId, start],
+    );
+    const closingsResult = await client.query(
+      "select reference_period, status, closed_at as closing_at, submitted_by, approved_by from public.monthly_closings where congregation_id = $1 and reference_period = $2",
+      [congregationId, start],
+    );
+    const cashPeriodsResult = await client.query(
+      `select p.id, p.reference_period, p.opening_balance_cents, p.status, p.cash_register_id
+         from public.physical_cash_periods p
+         join public.physical_cash_registers r on r.id = p.cash_register_id
+        where r.congregation_id = $1 and p.reference_period = $2`,
+      [congregationId, start],
+    );
+    const auditsResult = await client.query(
+      "select occurred_at, action, entity, entity_id, reason from public.audit_events where congregation_id = $1 and occurred_at >= $2 and occurred_at <= $3 order by occurred_at",
+      [congregationId, `${start}T00:00:00Z`, `${end}T23:59:59Z`],
+    );
+    const cashPeriodIds = cashPeriodsResult.rows.map((item) => item.id);
+    const cashMovementsResult = cashPeriodIds.length
+      ? await client.query(
+        "select created_at, movement_type, reason, amount_cents, cash_period_id from public.physical_cash_movements where cash_period_id = any($1::uuid[]) order by created_at",
+        [cashPeriodIds],
+      )
+      : { rows: [] };
+    return {
+      congregation: congregationResult.rows[0] ?? null,
+      summary: summaryResult.rows[0] ?? null,
+      entries: entriesResult.rows,
+      expenses: expensesResult.rows,
+      transfers: transfersResult.rows,
+      adjustments: adjustmentsResult.rows,
+      reversals: reversalsResult.rows,
+      closing: closingsResult.rows[0] ?? null,
+      audit: auditsResult.rows,
+      cashMovements: cashMovementsResult.rows,
+    };
+  });
+  const summary = reportRows.summary;
   const closingBalance = summary?.closing_balance ?? 0;
   return {
     organization: "Ecclesia Finance",
-    congregation: congregationResult.data ?? { name: "Congregação", city: "" },
+    congregation: reportRows.congregation ?? { name: "Congregação", city: "" },
     period,
     generatedAt: new Date().toISOString(),
     responsible,
-    summary: { openingBalance: summary?.opening_balance ?? 0, entries: summary?.entries ?? 0, expenses: summary?.expenses ?? 0, transfers: summary?.transfers ?? 0, adjustments: summary?.adjustments ?? 0, reversals: (reversalsResult.data ?? []).reduce((total, item) => total + Number(item.amount_cents ?? 0), 0), closingBalance, status: summary?.closing_status ?? null },
-    entries: entriesResult.data ?? [], expenses: expensesResult.data ?? [], transfers: transfersResult.data ?? [], adjustments: adjustmentsResult.data ?? [], reversals: reversalsResult.data ?? [], cashMovements: cashMovementsResult.data ?? [], closing: closingsResult.data, audit: auditsResult.data ?? [],
+    summary: { openingBalance: summary?.opening_balance ?? 0, entries: summary?.entries ?? 0, expenses: summary?.expenses ?? 0, transfers: summary?.transfers ?? 0, adjustments: summary?.adjustments ?? 0, reversals: reportRows.reversals.reduce((total, item) => total + Number(item.amount_cents ?? 0), 0), closingBalance, status: summary?.closing_status ?? null },
+    entries: reportRows.entries, expenses: reportRows.expenses, transfers: reportRows.transfers, adjustments: reportRows.adjustments, reversals: reportRows.reversals, cashMovements: reportRows.cashMovements, closing: reportRows.closing, audit: reportRows.audit,
   };
 }

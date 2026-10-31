@@ -3,28 +3,30 @@ import { redirect } from "next/navigation";
 
 import { can } from "@/domain/access";
 import { TransferManager } from "@/components/TransferManager";
-import { toMemberships } from "@/lib/auth/session";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser, getUserMemberships } from "@/lib/auth/session";
+import { withUserContext } from "@/lib/db/pool";
 
 export const dynamic = "force-dynamic";
 
 export default async function TransfersPage() {
-	const supabase = await createClient();
-	const { data: { user } } = await supabase.auth.getUser();
+	const user = await getCurrentUser();
 	if (!user) redirect("/login");
-	const { data: membershipRows, error: membershipError } = await supabase.from("memberships").select("congregation_id, role, congregations(id, name, city, state, active, organization_type, is_headquarters), permission_overrides:membership_permission_overrides(financial_read, financial_write, financial_approve, closing_submit, audit_read)").eq("user_id", user.id);
-	if (membershipError) throw new Error(membershipError.message);
-	const memberships = toMemberships(user, membershipRows ?? []);
+	const memberships = await getUserMemberships(user);
 	const activeId = (await cookies()).get("active_congregation_id")?.value;
 	const activeMembership = memberships.find((membership) => membership.congregationId === activeId) ?? memberships[0];
 	if (!activeMembership) return <div className="empty-state"><strong>Sem congregação ativa</strong><span>Seu usuário não possui uma membership disponível.</span></div>;
 
 	const currentPeriod = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1)).toISOString().slice(0, 10);
-	const [transfersResult, closingResult] = await Promise.all([
-		supabase.from("headquarters_transfers").select("id, destination_name, reference_period, amount_sent_cents, amount_received_cents, occurred_on, status, reason").eq("origin_congregation_id", activeMembership.congregationId).order("reference_period", { ascending: false }).order("created_at", { ascending: false }).limit(100),
-		supabase.from("monthly_closings").select("status").eq("congregation_id", activeMembership.congregationId).eq("reference_period", currentPeriod).maybeSingle(),
-	]);
-	if (transfersResult.error) throw new Error(transfersResult.error.message);
-	if (closingResult.error) throw new Error(closingResult.error.message);
-	return <TransferManager transfers={transfersResult.data ?? []} congregationId={activeMembership.congregationId} closed={closingResult.data?.status === "closed"} canWrite={can(activeMembership, "financial.write")} canApprove={can(activeMembership, "financial.approve")} canConfirm={activeMembership.role === "central_admin"} organizationType={activeMembership.congregation.organizationType} />;
+	const [transfers, closing] = await withUserContext(user.id, async (client) => {
+		const transfersResult = await client.query(
+			"select id, destination_name, reference_period, amount_sent_cents, amount_received_cents, occurred_on, status, reason from public.headquarters_transfers where origin_congregation_id = $1 order by reference_period desc, created_at desc limit 100",
+			[activeMembership.congregationId],
+		);
+		const closingResult = await client.query(
+			"select status from public.monthly_closings where congregation_id = $1 and reference_period = $2",
+			[activeMembership.congregationId, currentPeriod],
+		);
+		return [transfersResult.rows, closingResult.rows[0]] as const;
+	});
+	return <TransferManager transfers={transfers} congregationId={activeMembership.congregationId} closed={closing?.status === "closed"} canWrite={can(activeMembership, "financial.write")} canApprove={can(activeMembership, "financial.approve")} canConfirm={activeMembership.role === "central_admin"} organizationType={activeMembership.congregation.organizationType} />;
 }

@@ -4,8 +4,8 @@ import { redirect } from "next/navigation";
 
 import { ModuleIcon } from "@/components/brand/ModuleIcon";
 import { can } from "@/domain/access";
-import { createClient } from "@/lib/supabase/server";
-import { toMemberships } from "@/lib/auth/session";
+import { getCurrentUser, getUserMemberships } from "@/lib/auth/session";
+import { withUserContext } from "@/lib/db/pool";
 import { presentStatus } from "@/lib/presentation";
 import { getVocabulary } from "@/domain/vocabulary";
 import { HierarchicalDashboard } from "@/components/HierarchicalDashboard";
@@ -47,7 +47,8 @@ function periodLabel(value: string) {
 }
 
 export default async function Home() {
-  const supabase = await createClient();
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
   const emptySummary: Summary = {
     opening_balance: 0,
     entries: 0,
@@ -63,29 +64,16 @@ export default async function Home() {
   });
 
   let dashboardError: string | null = null;
-  let memberships: ReturnType<typeof toMemberships> = [];
-  let activeMembership: ReturnType<typeof toMemberships>[number] | null = null;
+  let memberships: Awaited<ReturnType<typeof getUserMemberships>> = [];
+  let activeMembership: Awaited<ReturnType<typeof getUserMemberships>>[number] | null = null;
 
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) redirect("/login");
-
-    const { data: membershipRows, error: membershipError } = await supabase
-      .from("memberships")
-      .select("congregation_id, role, congregations(id, name, city, state, active, organization_type, is_headquarters), permission_overrides:membership_permission_overrides(financial_read, financial_write, financial_approve, closing_submit, audit_read, hierarchy_view, hierarchy_financial_read)")
-      .eq("user_id", user.id);
-
-    if (membershipError) {
-      console.error("Dashboard membership query failed:", membershipError);
-      dashboardError = "Não foi possível carregar as congregações do utilizador.";
-    } else {
-      memberships = toMemberships(user, membershipRows ?? []);
-      const activeId = (await cookies()).get("active_congregation_id")?.value;
-      activeMembership = memberships.find((membership) => membership.congregationId === activeId) ?? memberships[0] ?? null;
-    }
+    memberships = await getUserMemberships(user);
+    const activeId = (await cookies()).get("active_congregation_id")?.value;
+    activeMembership = memberships.find((membership) => membership.congregationId === activeId) ?? memberships[0] ?? null;
   } catch (error) {
-    console.error("Dashboard auth/membership fallback failed:", error);
-    dashboardError = "Não foi possível validar o acesso ao dashboard.";
+    console.error("Dashboard membership query failed:", error);
+    dashboardError = "Não foi possível carregar as congregações do utilizador.";
   }
 
   const { start, end } = currentPeriod();
@@ -104,32 +92,38 @@ export default async function Home() {
 
   if (activeMembership) {
     try {
-      const [summaryResult, entriesResult, expensesResult, transfersResult, missingEntriesResult, missingExpensesResult, missingTransfersResult, pendingTransfersResult, monthlySummaryResult, categoryTotalsResult] = await Promise.all([
-        supabase.from("congregation_monthly_summary").select("opening_balance, entries, expenses, transfers, adjustments, closing_balance, closing_status").eq("congregation_id", activeMembership.congregationId).eq("reference_period", start).maybeSingle(),
-        supabase.from("entries").select("id, occurred_on, amount_cents, category, origin").eq("congregation_id", activeMembership.congregationId).gte("occurred_on", start).lte("occurred_on", end).order("occurred_on", { ascending: false }).limit(5),
-        supabase.from("expenses").select("id, occurred_on, amount_cents, category, description").eq("congregation_id", activeMembership.congregationId).gte("occurred_on", start).lte("occurred_on", end).order("occurred_on", { ascending: false }).limit(5),
-        supabase.from("headquarters_transfers").select("id, occurred_on, reference_period, amount_sent_cents, destination_name, status").eq("origin_congregation_id", activeMembership.congregationId).gte("reference_period", start).lte("reference_period", end).order("reference_period", { ascending: false }).limit(5),
-        supabase.from("entries").select("id", { count: "exact", head: true }).eq("congregation_id", activeMembership.congregationId).gte("occurred_on", start).lte("occurred_on", end).is("receipt_id", null),
-        supabase.from("expenses").select("id", { count: "exact", head: true }).eq("congregation_id", activeMembership.congregationId).gte("occurred_on", start).lte("occurred_on", end).is("receipt_id", null),
-        supabase.from("headquarters_transfers").select("id", { count: "exact", head: true }).eq("origin_congregation_id", activeMembership.congregationId).gte("reference_period", start).lte("reference_period", end).is("receipt_id", null),
-        supabase.from("headquarters_transfers").select("id", { count: "exact", head: true }).eq("origin_congregation_id", activeMembership.congregationId).eq("status", "sent"),
-        supabase.from("congregation_monthly_summary").select("reference_period, entries, expenses").eq("congregation_id", activeMembership.congregationId).gte("reference_period", chartStart).lte("reference_period", start).order("reference_period", { ascending: true }),
-        supabase.from("congregation_monthly_entry_categories").select("category, amount_cents").eq("congregation_id", activeMembership.congregationId).eq("reference_period", start),
-      ]);
-
-      const failedQuery = [summaryResult, entriesResult, expensesResult, transfersResult, missingEntriesResult, missingExpensesResult, missingTransfersResult, pendingTransfersResult, monthlySummaryResult, categoryTotalsResult].find((result) => result.error);
-      if (failedQuery?.error) {
-        console.error("Dashboard data query failed:", failedQuery.error);
-        dashboardError = dashboardError ?? "Não foi possível carregar os dados financeiros.";
-      } else {
-        summary = (summaryResult.data ?? emptySummary) as Summary;
-        entries = (entriesResult.data ?? []) as Movement[];
-        expenses = (expensesResult.data ?? []) as Movement[];
-        transfers = (transfersResult.data ?? []) as Movement[];
-        missingReceipts = (missingEntriesResult.count ?? 0) + (missingExpensesResult.count ?? 0) + (missingTransfersResult.count ?? 0);
-        pendingTransfersCount = pendingTransfersResult.count ?? 0;
-        monthlySummaries = (monthlySummaryResult.data ?? []) as MonthlySummary[];
-        categoryTotals = (categoryTotalsResult.data ?? []) as EntryCategoryTotal[];
+      const dashboardData = await withUserContext(user.id, async (client) => {
+        const [summaryResult, entriesResult, expensesResult, transfersResult, missingEntriesResult, missingExpensesResult, missingTransfersResult, pendingTransfersResult, monthlySummaryResult, categoryTotalsResult] = await Promise.all([
+          client.query("select opening_balance, entries, expenses, transfers, adjustments, closing_balance, closing_status from public.congregation_monthly_summary where congregation_id = $1 and reference_period = $2", [activeMembership.congregationId, start]),
+          client.query("select id, occurred_on, amount_cents, category, origin from public.entries where congregation_id = $1 and occurred_on between $2 and $3 order by occurred_on desc limit 5", [activeMembership.congregationId, start, end]),
+          client.query("select id, occurred_on, amount_cents, category, description from public.expenses where congregation_id = $1 and occurred_on between $2 and $3 order by occurred_on desc limit 5", [activeMembership.congregationId, start, end]),
+          client.query("select id, occurred_on, reference_period, amount_sent_cents, destination_name, status from public.headquarters_transfers where origin_congregation_id = $1 and reference_period between $2 and $3 order by reference_period desc limit 5", [activeMembership.congregationId, start, end]),
+          client.query("select count(*)::integer as count from public.entries where congregation_id = $1 and occurred_on between $2 and $3 and receipt_id is null", [activeMembership.congregationId, start, end]),
+          client.query("select count(*)::integer as count from public.expenses where congregation_id = $1 and occurred_on between $2 and $3 and receipt_id is null", [activeMembership.congregationId, start, end]),
+          client.query("select count(*)::integer as count from public.headquarters_transfers where origin_congregation_id = $1 and reference_period between $2 and $3 and receipt_id is null", [activeMembership.congregationId, start, end]),
+          client.query("select count(*)::integer as count from public.headquarters_transfers where origin_congregation_id = $1 and status = 'sent'", [activeMembership.congregationId]),
+          client.query("select reference_period, entries, expenses from public.congregation_monthly_summary where congregation_id = $1 and reference_period between $2 and $3 order by reference_period", [activeMembership.congregationId, chartStart, start]),
+          client.query("select category, amount_cents from public.congregation_monthly_entry_categories where congregation_id = $1 and reference_period = $2", [activeMembership.congregationId, start]),
+        ]);
+        return {
+          summary: summaryResult.rows[0] ?? emptySummary,
+          entries: entriesResult.rows,
+          expenses: expensesResult.rows,
+          transfers: transfersResult.rows,
+          missingReceipts: missingEntriesResult.rows[0].count + missingExpensesResult.rows[0].count + missingTransfersResult.rows[0].count,
+          pendingTransfersCount: pendingTransfersResult.rows[0].count,
+          monthlySummaries: monthlySummaryResult.rows,
+          categoryTotals: categoryTotalsResult.rows,
+        };
+      });
+      summary = dashboardData.summary as Summary;
+      entries = dashboardData.entries as Movement[];
+      expenses = dashboardData.expenses as Movement[];
+      transfers = dashboardData.transfers as Movement[];
+      missingReceipts = dashboardData.missingReceipts;
+      pendingTransfersCount = dashboardData.pendingTransfersCount;
+      monthlySummaries = dashboardData.monthlySummaries as MonthlySummary[];
+      categoryTotals = dashboardData.categoryTotals as EntryCategoryTotal[];
 
         chartData = Array.from({ length: 6 }, (_, index) => {
           const date = new Date(Date.UTC(new Date(start).getUTCFullYear(), new Date(start).getUTCMonth() - 5 + index, 1));
@@ -147,7 +141,6 @@ export default async function Home() {
           { label: terms.freeIncome, value: categoryTotals.filter((item) => freeCategories.includes(normalizedCategory(item.category))).reduce((sum, item) => sum + item.amount_cents, 0), color: "#0f766e" },
           { label: "Outros", value: categoryTotals.filter((item) => !recurringCategories.includes(normalizedCategory(item.category)) && !freeCategories.includes(normalizedCategory(item.category))).reduce((sum, item) => sum + item.amount_cents, 0), color: "#94a3b8" },
         ];
-      }
     } catch (error) {
       console.error("Dashboard financial queries failed:", error);
       dashboardError = dashboardError ?? "Não foi possível carregar os dados financeiros desta congregação.";
@@ -241,7 +234,6 @@ function EntryCompositionChart({ data }: { data: CompositionSegment[] }) {
 }
 
 function Row({ label, value, positive = false }: { label: string; value: number; positive?: boolean }) { return <div className="row"><span>{label}</span><b className={positive ? "positive" : ""}>{money(value)}</b></div>; }
-function EmptyState({ text, description = "O dashboard não cria dados; ele apenas apresenta o que existe no Supabase.", showQuickActions = false }: { text: string; description?: string; showQuickActions?: boolean }) {
+function EmptyState({ text, description = "O dashboard não cria dados; ele apenas apresenta o que existe no PostgreSQL local.", showQuickActions = false }: { text: string; description?: string; showQuickActions?: boolean }) {
   return <div className="empty-state"><strong>{text}</strong><span>{description}</span>{showQuickActions && <nav className="quick-actions" aria-label="Ações rápidas"><Link className="quick-action primary" href="/entradas"><span aria-hidden="true">+</span> Nova Entrada</Link><Link className="quick-action secondary" href="/despesas"><span aria-hidden="true">+</span> Nova Despesa</Link><Link className="quick-action tertiary" href="/caixa">Abrir Caixa</Link></nav>}</div>;
 }
-

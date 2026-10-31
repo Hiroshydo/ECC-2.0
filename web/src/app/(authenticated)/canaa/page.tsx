@@ -4,8 +4,7 @@ import type { Edge, Node } from "@xyflow/react";
 
 import { ModuleIcon } from "@/components/brand/ModuleIcon";
 import { can, isMasterAdmin } from "@/domain/access";
-import { toMemberships } from "@/lib/auth/session";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser, getUserMemberships } from "@/lib/auth/session";
 import { InviteOperatorModal } from "@/modules/core/canaa/components/InviteOperatorModal";
 import { LocalTeamManager } from "@/modules/core/canaa/components/LocalTeamManager";
 import { CongregationFlowMap } from "@/modules/core/canaa/components/CongregationFlowMap";
@@ -16,17 +15,9 @@ import { KhatamQuotaBar } from "@/modules/core/khatam/components/KhatamQuotaBar"
 export const dynamic = "force-dynamic";
 
 export default async function CanaaPage() {
-  const supabase = await createClient();
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
-  if (userError || !user) redirect("/login");
-
-  const { data: membershipRows, error: membershipError } = await supabase
-    .from("memberships")
-    .select("congregation_id, role, congregations!inner(id, name, city, active, state, parent_id, organization_type, is_headquarters), permission_overrides:membership_permission_overrides(financial_read, financial_write, financial_approve, closing_submit, audit_read, hierarchy_view, hierarchy_financial_read)")
-    .eq("user_id", user.id);
-  if (membershipError) throw new Error(membershipError.message);
-
-  const memberships = toMemberships(user, membershipRows ?? []);
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+  const memberships = await getUserMemberships(user);
   const selectedId = (await cookies()).get("active_congregation_id")?.value;
   const activeMembership = memberships.find((membership) => membership.congregationId === selectedId) ?? memberships[0] ?? null;
   const masterAdmin = isMasterAdmin(user);

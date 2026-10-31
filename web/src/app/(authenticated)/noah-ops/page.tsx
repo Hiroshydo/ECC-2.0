@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 
 import { ModuleIcon } from "@/components/brand/ModuleIcon";
 import { isMasterAdmin } from "@/domain/access";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth/session";
 import { CongregationFlowMap } from "@/modules/core/canaa/components/CongregationFlowMap";
 import { NoahTelemetryGrid } from "@/modules/core/canaa/components/NoahTelemetryGrid";
 import type { ModuleTelemetry } from "@/modules/core/canaa/types";
@@ -16,7 +16,7 @@ const telemetry: ModuleTelemetry[] = [
 ];
 
 export default async function NoahOpsPage() {
-  const { data: { user } } = await (await createClient()).auth.getUser();
+  const user = await getCurrentUser();
   if (!user) redirect("/login");
   if (!isMasterAdmin(user)) redirect("/");
 

@@ -2,25 +2,21 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { ReportSummary } from "@/components/ReportSummary";
-import { toMemberships } from "@/lib/auth/session";
+import { getCurrentUser, getUserMemberships } from "@/lib/auth/session";
 import { loadReportData } from "@/lib/reports/data";
-import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function ReportsPage() {
-	const supabase = await createClient();
-	const { data: { user } } = await supabase.auth.getUser();
+	const user = await getCurrentUser();
 	if (!user) redirect("/login");
-	const { data: membershipRows, error: membershipError } = await supabase.from("memberships").select("congregation_id, role, congregations(id, name, city, state, active, organization_type, is_headquarters), permission_overrides:membership_permission_overrides(financial_read, financial_write, financial_approve, closing_submit, audit_read)").eq("user_id", user.id);
-	if (membershipError) throw new Error(membershipError.message);
-	const memberships = toMemberships(user, membershipRows ?? []);
+	const memberships = await getUserMemberships(user);
 	const activeId = (await cookies()).get("active_congregation_id")?.value;
 	const activeMembership = memberships.find((membership) => membership.congregationId === activeId) ?? memberships[0];
 	if (!activeMembership) return <div className="empty-state"><strong>Sem congregação ativa</strong><span>Seu usuário não possui uma membership disponível.</span></div>;
 	 const congregations = memberships.map((membership) => ({ congregationId: membership.congregationId, name: membership.congregation.name, city: membership.congregation.city }));
 	 const now = new Date();
 	 const period = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
-	 const data = await loadReportData(supabase, activeMembership.congregationId, period, user.email ?? null);
+	 const data = await loadReportData(user.id, activeMembership.congregationId, period, user.email ?? null);
 	 return <ReportSummary initialData={data} congregations={congregations} />;
 }
