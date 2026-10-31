@@ -37,16 +37,39 @@ print_blocked_summary() {
 
 if [[ -n "${DATABASE_URL:-}" ]]; then
   DB_CONN="${DATABASE_URL}"
-elif [[ -n "${PGHOST:-}" && -n "${PGUSER:-}" && -n "${PGDATABASE:-}" ]]; then
-  DB_CONN="postgresql://${PGUSER}@${PGHOST}:${PGPORT:-5432}/${PGDATABASE}"
 else
-  print_blocked_summary
-  echo "Reason: no PostgreSQL/Supabase connection is available."
+  DB_CONN="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+fi
+
+if command -v psql >/dev/null 2>&1; then
+  PSQL_CMD=(psql "${DB_CONN}")
+elif [[ -z "${DATABASE_URL:-}" ]] && command -v docker >/dev/null 2>&1; then
+  PSQL_CMD=(docker exec -i supabase_db_ecc-local psql -U postgres -d postgres)
+else
+  echo "DOMAIN STATUS: BLOCKED"
+  echo "Reason: neither psql nor the local Supabase Docker container is available."
   exit 0
 fi
 
+run_psql() {
+  if [[ "${PSQL_CMD[0]}" == "psql" ]]; then
+    PGPASSWORD="${PGPASSWORD:-}" "${PSQL_CMD[@]}" "$@"
+  else
+    "${PSQL_CMD[@]}" "$@"
+  fi
+}
+
+run_sql_file() {
+  local file_path="$1"
+  if [[ "${PSQL_CMD[0]}" == "docker" ]]; then
+    run_psql -v ON_ERROR_STOP=1 -f - < "${file_path}"
+  else
+    run_psql -v ON_ERROR_STOP=1 -f "${file_path}"
+  fi
+}
+
 echo "Checking authenticated execution context"
-if ! PGPASSWORD="${PGPASSWORD:-}" psql "${DB_CONN}" -v ON_ERROR_STOP=1 -X -Atc \
+if ! run_psql -v ON_ERROR_STOP=1 -X -Atc \
   "begin; set local role authenticated; select set_config('request.jwt.claims', '{\"sub\":\"66666666-6666-4666-8666-666666666666\",\"role\":\"authenticated\",\"aud\":\"authenticated\"}', true); select set_config('request.jwt.claim.sub', '66666666-6666-4666-8666-666666666666', true); select set_config('request.jwt.claim.role', 'authenticated', true); select current_user, current_role, auth.uid(); do \$\$ begin if current_user <> 'authenticated' or current_role <> 'authenticated' or auth.uid() is distinct from '66666666-6666-4666-8666-666666666666'::uuid then raise exception 'AUTH_CONTEXT_MISMATCH: user=%, role=%, uid=%', current_user, current_role, auth.uid(); end if; end \$\$; rollback;"; then
   echo "DOMAIN STATUS: BLOCKED"
   echo "Reason: direct psql could not reproduce the authenticated Supabase role/claims context safely."
@@ -88,7 +111,7 @@ for file in "${SQL_FILES[@]}"; do
     exit 3
   fi
   echo "Running ${file}"
-  if PGPASSWORD="${PGPASSWORD:-}" psql "${DB_CONN}" -v ON_ERROR_STOP=1 -f "${ROOT_DIR}/${file}"; then
+  if run_sql_file "${ROOT_DIR}/${file}"; then
     echo "Result: script completed without assertion failures."
   else
     echo "Result: script failed with SQL assertions or runtime error."

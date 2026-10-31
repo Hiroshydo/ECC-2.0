@@ -1,0 +1,23 @@
+# Progresso da execução local
+
+## Parte 1 — Supabase local
+
+Status: concluída.
+
+- Configurado o projeto Supabase local `ecc-local` e adicionados comandos npm para iniciar, parar, resetar, consultar e gerar tipos.
+- Criados modelos separados para os perfis local e de nuvem; os arquivos locais com chaves estão ignorados pelo Git.
+- Atualizadas as instruções de desenvolvimento e homologação para usar Docker e o Supabase local. O comando `jordao use local` continua pendente para a Parte 6; até lá, as variáveis devem ser mapeadas manualmente para `.env.local`.
+- Limitados os testes SQL ao banco local por padrão, com execução pelo container quando o cliente `psql` não estiver instalado no host.
+- Gerados os tipos TypeScript do schema local e aplicada a tipagem somente ao cliente Supabase de serviço. A tipagem dos demais clientes foi adiada porque revelou incompatibilidades existentes em várias consultas do app.
+- A migration `0013_khatam_licenses.sql` já existia nesta branch e foi aplicada somente no banco local pelo reset; nenhuma migration foi criada nesta parte.
+
+### Validação
+
+- Reset local: concluído, migrations `0001` a `0013` e seed aplicados.
+- Studio local: respondeu em `127.0.0.1:54323`.
+- Mailpit local: respondeu em `127.0.0.1:54324`.
+- Suíte `database-tests/run_suite.sh`: passou; autenticação, RLS, RBAC, auditoria, fluxos financeiros e demais asserções reportaram `PASS`.
+- `npm run lint`: passou.
+- `npm run build`: passou.
+
+Nenhuma migration foi aplicada à nuvem. O relatório do `npm install` indicou vulnerabilidades na árvore de dependências; não foi executado `npm audit fix`.

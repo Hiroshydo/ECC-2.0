@@ -1,5 +1,5 @@
--- Ecclesia Finance homologation seed.
--- STAGING ONLY: do not run against production.
+-- LOCAL ONLY — nunca aplicar na nuvem.
+-- Ecclesia Finance local demonstration seed.
 -- Login: teste@teste / teste
 
 create extension if not exists pgcrypto with schema extensions;
