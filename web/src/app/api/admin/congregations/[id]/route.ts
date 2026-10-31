@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getPlatformAdminContext } from "@/lib/admin/platform";
+import { adminQuery } from "@/lib/db/pool";
 import type { OrganizationLevel, OrganizationType } from "@/domain/vocabulary";
 
 type UpdateOrganizationRequest = {
@@ -97,14 +98,12 @@ export async function PUT(
     }
     const parentId = typedLevel === "national_hq" ? null : input.parent_id;
     if (typeof parentId === "string") {
-      const { data: parent, error: parentError } = await authorization.serviceClient
-        .from("congregations")
-        .select("id, organization_level")
-        .eq("id", parentId)
-        .eq("organization_type", organizationType)
-        .maybeSingle();
-      if (parentError) return NextResponse.json({ error: parentError.message }, { status: 400 });
-      if (!parent || !parentLevels[typedLevel].includes(parent.organization_level as OrganizationLevel)) {
+      const parentResult = await adminQuery<{ organization_level: OrganizationLevel }>(
+        "select organization_level from public.congregations where id = $1 and organization_type = $2",
+        [parentId, organizationType],
+      );
+      const parent = parentResult.rows[0];
+      if (!parent || !parentLevels[typedLevel].includes(parent.organization_level)) {
         return NextResponse.json({ error: "parent_organization_level_invalid" }, { status: 400 });
       }
     }
@@ -122,14 +121,13 @@ export async function PUT(
     sub_hq: ["local_congregation"],
     local_congregation: [],
   };
-  const { data: children, error: childrenError } = await authorization.serviceClient
-    .from("congregations")
-    .select("organization_level, organization_type")
-    .eq("parent_id", id);
-  if (childrenError) return NextResponse.json({ error: childrenError.message }, { status: 400 });
-  if ((children ?? []).some((child) =>
+  const childrenResult = await adminQuery<{ organization_level: OrganizationLevel; organization_type: OrganizationType }>(
+    "select organization_level, organization_type from public.congregations where parent_id = $1",
+    [id],
+  );
+  if (childrenResult.rows.some((child) =>
     child.organization_type !== organizationType ||
-    !allowedChildLevels[typedLevel].includes(child.organization_level as OrganizationLevel)
+    !allowedChildLevels[typedLevel].includes(child.organization_level)
   )) {
     return NextResponse.json({ error: "organization_has_incompatible_children" }, { status: 400 });
   }
@@ -141,14 +139,27 @@ export async function PUT(
     updates.active = input.active;
   }
 
-  const { data, error } = await authorization.serviceClient
-    .from("congregations")
-    .update(updates)
-    .eq("id", id)
-    .select("id, name, city, state, parent_id, leader_name, organization_type, organization_level, is_headquarters, active")
-    .maybeSingle();
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  const columns: Record<keyof typeof updates, string> = {
+    name: "name",
+    city: "city",
+    state: "state",
+    organization_type: "organization_type",
+    organization_level: "organization_level",
+    is_headquarters: "is_headquarters",
+    leader_name: "leader_name",
+    parent_id: "parent_id",
+    active: "active",
+  };
+  const entries = Object.entries(updates) as [keyof typeof updates, (typeof updates)[keyof typeof updates]][];
+  const parameters = entries.map(([, value]) => value);
+  const assignments = entries.map(([key], index) => `${columns[key]} = $${index + 1}`).join(", ");
+  const result = await adminQuery(
+    `update public.congregations set ${assignments}
+      where id = $${parameters.length + 1}
+      returning id, name, city, state, parent_id, leader_name, organization_type, organization_level, is_headquarters, active`,
+    [...parameters, id],
+  );
+  const data = result.rows[0];
   if (!data) return NextResponse.json({ error: "congregation_not_found" }, { status: 404 });
 
   return NextResponse.json({ data }, { headers: { "Cache-Control": "no-store" } });

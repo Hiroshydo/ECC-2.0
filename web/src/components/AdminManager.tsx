@@ -141,7 +141,7 @@ export function AdminManager() {
     event.preventDefault();
     setPending(true); setError(null); setNotice(null);
     try {
-      await readApi<{ id: string }>(await fetch("/api/admin/users", {
+      const createdUser = await readApi<{ id: string; temporaryPassword: string }>(await fetch("/api/admin/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -152,7 +152,7 @@ export function AdminManager() {
       }));
       setNewUser((current) => ({ ...current, name: "", email: "" }));
       setShowUserForm(false);
-      setNotice("Convite enviado por e-mail.");
+      setNotice(`Usuário criado. Senha temporária (copie e compartilhe por um canal seguro): ${createdUser.temporaryPassword}`);
       await refreshOverview();
     } catch (submitError) { setError(submitError instanceof Error ? submitError.message : "Não foi possível convidar o usuário."); }
     finally { setPending(false); }

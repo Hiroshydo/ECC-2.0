@@ -1,7 +1,9 @@
+import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
 
 import { allPermissions, type Role } from "@/domain/access";
 import { getPlatformAdminContext } from "@/lib/admin/platform";
+import { withAdminContext } from "@/lib/db/pool";
 import type { AdminAssignment, AdminPermissionSet } from "@/lib/admin/types";
 
 const roles: Role[] = ["central_admin", "congregation_admin", "treasurer", "auditor", "viewer"];
@@ -43,19 +45,37 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "name_email_or_assignments_invalid" }, { status: 400 });
   }
 
-  const { data, error } = await context.serviceClient.auth.admin.inviteUserByEmail(email, { data: { full_name: name, name } });
-  if (error || !data.user) return NextResponse.json({ error: error?.message ?? "user_invite_failed" }, { status: 400 });
+  const temporaryPassword = randomBytes(32).toString("base64url");
+  try {
+    const user = await withAdminContext(async (client) => {
+      const result = await client.query<{ id: string }>(
+        `insert into auth.users (
+           id, aud, role, email, encrypted_password, email_confirmed_at,
+           raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+         )
+         values (
+           gen_random_uuid(), 'authenticated', 'authenticated', $1,
+           extensions.crypt($2, extensions.gen_salt('bf')), now(),
+           '{"provider":"email","providers":["email"]}'::jsonb, $3::jsonb, now(), now()
+         )
+         returning id`,
+        [email, temporaryPassword, JSON.stringify({ full_name: name, name })],
+      );
+      const createdUser = result.rows[0];
+      if (!createdUser) throw new Error("user_creation_failed");
 
-  const { error: accessError } = await context.serviceClient.rpc("admin_replace_user_access", {
-    p_actor_id: context.user.id,
-    p_user_id: data.user.id,
-    p_assignments: assignments,
-  });
-  if (accessError) {
-    await context.serviceClient.auth.admin.deleteUser(data.user.id);
-    return NextResponse.json({ error: accessError.message }, { status: 400 });
+      await client.query(
+        "select public.admin_replace_user_access($1, $2, $3::jsonb)",
+        [context.user.id, createdUser.id, JSON.stringify(assignments)],
+      );
+      return createdUser;
+    });
+
+    return NextResponse.json({
+      data: { id: user.id, email, name, temporaryPassword },
+    }, { status: 201, headers: { "Cache-Control": "no-store" } });
+  } catch (error) {
+    console.error("Local user creation failed:", error);
+    return NextResponse.json({ error: "user_creation_failed" }, { status: 400 });
   }
-
-  return NextResponse.json({ data: { id: data.user.id, email, name } }, { status: 201, headers: { "Cache-Control": "no-store" } });
 }
-

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { adminQuery, withUserContext } from "@/lib/db/pool";
+import { withAdminContext, withUserContext } from "@/lib/db/pool";
 
 function functionCall(functionName: string, params: Record<string, unknown>) {
   if (!/^[a-z][a-z0-9_]*$/.test(functionName)) {
@@ -36,6 +36,8 @@ export async function callAdminFunction<T = unknown>(
   params: Record<string, unknown>,
 ): Promise<T> {
   const call = functionCall(functionName, params);
-  const result = await adminQuery<{ result: T }>(call.text, call.values);
-  return result.rows[0]?.result;
+  return withAdminContext(async (client) => {
+    const result = await client.query<{ result: T }>(call.text, call.values);
+    return result.rows[0]?.result;
+  });
 }

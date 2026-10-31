@@ -79,3 +79,13 @@ export async function withAdminTransaction<T>(
     client.release();
   }
 }
+
+export async function withAdminContext<T>(
+  operation: (client: PoolClient) => Promise<T>,
+): Promise<T> {
+  return withAdminTransaction(async (client) => {
+    await client.query("SELECT set_config('request.jwt.claim.role', 'service_role', true)");
+    await client.query("SELECT set_config('request.jwt.claims', '{\"role\":\"service_role\"}', true)");
+    return operation(client);
+  });
+}

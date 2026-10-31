@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { permissionsForRole, type Role } from "@/domain/access";
 import { getPlatformAdminContext } from "@/lib/admin/platform";
 import { adminQuery } from "@/lib/db/pool";
-import type { AdminAssignment, AdminOverview, AdminPermissionSet, AdminUser } from "@/lib/admin/types";
+import type { AdminAssignment, AdminOrganization, AdminOverview, AdminPermissionSet, AdminUser } from "@/lib/admin/types";
 
 type MembershipRow = { user_id: string; congregation_id: string; role: Role };
 type PermissionRow = {
@@ -37,7 +37,7 @@ export async function GET() {
 
   try {
     const [organizationResult, membershipResult, permissionResult, userResult] = await Promise.all([
-      adminQuery("select id, name, city, state, parent_id, leader_name, organization_type, organization_level, is_headquarters, active from public.congregations order by name"),
+      adminQuery<AdminOrganization>("select id, name, city, state, parent_id, leader_name, organization_type, organization_level, is_headquarters, active from public.congregations order by name"),
       adminQuery<MembershipRow>("select user_id, congregation_id, role from public.memberships"),
       adminQuery<PermissionRow>("select user_id, congregation_id, financial_read, financial_write, financial_approve, closing_submit, audit_read, hierarchy_view, hierarchy_financial_read from public.membership_permission_overrides"),
       adminQuery<{ id: string; email: string | null; user_metadata: Record<string, unknown> | null }>(

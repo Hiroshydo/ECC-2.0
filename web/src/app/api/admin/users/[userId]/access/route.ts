@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 
 import { allPermissions, type Role } from "@/domain/access";
 import { getPlatformAdminContext } from "@/lib/admin/platform";
+import { adminQuery } from "@/lib/db/pool";
+import { callAdminFunction } from "@/lib/db/rpc";
 import type { AdminAssignment, AdminPermissionSet } from "@/lib/admin/types";
 
 const roles: Role[] = ["central_admin", "congregation_admin", "treasurer", "auditor", "viewer"];
@@ -30,8 +32,11 @@ export async function PUT(request: Request, context: RouteContext<"/api/admin/us
   const authorization = await getPlatformAdminContext();
   if (!authorization.ok) return NextResponse.json({ error: authorization.error }, { status: authorization.status });
   const { userId } = await context.params;
-  const { data: targetUser, error: userError } = await authorization.serviceClient.auth.admin.getUserById(userId);
-  if (userError || !targetUser.user) return NextResponse.json({ error: "user_not_found" }, { status: 404 });
+  const targetUser = await adminQuery(
+    "select id from auth.users where id = $1 and deleted_at is null",
+    [userId],
+  );
+  if (!targetUser.rows[0]) return NextResponse.json({ error: "user_not_found" }, { status: 404 });
 
   let input: { assignments?: unknown };
   try {
@@ -42,11 +47,15 @@ export async function PUT(request: Request, context: RouteContext<"/api/admin/us
   const assignments = parseAssignments(input.assignments);
   if (!assignments) return NextResponse.json({ error: "assignments_invalid" }, { status: 400 });
 
-  const { error } = await authorization.serviceClient.rpc("admin_replace_user_access", {
+  try {
+    await callAdminFunction("admin_replace_user_access", {
     p_actor_id: authorization.user.id,
     p_user_id: userId,
     p_assignments: assignments,
-  });
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    });
+  } catch (error) {
+    console.error("Local user access update failed:", error);
+    return NextResponse.json({ error: "user_access_update_failed" }, { status: 400 });
+  }
   return NextResponse.json({ data: { updated: true } }, { headers: { "Cache-Control": "no-store" } });
 }

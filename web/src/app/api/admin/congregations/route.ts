@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { getPlatformAdminContext } from "@/lib/admin/platform";
+import { adminQuery } from "@/lib/db/pool";
+import { callAdminFunction } from "@/lib/db/rpc";
 import type { OrganizationLevel, OrganizationType } from "@/domain/vocabulary";
 
 type CreateOrganizationRequest = {
@@ -52,19 +54,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "parent_organization_required" }, { status: 400 });
   }
   if (parentId) {
-    const { data: parent, error: parentError } = await context.serviceClient
-      .from("congregations")
-      .select("id, organization_level")
-      .eq("id", parentId)
-      .eq("organization_type", input.organizationType)
-      .maybeSingle();
-    if (parentError) return NextResponse.json({ error: parentError.message }, { status: 400 });
-    if (!parent || !parentLevels[input.organizationLevel].includes(parent.organization_level as OrganizationLevel)) {
+    const parentResult = await adminQuery<{ organization_level: OrganizationLevel }>(
+      "select organization_level from public.congregations where id = $1 and organization_type = $2",
+      [parentId, input.organizationType],
+    );
+    const parent = parentResult.rows[0];
+    if (!parent || !parentLevels[input.organizationLevel].includes(parent.organization_level)) {
       return NextResponse.json({ error: "parent_organization_level_invalid" }, { status: 400 });
     }
   }
 
-  const { data, error } = await context.serviceClient.rpc("admin_create_congregation", {
+  const data = await callAdminFunction("admin_create_congregation", {
     p_actor_id: context.user.id,
     p_name: input.name.trim(),
     p_city: input.city.trim(),
@@ -74,6 +74,5 @@ export async function POST(request: Request) {
     p_parent_id: parentId,
     p_organization_level: input.organizationLevel,
   });
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json({ data }, { status: 201, headers: { "Cache-Control": "no-store" } });
 }
