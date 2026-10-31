@@ -1,0 +1,122 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="110 20 580 580" width="100%" height="100%">
+  <defs>
+    <!-- Main Squircle Background Gradient -->
+    <linearGradient id="bgGrad_gideon" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#14B8A6" />
+      <stop offset="35%" stop-color="#0D9488" />
+      <stop offset="70%" stop-color="#065F46" />
+      <stop offset="100%" stop-color="#042F2E" />
+    </linearGradient>
+
+    <!-- Diagonal Glossy Facet Top-Left -->
+    <linearGradient id="glossTL_gideon" x1="0%" y1="0%" x2="70%" y2="70%">
+      <stop offset="0%" stop-color="#5EEAD4" stop-opacity="0.45" />
+      <stop offset="50%" stop-color="#10B981" stop-opacity="0.15" />
+      <stop offset="100%" stop-color="#064E3B" stop-opacity="0.0" />
+    </linearGradient>
+
+    <!-- Diagonal Deep Shadow Bottom-Right -->
+    <linearGradient id="SombraBR_gideon" x1="30%" y1="30%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#042F2E" stop-opacity="0.0" />
+      <stop offset="100%" stop-color="#021716" stop-opacity="0.55" />
+    </linearGradient>
+
+    <!-- Inner Bevel Border Gradient -->
+    <linearGradient id="rimGrad_gideon" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#99F6E4" stop-opacity="0.7" />
+      <stop offset="50%" stop-color="#14B8A6" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#022C22" stop-opacity="0.8" />
+    </linearGradient>
+
+    <!-- Accent Mint-Emerald Gradient for Icon Highlights -->
+    <linearGradient id="mintGrad_gideon" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#99F6E4" />
+      <stop offset="50%" stop-color="#2DD4BF" />
+      <stop offset="100%" stop-color="#0D9488" />
+    </linearGradient>
+
+    <!-- Dark Emerald Core Fill -->
+    <linearGradient id="darkCore_gideon" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F766E" />
+      <stop offset="100%" stop-color="#042F2E" />
+    </linearGradient>
+
+    <!-- Crisp Metallic White Gradient -->
+    <linearGradient id="whiteGrad_gideon" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#E2E8F0" />
+    </linearGradient>
+
+    <!-- Soft Drop Shadow for Squircle Badge -->
+    <filter id="badgeShadow_gideon" x="-15%" y="-10%" width="130%" height="135%">
+      <feDropShadow dx="0" dy="14" stdDeviation="16" flood-color="#042F2E" flood-opacity="0.28" />
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0D9488" flood-opacity="0.15" />
+    </filter>
+
+    <!-- Crisp Inner Icon Drop Shadow -->
+    <filter id="iconShadow_gideon" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#021716" flood-opacity="0.45" />
+    </filter>
+
+    <!-- Clip Path for Squircle Facets -->
+    <clipPath id="squircleClip_gideon">
+      <rect x="150" y="50" width="500" height="500" rx="115" />
+    </clipPath>
+  </defs>
+  <!-- Squircle Base with 3D Facets & Gloss -->
+  <g filter="url(#badgeShadow_gideon)">
+    <rect x="150" y="50" width="500" height="500" rx="115" fill="url(#bgGrad_gideon)" />
+  </g>
+  <g clip-path="url(#squircleClip_gideon)">
+    <!-- Top-Left Sweeping Light Facet (Ecclesia Signature Style) -->
+    <path d="M 120 50 L 520 50 C 440 220 280 380 120 460 Z" fill="url(#glossTL_gideon)" />
+    <!-- Secondary Geometric Facet -->
+    <path d="M 150 50 L 650 50 L 650 220 C 480 240 310 350 150 550 Z" fill="#2DD4BF" fill-opacity="0.08" />
+    <!-- Bottom-Right Deep Contrast Curve -->
+    <path d="M 650 180 C 520 340 380 460 180 550 L 650 550 Z" fill="url(#SombraBR_gideon)" />
+  </g>
+  <!-- Outer & Inner Precision Bevel Borders -->
+  <rect x="153" y="53" width="494" height="494" rx="112" fill="none" stroke="url(#rimGrad_gideon)" stroke-width="5" />
+  <rect x="166" y="66" width="468" height="468" rx="102" fill="none" stroke="#99F6E4" stroke-width="1.5" stroke-opacity="0.25" />
+  <g transform="translate(400, 300) scale(1.04) translate(-400, -280)">
+  <g transform="translate(400, 295)" filter="url(#iconShadow_gideon)">
+    <!-- Outer 3D Faceted Shield -->
+    <path d="M 0 -155 L 135 -95 L 135 20 C 135 112 68 165 0 192 C -68 165 -135 112 -135 20 L -135 -95 Z" fill="url(#whiteGrad_gideon)" />
+    <!-- Shield Left Highlight Bevel -->
+    <path d="M 0 -155 L -135 -95 L -135 20 C -135 112 -68 165 0 192 L 0 -155 Z" fill="#FFFFFF" />
+    <!-- Shield Right Shaded Bevel -->
+    <path d="M 0 -155 L 135 -95 L 135 20 C 135 112 68 165 0 192 L 0 -155 Z" fill="#CBD5E1" fill-opacity="0.45" />
+
+    <!-- Inner Emerald Core Shield -->
+    <path d="M 0 -115 L 98 -72 L 98 16 C 98 86 48 128 0 150 C -48 128 -98 86 -98 16 L -98 -72 Z" fill="url(#darkCore_gideon)" stroke="#0D9488" stroke-width="4" />
+    <!-- Inner Shield Left Lit Half -->
+    <path d="M 0 -115 L -98 -72 L -98 16 C -98 86 -48 128 0 150 Z" fill="url(#mintGrad_gideon)" fill-opacity="0.55" />
+
+    <!-- Subtle Encryption / Pix / DPoP Nodes Inside Shield Top-Left -->
+    <g stroke="#99F6E4" stroke-width="2.5" opacity="0.55" fill="none">
+      <path d="M -65 -40 L -35 -40 L -20 -25" />
+      <path d="M -65 -10 L -40 -10 L -25 5" />
+      <circle cx="-65" cy="-40" r="4" fill="#99F6E4" />
+      <circle cx="-20" cy="-25" r="4" fill="#99F6E4" />
+      <circle cx="-65" cy="-10" r="4" fill="#99F6E4" />
+    </g>
+
+    <!-- Long Cast Shadow of the Fortress Battlement -->
+    <path d="M 8 28 L 145 28 L 115 140 L 8 188 Z" fill="#021716" fill-opacity="0.45" />
+
+    <!-- Fortress Battlement Wall (A Muralha de Borda) - Bottom Right -->
+    <g transform="translate(8, 18)">
+      <!-- Top Overhanging Cornice Bar -->
+      <rect x="-8" y="0" width="152" height="12" rx="4" fill="#FFFFFF" />
+      <!-- Battlement Body & Crenelations (Merlons) -->
+      <path d="M 8 18 L 36 18 L 36 42 L 58 42 L 58 18 L 86 18 L 86 42 L 108 42 L 108 18 L 136 18 L 136 115 L 8 158 Z" fill="url(#mintGrad_gideon)" stroke="#FFFFFF" stroke-width="10" stroke-linejoin="round" />
+      <!-- Fortress Masonry / Brick Detail Lines -->
+      <line x1="16" y1="68" x2="128" y2="68" stroke="#042F2E" stroke-width="3" stroke-opacity="0.35" />
+      <line x1="16" y1="98" x2="128" y2="98" stroke="#042F2E" stroke-width="3" stroke-opacity="0.35" />
+      <line x1="58" y1="68" x2="58" y2="98" stroke="#042F2E" stroke-width="3" stroke-opacity="0.35" />
+      <line x1="96" y1="68" x2="96" y2="98" stroke="#042F2E" stroke-width="3" stroke-opacity="0.35" />
+      <line x1="72" y1="98" x2="72" y2="128" stroke="#042F2E" stroke-width="3" stroke-opacity="0.35" />
+    </g>
+  </g>
+  </g>
+</svg>

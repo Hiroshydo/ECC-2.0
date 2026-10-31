@@ -1,0 +1,24 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"name": "ECC-2.0",
+			"path": "."
+		},
+		{
+			"path": "../Ecclesia-Finance/database-tests"
+		},
+		{
+			"path": "../Ecclesia-Finance/docs"
+		},
+		{
+			"path": "../Ecclesia-Finance/supabase"
+		},
+		{
+			"path": "../Ecclesia-Finance/web"
+		}
+	],
+	"settings": {}
+}

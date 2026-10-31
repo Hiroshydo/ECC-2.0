@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 820" width="100%" height="100%">
+  <defs>
+    <!-- Main Squircle Background Gradient -->
+    <linearGradient id="bgGrad_shofeet" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#14B8A6" />
+      <stop offset="35%" stop-color="#0D9488" />
+      <stop offset="70%" stop-color="#065F46" />
+      <stop offset="100%" stop-color="#042F2E" />
+    </linearGradient>
+
+    <!-- Diagonal Glossy Facet Top-Left -->
+    <linearGradient id="glossTL_shofeet" x1="0%" y1="0%" x2="70%" y2="70%">
+      <stop offset="0%" stop-color="#5EEAD4" stop-opacity="0.45" />
+      <stop offset="50%" stop-color="#10B981" stop-opacity="0.15" />
+      <stop offset="100%" stop-color="#064E3B" stop-opacity="0.0" />
+    </linearGradient>
+
+    <!-- Diagonal Deep Shadow Bottom-Right -->
+    <linearGradient id="SombraBR_shofeet" x1="30%" y1="30%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#042F2E" stop-opacity="0.0" />
+      <stop offset="100%" stop-color="#021716" stop-opacity="0.55" />
+    </linearGradient>
+
+    <!-- Inner Bevel Border Gradient -->
+    <linearGradient id="rimGrad_shofeet" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#99F6E4" stop-opacity="0.7" />
+      <stop offset="50%" stop-color="#14B8A6" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#022C22" stop-opacity="0.8" />
+    </linearGradient>
+
+    <!-- Accent Mint-Emerald Gradient for Icon Highlights -->
+    <linearGradient id="mintGrad_shofeet" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#99F6E4" />
+      <stop offset="50%" stop-color="#2DD4BF" />
+      <stop offset="100%" stop-color="#0D9488" />
+    </linearGradient>
+
+    <!-- Dark Emerald Core Fill -->
+    <linearGradient id="darkCore_shofeet" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F766E" />
+      <stop offset="100%" stop-color="#042F2E" />
+    </linearGradient>
+
+    <!-- Crisp Metallic White Gradient -->
+    <linearGradient id="whiteGrad_shofeet" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#E2E8F0" />
+    </linearGradient>
+
+    <!-- Soft Drop Shadow for Squircle Badge -->
+    <filter id="badgeShadow_shofeet" x="-15%" y="-10%" width="130%" height="135%">
+      <feDropShadow dx="0" dy="14" stdDeviation="16" flood-color="#042F2E" flood-opacity="0.28" />
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0D9488" flood-opacity="0.15" />
+    </filter>
+
+    <!-- Crisp Inner Icon Drop Shadow -->
+    <filter id="iconShadow_shofeet" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#021716" flood-opacity="0.45" />
+    </filter>
+
+    <!-- Clip Path for Squircle Facets -->
+    <clipPath id="squircleClip_shofeet">
+      <rect x="150" y="50" width="500" height="500" rx="115" />
+    </clipPath>
+  </defs>
+  <!-- Squircle Base with 3D Facets & Gloss -->
+  <g filter="url(#badgeShadow_shofeet)">
+    <rect x="150" y="50" width="500" height="500" rx="115" fill="url(#bgGrad_shofeet)" />
+  </g>
+  <g clip-path="url(#squircleClip_shofeet)">
+    <!-- Top-Left Sweeping Light Facet (Ecclesia Signature Style) -->
+    <path d="M 120 50 L 520 50 C 440 220 280 380 120 460 Z" fill="url(#glossTL_shofeet)" />
+    <!-- Secondary Geometric Facet -->
+    <path d="M 150 50 L 650 50 L 650 220 C 480 240 310 350 150 550 Z" fill="#2DD4BF" fill-opacity="0.08" />
+    <!-- Bottom-Right Deep Contrast Curve -->
+    <path d="M 650 180 C 520 340 380 460 180 550 L 650 550 Z" fill="url(#SombraBR_shofeet)" />
+  </g>
+  <!-- Outer & Inner Precision Bevel Borders -->
+  <rect x="153" y="53" width="494" height="494" rx="112" fill="none" stroke="url(#rimGrad_shofeet)" stroke-width="5" />
+  <rect x="166" y="66" width="468" height="468" rx="102" fill="none" stroke="#99F6E4" stroke-width="1.5" stroke-opacity="0.25" />
+  <g transform="translate(400, 295)" filter="url(#iconShadow_shofeet)">
+    <!-- Top-Left Curled Scroll Roll (Back) -->
+    <path d="M -155 -130 C -155 -152 -138 -165 -118 -165 L -75 -165 L -75 -95 L -155 -95 Z" fill="#CBD5E1" />
+    <path d="M -135 -95 L -135 -125 C -135 -138 -125 -148 -112 -148 C -99 -148 -89 -138 -89 -125 L -89 -95 Z" fill="#064E3B" fill-opacity="0.4" />
+
+    <!-- Main Parchment Scroll Body -->
+    <path d="M -118 -165 L 65 -165 C 92 -165 112 -145 112 -118 L 112 115 L 55 165 L -75 165 C -100 165 -118 148 -118 122 Z" fill="url(#whiteGrad_shofeet)" />
+
+    <!-- Bottom-Right Curled Scroll Roll (Front) -->
+    <path d="M -78 165 C -60 165 -48 150 -48 130 L -48 112 L 152 112 L 152 128 C 152 152 134 165 110 165 Z" fill="#E2E8F0" stroke="#FFFFFF" stroke-width="4" />
+    <circle cx="-68" cy="138" r="24" fill="#064E3B" />
+    <circle cx="-68" cy="138" r="10" fill="#2DD4BF" />
+
+    <!-- Document Typography & Lines Inside Scroll -->
+    <!-- Serif 'N' for Note / Nota Fiscal -->
+    <text x="-85" y="-58" font-family="Georgia, 'Times New Roman', serif" font-size="92" font-weight="bold" fill="#064E3B">N</text>
+    <!-- Equals / Header Bars next to N -->
+    <rect x="-2" y="-110" width="62" height="12" rx="6" fill="#0D9488" />
+    <rect x="-2" y="-82" width="46" height="12" rx="6" fill="#0D9488" />
+
+    <!-- Ledger / Fiscal Lines -->
+    <rect x="-82" y="-25" width="95" height="12" rx="6" fill="#064E3B" />
+    <rect x="-82" y="8" width="80" height="12" rx="6" fill="#064E3B" />
+    <rect x="-82" y="41" width="65" height="12" rx="6" fill="#064E3B" />
+    <rect x="-82" y="74" width="50" height="12" rx="6" fill="#0D9488" />
+
+    <!-- Feather Quill Pen (Signing the Scroll) -->
+    <g transform="translate(38, -10) rotate(8)">
+      <!-- Quill Cast Shadow on Scroll -->
+      <path d="M -32 95 C -10 25 45 -65 125 -135 C 110 -45 65 25 -5 95 Z" fill="#021716" fill-opacity="0.22" transform="translate(8, 12)" />
+      <!-- Quill Feather Vane (Rich Mint-Emerald Gradient) -->
+      <path d="M -18 55 C -12 -18 38 -95 125 -155 C 122 -95 98 -45 72 -18 L 48 -15 L 65 -5 C 45 25 18 48 -18 55 Z" fill="url(#mintGrad_shofeet)" />
+      <!-- Left Feather Highlight Edge -->
+      <path d="M -18 55 C -12 -18 38 -95 125 -155 C 68 -85 22 -15 -8 52 Z" fill="#99F6E4" fill-opacity="0.65" />
+      <!-- Feather Notches -->
+      <path d="M 88 -72 L 62 -60 L 80 -52" fill="#065F46" fill-opacity="0.4" />
+      <path d="M 65 -32 L 40 -22 L 58 -14" fill="#065F46" fill-opacity="0.4" />
+      <!-- Central Quill Shaft (Rachis) -->
+      <path d="M -25 68 C 12 -10 62 -85 125 -155" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" />
+      <!-- Fountain Nib at Bottom-Left -->
+      <path d="M -18 48 L -38 68 L -45 102 L -12 92 L 5 68 Z" fill="#042F2E" stroke="#FFFFFF" stroke-width="5" stroke-linejoin="round" />
+      <line x1="-45" y1="102" x2="-22" y2="75" stroke="#2DD4BF" stroke-width="4" stroke-linecap="round" />
+      <circle cx="-22" cy="75" r="5" fill="#99F6E4" />
+    </g>
+  </g>
+  <!-- Official Module Typography -->
+  <g>
+    <text x="400" y="645" text-anchor="middle" font-family="'Montserrat', 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="64" font-weight="800" fill="#0B3B35" letter-spacing="3">SHOFEET</text>
+    <text x="400" y="693" text-anchor="middle" font-family="'Montserrat', 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="34" font-weight="600" fill="#115E59" letter-spacing="7">NOTE</text>
+    <line x1="220" y1="721" x2="580" y2="721" stroke="#0D9488" stroke-width="2" stroke-opacity="0.4" />
+    <text x="400" y="751" text-anchor="middle" font-family="'Montserrat', 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="18" font-weight="600" fill="#0F766E" letter-spacing="4">O CÉREBRO FISCAL E CONTÁBIL</text>
+  </g>
+</svg>

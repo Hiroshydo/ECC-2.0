@@ -1,0 +1,27 @@
+ECCLESIA FINANCE
+DOMAIN VALIDATION
+
+Authentication    PASS
+RLS               PASS
+RBAC              PASS
+Audit             PASS
+Balance           PASS
+Transfers         PASS
+Divergence        PASS
+Idempotency       PASS
+Transaction       PASS
+Concurrency       PASS
+Closing           PASS
+
+Reopening         NOT IMPLEMENTED
+Adjustments       NOT IMPLEMENTED
+Reversals         NOT IMPLEMENTED
+Physical Cash     NOT IMPLEMENTED
+
+IMPLEMENTED RULES
+11 PASS
+0 FAIL
+0 BLOCKED
+
+KNOWN DOMAIN GAPS
+4 NOT IMPLEMENTED

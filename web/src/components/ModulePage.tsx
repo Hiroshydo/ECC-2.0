@@ -1,0 +1,3 @@
+export function ModulePage({ title, description }: { title: string; description: string }) {
+  return <section className="module-page"><p className="eyebrow">ÁREA AUTENTICADA</p><h1>{title}</h1><p>{description}</p><div className="empty-state module-empty" role="status"><span className="module-empty-mark" aria-hidden="true">—</span><strong>Nenhum dado carregado</strong><span>Esta fundação não executa operações financeiras.</span></div></section>;
+}
