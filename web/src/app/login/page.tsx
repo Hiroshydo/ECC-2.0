@@ -1,8 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
+
+import { ModuleIcon } from "@/components/brand/ModuleIcon";
 import { createClient } from "@/lib/supabase/client";
 
 const principles = [
@@ -56,7 +57,7 @@ export default function LoginPage() {
       <section className="login-panel" aria-labelledby="login-title">
         <div className="login-form-shell">
           <Link className="brand login-brand" href="/" aria-label="Ir para o dashboard">
-            <Image alt="Ecclesia Finance" className="h-11 w-auto object-contain" height={44} priority src="/branding/ecclesia-finance-logo.png" width={190} />
+            <ModuleIcon module="ecclesia" variant="logo" size={320} decorative={false} priority className="login-brand-image" />
           </Link>
           <p className="eyebrow login-eyebrow">CONTROLE COM TRANSPARÊNCIA</p>
           <h1 id="login-title">Entrar na sua administração</h1>

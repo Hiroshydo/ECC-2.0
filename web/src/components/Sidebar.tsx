@@ -1,11 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { Building2 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { ModuleIcon } from "@/components/brand/ModuleIcon";
 import { can, isMasterAdmin, type Permission } from "@/domain/access";
 import { getVocabulary } from "@/domain/vocabulary";
 import type { AuthenticatedMembership } from "@/lib/auth/session";
@@ -116,8 +116,11 @@ export function Sidebar({ userName, membership, memberships, isPlatformAdmin, us
       <button type="button" className={`sidebar-backdrop${menuOpen ? " is-visible" : ""}`} aria-label="Fechar menu" tabIndex={menuOpen ? 0 : -1} disabled={!menuOpen} onClick={() => setMenuOpen(false)} />
       <aside className={`sidebar${menuOpen ? " is-open" : ""}`}>
         <div className="brand" style={{ padding: "0 8px", marginBottom: "28px" }}>
-          <Link className="flex items-center transition-opacity hover:opacity-90" href="/" aria-label="Ir para o dashboard">
-            <Image alt="Ecclesia Finance" className="h-9 w-auto object-contain" height={40} priority src="/branding/ecclesia-finance-logo.png" width={160} />
+          <Link className="brand-link" href="/" aria-label="Ir para o dashboard">
+            <span className="brand-identity">
+              <ModuleIcon module="ecclesia" size={40} priority decorative />
+              <span className="brand-copy">Ecclesia Finance</span>
+            </span>
           </Link>
         </div>
         <p className="eyebrow">GESTÃO · {terms.unitPlural.toLocaleUpperCase("pt-BR")}</p>
@@ -126,7 +129,8 @@ export function Sidebar({ userName, membership, memberships, isPlatformAdmin, us
             const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(`${item.href}/`));
             const label = item.icon === "entries" ? terms.dashboardEntries : item.icon === "transfers" ? terms.campaigns : item.label;
             const showDevBadge = item.devOnly;
-            return <Link key={item.href} href={item.href} data-nav={item.icon} className={active ? "active group" : "group"} aria-current={active ? "page" : undefined} onClick={() => setMenuOpen(false)}><span className="nav-icon" data-nav={item.icon} aria-hidden="true"><NavigationGlyph icon={item.icon} /></span><span>{label}</span>{showDevBadge && <span className="dev-badge">DEV</span>}</Link>;
+            const navBrandModule = item.href === "/canaa" ? "canaa-local" : item.href === "/auditoria" ? "enoch" : item.href === "/relatorios" ? "sefer" : item.href === "/fechamento" ? "elias" : null;
+            return <Link key={item.href} href={item.href} data-nav={item.icon} className={active ? "active group" : "group"} aria-current={active ? "page" : undefined} onClick={() => setMenuOpen(false)}><span className={`nav-icon${navBrandModule ? " nav-icon--brand" : ""}`} data-nav={item.icon} aria-hidden="true">{navBrandModule ? <ModuleIcon module={navBrandModule} size={24} decorative /> : <NavigationGlyph icon={item.icon} />}</span><span>{label}</span>{showDevBadge && <span className="dev-badge">DEV</span>}</Link>;
           })}
         </nav>
         <div className="sidebar-footer">

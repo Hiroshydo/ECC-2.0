@@ -1,8 +1,13 @@
+import { ModuleIcon } from "@/components/brand/ModuleIcon";
 import type { LocalOperator } from "@/modules/core/canaa/types";
 
 export function LocalTeamManager({ members = [] }: { members?: LocalOperator[] }) {
   return (
     <div style={{ width: "100%", border: "1px solid #dfeae6", borderRadius: 18, background: "#fff", overflow: "hidden" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "16px 16px 0" }}>
+        <ModuleIcon module="canaa-access" variant="icon" size={28} decorative />
+        <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Equipe local</h3>
+      </div>
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead style={{ background: "#f3f8f5" }}>
           <tr>

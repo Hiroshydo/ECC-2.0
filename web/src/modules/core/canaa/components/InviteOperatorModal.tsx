@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 
+import { ModuleIcon } from "@/components/brand/ModuleIcon";
 import { checkSeat } from "@/modules/core/khatam/services/license.service";
 
 const defaultLicense = {
@@ -27,8 +28,11 @@ export function InviteOperatorModal({ license = defaultLicense }: { license?: { 
       {isOpen ? (
         <div style={{ position: "fixed", inset: 0, background: "rgba(11, 31, 26, 0.42)", display: "grid", placeItems: "center", zIndex: 30 }}>
           <div style={{ width: "min(420px, calc(100vw - 32px))", background: "#fff", borderRadius: 18, padding: 24, boxShadow: "0 18px 44px rgba(11, 31, 26, 0.18)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-              <h3 style={{ margin: 0, fontSize: 22 }}>Convidar operador</h3>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <ModuleIcon module="canaa-access" variant="icon" size={40} decorative />
+                <h3 style={{ margin: 0, fontSize: 22 }}>Convidar operador</h3>
+              </div>
               <button type="button" onClick={() => setIsOpen(false)} style={{ border: "none", background: "transparent", fontSize: 18, cursor: "pointer" }} aria-label="Fechar modal">×</button>
             </div>
 
