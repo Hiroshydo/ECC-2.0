@@ -62,15 +62,16 @@ export default async function CanaaPage() {
         </div>
       </header>
       <Section title="Acesso e licença" subtitle="Gerencie a capacidade de acesso de operadores." moduleSeal="khatam">
-        <KhatamQuotaBar license={license}>
-          <InviteOperatorModal congregationId={activeMembership?.congregationId ?? null} license={license} />
-        </KhatamQuotaBar>
+        <KhatamQuotaBar license={license} />
       </Section>
       <Section title="Estrutura de congregações" subtitle="Visualize a organização hierárquica das unidades." moduleSeal="hiram">
         <CongregationFlowMap nodes={nodes} activeId={activeMembership?.congregationId ?? null} />
       </Section>
       <Section title="Equipe" subtitle="Operadores cadastrados na congregação ativa." moduleSeal="khatam">
-        <LocalTeamManager members={[]} />
+        <LocalTeamManager
+          members={[]}
+          inviteAction={<InviteOperatorModal congregationId={activeMembership?.congregationId ?? null} license={license} />}
+        />
       </Section>
     </div>
   );
