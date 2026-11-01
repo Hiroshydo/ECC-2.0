@@ -41,6 +41,8 @@ const licenseFilters = new Set<LicenseState>([
   "bloqueada",
 ]);
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 export function parseUnitFilters(params: SearchParamInput): UnitFilters {
   const rawSearch = getValue(params, "q")?.trim() ?? "";
   const rawType = getValue(params, "tipo");
@@ -56,7 +58,10 @@ export function parseUnitFilters(params: SearchParamInput): UnitFilters {
     type: rawType === "church" || rawType === "ngo" ? rawType : null,
     status: rawStatus === "active" || rawStatus === "inactive" ? rawStatus : null,
     license: rawLicense && licenseFilters.has(rawLicense as LicenseState) ? rawLicense as LicenseState : null,
-    parentId: getValue(params, "ramo") ?? null,
+    parentId: (() => {
+      const parentId = getValue(params, "ramo");
+      return parentId && UUID_PATTERN.test(parentId) ? parentId : null;
+    })(),
     order: rawOrder === "cidade" ? "city" : rawOrder === "expiracao" ? "expiration" : "name",
     page: positiveInteger(getValue(params, "pagina"), 1),
     pageSize: Math.min(MAX_PAGE_SIZE, requestedPageSize),
