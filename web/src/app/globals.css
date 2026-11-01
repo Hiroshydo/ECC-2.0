@@ -3622,6 +3622,33 @@ textarea {
 
 /* Phase 1: calm, consistent visual foundation. */
 :root {
+  --ecc-brand: #287b65;
+  --ecc-brand-strong: #1e624f;
+  --ecc-brand-soft: #e2f2eb;
+  --ecc-ink: #0f172a;
+  --ecc-muted: #64748b;
+  --ecc-muted-soft: #94a3b8;
+  --ecc-paper: #f8fafc;
+  --ecc-surface: #ffffff;
+  --ecc-border: #e2e8f0;
+  --ecc-border-soft: #f1f5f9;
+  --ecc-amber: #9a5c08;
+  --ecc-amber-soft: #fff4db;
+  --ecc-danger: #b42318;
+  --ecc-radius-card: 12px;
+  --ecc-radius-panel: 16px;
+  --ecc-shadow-card: 0 1px 2px rgba(15, 23, 42, .04), 0 4px 12px rgba(15, 23, 42, .035);
+  --ecc-shadow-raised: 0 2px 6px rgba(15, 23, 42, .05), 0 10px 24px rgba(15, 23, 42, .06);
+  --ecc-space-1: 4px;
+  --ecc-space-2: 8px;
+  --ecc-space-3: 12px;
+  --ecc-space-4: 16px;
+  --ecc-space-5: 24px;
+  --ecc-space-6: 32px;
+  --ecc-section-title: 20px;
+  --ecc-section-title-line: 1.25;
+  --ecc-subtitle: 13px;
+  --ecc-label: 11px;
   --r-sm: 10px;
   --r-md: 14px;
   --r-lg: 20px;
@@ -3643,6 +3670,35 @@ textarea {
   --ease: cubic-bezier(.2, .8, .2, 1);
   --dur-1: 150ms;
   --dur-2: 220ms;
+}
+
+@theme inline {
+  --color-ui-brand: var(--ecc-brand);
+  --color-ui-brand-strong: var(--ecc-brand-strong);
+  --color-ui-brand-soft: var(--ecc-brand-soft);
+  --color-ui-ink: var(--ecc-ink);
+  --color-ui-muted: var(--ecc-muted);
+  --color-ui-muted-soft: var(--ecc-muted-soft);
+  --color-ui-paper: var(--ecc-paper);
+  --color-ui-surface: var(--ecc-surface);
+  --color-ui-border: var(--ecc-border);
+  --color-ui-border-soft: var(--ecc-border-soft);
+  --color-ui-amber: var(--ecc-amber);
+  --color-ui-amber-soft: var(--ecc-amber-soft);
+  --color-ui-danger: var(--ecc-danger);
+  --radius-ui-card: var(--ecc-radius-card);
+  --radius-ui-panel: var(--ecc-radius-panel);
+  --shadow-ui-card: var(--ecc-shadow-card);
+  --shadow-ui-raised: var(--ecc-shadow-raised);
+  --spacing-ui-1: var(--ecc-space-1);
+  --spacing-ui-2: var(--ecc-space-2);
+  --spacing-ui-3: var(--ecc-space-3);
+  --spacing-ui-4: var(--ecc-space-4);
+  --spacing-ui-5: var(--ecc-space-5);
+  --spacing-ui-6: var(--ecc-space-6);
+  --text-ui-section: var(--ecc-section-title);
+  --text-ui-subtitle: var(--ecc-subtitle);
+  --text-ui-label: var(--ecc-label);
 }
 
 .metric,
