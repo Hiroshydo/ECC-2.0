@@ -39,3 +39,16 @@ Status: concluída; sem alterações de código.
 - O RPC `public.has_congregation_permission(uuid, text)` valida associação em `memberships` e overrides; a camada Next usa `can(membership, permission)` de `domain/access.ts`. Não existe permissão de administração de unidades dedicada: `hierarchy.view` é leitura; `financial.write` é a permissão de escrita hoje usada pelo convite local; `isMasterAdmin` protege o Console Dev.
 - O esquema usa `congregations.parent_id`, `organization_type` (`church`/`ngo`) e `organization_level`; não existe conceito de região. A relação de operadores é `public.memberships`, sem tabela `congregation_memberships`.
 - Guias locais do Next.js 16 lidos antes da implementação: Server Actions/Mutations, Segurança de Dados, Server e Client Components. Toda action/consulta deve validar entrada e autorização no servidor; DAL com `server-only` mantém leitura e autorização fora do cliente.
+
+### Parte 1 — Camada de dados paginada
+
+Status: concluída; sem alterações em dados financeiros, RLS ou permissões.
+
+- Criado `modules/core/canaa/services/units.service.ts`, uma DAL `server-only` para listagem paginada, detalhe de unidade e resumo de saúde da rede. A listagem aplica busca/filtros/ordenação no PostgreSQL e `LIMIT/OFFSET`; as respostas de saúde são agregadas no servidor.
+- Criadas as rotas `GET /api/admin/units` e `GET /api/admin/units/[id]`. A visão global exige `isMasterAdmin`; a leitura restrita exige associação à raiz e `hierarchy.view`. Essa permissão é usada apenas para leitura, nunca como permissão de escrita.
+- Quando as colunas da migration `0014` não existem, a DAL lê o schema legado de `khatam_licenses`; se a tabela não estiver instalada, expõe disponibilidade da licença como indisponível, sem fabricar zero/cota/status.
+- Criados `license.classification.ts` e `units.filters.ts`, com classificação consistente, validação de filtros e limites de paginação; operadores ativos excluem contas excluídas do Auth.
+- Criada migration local `0015_units_directory_indexes.sql` com índice de memberships por unidade e cargo. Não foi aplicada a nenhum banco.
+- Adicionado Vitest e scripts `typecheck`/`test` ao pacote `web`. O repositório não tinha runner de testes declarado.
+- ASSUNÇÕES registradas no código: página padrão 25; `MAX_PAGE_SIZE=100`; busca a partir de 2 caracteres e limitada a 100; janela de saúde de vencimento de 30 dias. A classificação visual individual de licença continua usando a janela de 7 dias já especificada.
+- Validação desta parte: `npm run typecheck`, `npm run lint` e `npm run test` passaram (8 testes). As rotas/consultas ainda não foram exercitadas contra um banco de integração; nenhuma migration foi aplicada.
