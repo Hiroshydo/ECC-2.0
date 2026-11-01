@@ -10,6 +10,7 @@
     "local:up": "supabase start",
     "local:down": "supabase stop",
     "local:reset": "supabase db reset",
+    "local:restore": "bash scripts/restore-local-backup.sh",
     "local:status": "supabase status",
     "jordao": "node scripts/jordao.mjs",
     "db:types": "supabase gen types typescript --local > src/lib/supabase/database.types.ts"

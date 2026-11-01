@@ -12,10 +12,11 @@ From `web/`:
 npm ci
 npm run local:up
 npm run local:reset
+npm run local:restore -- --confirm-local-overwrite
 npm run jordao -- use local
 ```
 
-The reset applies all local migrations and loads the local demonstration seed. The profile command writes local credentials to the ignored `web/.env.local` file with restricted permissions. It never configures or contacts a cloud project.
+The reset applies all local migrations and loads a demonstration seed. To work with the repository's local backup instead, run the explicitly destructive restore command shown above; it replaces the local demo data with the backup's users and application data. The profile command writes local credentials to the ignored `web/.env.local` file with restricted permissions. These commands do not configure or contact a cloud project.
 
 Do not run `supabase link`, `supabase db push`, or use a cloud `DATABASE_URL` for this workflow.
 

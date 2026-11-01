@@ -14,7 +14,8 @@ Status: concluída.
 ### Validação
 
 - Reset local: concluído, migrations `0001` a `0013` e seed aplicados.
-- O seed concede `app_metadata.role = central_admin` ao usuário demonstrativo local para habilitar o fluxo administrativo.
+- O seed concede `app_metadata.role = central_admin` somente à conta demonstrativa local `teste@teste`.
+- Backup `ecc_producao_local.dump`: restauração isolada validada e importação aplicada no banco local, preservando o esquema migrado. Foram carregados 9 usuários, 5 congregações, 17 vínculos, 9 entradas e 8 despesas; a tabela Khatam da migration `0013` permanece sem dados do backup.
 - Studio local: respondeu em `127.0.0.1:54323`.
 - Mailpit local: respondeu em `127.0.0.1:54324`.
 - Suíte `database-tests/run_suite.sh`: passou; autenticação, RLS, RBAC, auditoria, fluxos financeiros e demais asserções reportaram `PASS`.

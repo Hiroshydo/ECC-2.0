@@ -9,13 +9,16 @@ cd web
 npm ci
 npm run local:up
 npm run local:reset
+npm run local:restore -- --confirm-local-overwrite
 npm run jordao -- use local
 npm run dev
 ```
 
 `npm run jordao -- use local` gera/atualiza `.env.local` com as URLs e chaves do Supabase local, as conexões PostgreSQL e um segredo de sessão local. O comando só funciona com os serviços locais ativos; ele não consulta nem configura projetos de nuvem.
 
-O Supabase Studio fica em <http://127.0.0.1:54323>. E-mails locais de convite são capturados pelo Mailpit (endereço exibido em `npm run local:status`, normalmente <http://127.0.0.1:54324>). O seed local habilita o login demonstrativo documentado em `supabase/seed.sql`.
+`npm run local:restore -- --confirm-local-overwrite` importa `../ecc_producao_local.dump` no banco local já migrado, substituindo usuários e dados de demonstração pelos dados do backup. O comando exige confirmação explícita, valida que o Supabase ativo é o local e nunca conecta à nuvem. As senhas não podem ser lidas do backup; os hashes são preservados para autenticação local.
+
+O Supabase Studio fica em <http://127.0.0.1:54323>. E-mails locais de convite são capturados pelo Mailpit (endereço exibido em `npm run local:status`, normalmente <http://127.0.0.1:54324>). `npm run local:reset` usa a conta de demonstração documentada em `supabase/seed.sql`; depois da restauração do backup, use a senha original da conta, que não pode ser recuperada a partir do hash.
 
 Comandos úteis:
 
