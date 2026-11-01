@@ -21,34 +21,22 @@ No feature is considered implemented unless the expected behavior is proven by a
 
 The database suite requires:
 
-- a real PostgreSQL or Supabase connection;
-- the schema already applied through the migration files;
+- Docker running with access for the current user;
+- the local Supabase project started from `web/`;
 - a context that can create fixture rows in `auth.users` when required;
-- access to the correct project reference for Ecclesia Finance.
+- a clean local database, created by `npm run local:reset`.
 
 ## Environment configuration
 
-Use local environment variables without committing secrets:
+The suite uses the local database on port `54322` by default. From the repository root:
 
 ```bash
-cp .env.example .env.local
+cd web
+npm run local:up
+npm run local:reset
 ```
 
-Then fill values for the selected environment, including:
-
-```bash
-DATABASE_URL=
-# or
-PGHOST=
-PGUSER=
-PGPASSWORD=
-PGDATABASE=
-PGPORT=5432
-```
-
-Do not commit `.env.local`.
-Do not put `service_role` in the frontend.
-Do not store credentials in Git-tracked files.
+Do not set `DATABASE_URL` to a cloud project. The suite is for the local Docker database only.
 
 ## How to run
 
@@ -59,6 +47,15 @@ bash database-tests/run_suite.sh
 ```
 
 If the environment is ready, the runner executes the test scripts in order.
+
+The SQL scripts create persistent test fixtures. To run the suite again or restore the app's demo data, reset the local database:
+
+```bash
+cd web
+npm run local:reset
+```
+
+This reset is destructive to the local database and reloads its demonstration seed. Never run it against a cloud project.
 
 ## What the runner checks
 

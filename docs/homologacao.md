@@ -17,7 +17,7 @@ npm run jordao -- use local
 npm run dev
 ```
 
-O comando `jordao use local` será criado na Parte 6. Até lá, `npx supabase status -o env` exibe as variáveis para compor o `.env.local`: `API_URL`, `PUBLISHABLE_KEY` (ou `ANON_KEY`) e `SECRET_KEY` (ou `SERVICE_ROLE_KEY`). Não copie chaves para arquivos versionados.
+O comando `npm run jordao -- use local` gera/atualiza `.env.local` a partir do Supabase local ativo e cria um segredo de sessão local se necessário. Ele preserva as demais variáveis já configuradas e não consulta nem configura projetos de nuvem.
 
 O Studio local está em <http://127.0.0.1:54323>. Convites de teste ficam no Mailpit/Inbucket cujo endereço é informado por `npm run local:status` (normalmente <http://127.0.0.1:54324>).
 

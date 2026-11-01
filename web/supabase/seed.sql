@@ -32,7 +32,7 @@ begin
       'teste@teste',
       extensions.crypt('teste', extensions.gen_salt('bf')),
       now(),
-      '{"provider":"email","providers":["email"]}'::jsonb,
+      '{"provider":"email","providers":["email"],"role":"central_admin"}'::jsonb,
       '{"name":"Usuário de Homologação","environment":"staging"}'::jsonb,
       now(),
       now()

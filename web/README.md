@@ -13,9 +13,9 @@ npm run jordao -- use local
 npm run dev
 ```
 
-O Supabase Studio fica em <http://127.0.0.1:54323>. E-mails locais de convite são capturados pelo Mailpit (endereço exibido em `npm run local:status`, normalmente <http://127.0.0.1:54324>). O seed local habilita o login demonstrativo documentado em `supabase/seed.sql`.
+`npm run jordao -- use local` gera/atualiza `.env.local` com as URLs e chaves do Supabase local, as conexões PostgreSQL e um segredo de sessão local. O comando só funciona com os serviços locais ativos; ele não consulta nem configura projetos de nuvem.
 
-O comando `jordao use local` será implementado na Parte 6. Até lá, obtenha os valores pelo comando `npx supabase status -o env`: `API_URL` é `NEXT_PUBLIC_SUPABASE_URL`; use `PUBLISHABLE_KEY` (ou `ANON_KEY`) para `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`; use `SECRET_KEY` (ou `SERVICE_ROLE_KEY`) para `SUPABASE_SERVICE_ROLE_KEY`. Grave-os somente em `.env.local`, que não deve ser versionado.
+O Supabase Studio fica em <http://127.0.0.1:54323>. E-mails locais de convite são capturados pelo Mailpit (endereço exibido em `npm run local:status`, normalmente <http://127.0.0.1:54324>). O seed local habilita o login demonstrativo documentado em `supabase/seed.sql`.
 
 Comandos úteis:
 
