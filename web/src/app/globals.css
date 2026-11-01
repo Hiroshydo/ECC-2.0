@@ -5979,7 +5979,7 @@ html, body { overflow-x: hidden; }
 
 .congregation-node {
   width: 248px;
-  min-height: 228px;
+  min-height: 192px;
   cursor: default;
   gap: var(--ecc-space-2);
   padding: var(--ecc-space-3);

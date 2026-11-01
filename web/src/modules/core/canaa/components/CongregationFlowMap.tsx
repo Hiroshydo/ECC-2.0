@@ -11,7 +11,7 @@ import { CongregationNode } from "@/modules/core/canaa/components/CongregationNo
 import type { CongregationNodeData } from "@/modules/core/canaa/types";
 
 const NODE_WIDTH = 248;
-const NODE_HEIGHT = 228;
+const NODE_HEIGHT = 192;
 const nodeTypes: NodeTypes = { congregation: CongregationNode };
 
 type FlowMapProps = {
