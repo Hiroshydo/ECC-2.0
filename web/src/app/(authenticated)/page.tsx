@@ -9,6 +9,7 @@ import { withUserContext } from "@/lib/db/pool";
 import { presentStatus } from "@/lib/presentation";
 import { getVocabulary } from "@/domain/vocabulary";
 import { HierarchicalDashboard } from "@/components/HierarchicalDashboard";
+import { getBusinessPeriodBounds, getCurrentBusinessDate } from "@/lib/business-date";
 
 export const dynamic = "force-dynamic";
 
@@ -33,14 +34,6 @@ const movementDate = (value: string | null | undefined) => {
   return new Date(normalized).toLocaleDateString("pt-BR", { timeZone: "UTC" });
 };
 
-function currentPeriod() {
-  const now = new Date();
-  return {
-    start: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString().slice(0, 10),
-    end: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)).toISOString().slice(0, 10),
-  };
-}
-
 function periodLabel(value: string) {
   const label = new Date(`${value}T12:00:00Z`).toLocaleDateString("pt-BR", { month: "long", year: "numeric", timeZone: "UTC" });
   return label.charAt(0).toLocaleUpperCase("pt-BR") + label.slice(1);
@@ -58,8 +51,11 @@ export default async function Home() {
     closing_balance: 0,
     closing_status: null,
   };
+  const businessDate = getCurrentBusinessDate();
   const emptySixMonthFlow = Array.from({ length: 6 }, (_, index) => {
-    const month = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth() - 5 + index, 1));
+    const businessYear = Number(businessDate.slice(0, 4));
+    const businessMonth = Number(businessDate.slice(5, 7));
+    const month = new Date(Date.UTC(businessYear, businessMonth - 1 - 5 + index, 1));
     return { label: month.toLocaleDateString("pt-BR", { month: "short", timeZone: "UTC" }).replace(".", ""), entries: 0, expenses: 0 };
   });
 
@@ -76,7 +72,7 @@ export default async function Home() {
     dashboardError = "Não foi possível carregar as congregações do utilizador.";
   }
 
-  const { start, end } = currentPeriod();
+  const { start, end } = getBusinessPeriodBounds(businessDate);
   const chartStart = new Date(Date.UTC(new Date(start).getUTCFullYear(), new Date(start).getUTCMonth() - 5, 1)).toISOString().slice(0, 10);
 
   let summary: Summary = emptySummary;

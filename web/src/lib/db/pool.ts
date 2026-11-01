@@ -1,9 +1,11 @@
 import "server-only";
 
-import { Pool, type PoolClient, type QueryResult, type QueryResultRow } from "pg";
+import { Pool, types, type PoolClient, type QueryResult, type QueryResultRow } from "pg";
 
 let applicationPool: Pool | undefined;
 let administrativePool: Pool | undefined;
+
+types.setTypeParser(1082, (value) => value);
 
 function createPool(connectionString: string | undefined, variableName: string) {
   if (!connectionString) throw new Error(`${variableName}_not_configured`);

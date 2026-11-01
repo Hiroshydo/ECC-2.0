@@ -5,6 +5,7 @@ import { can } from "@/domain/access";
 import { ClosingManager } from "@/components/ClosingManager";
 import { getCurrentUser, getUserMemberships } from "@/lib/auth/session";
 import { withUserContext } from "@/lib/db/pool";
+import { getCurrentBusinessPeriod } from "@/lib/business-date";
 
 export const dynamic = "force-dynamic";
 
@@ -15,8 +16,7 @@ export default async function ClosingPage() {
 	const activeId = (await cookies()).get("active_congregation_id")?.value;
 	const activeMembership = memberships.find((membership) => membership.congregationId === activeId) ?? memberships[0];
 	if (!activeMembership) return <div className="empty-state"><strong>Sem congregação ativa</strong><span>Seu usuário não possui uma membership disponível.</span></div>;
-	const now = new Date();
-	const referencePeriod = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString().slice(0, 10);
+	const referencePeriod = getCurrentBusinessPeriod();
 	const [summary, closing] = await withUserContext(user.id, async (client) => {
 		const summaryResult = await client.query(
 			"select opening_balance, entries, expenses, transfers, adjustments, closing_balance from public.congregation_monthly_summary where congregation_id = $1 and reference_period = $2",

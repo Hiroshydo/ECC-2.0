@@ -5,6 +5,7 @@ import { can } from "@/domain/access";
 import { CashManager } from "@/components/CashManager";
 import { getCurrentUser, getUserMemberships } from "@/lib/auth/session";
 import { withUserContext } from "@/lib/db/pool";
+import { getCurrentBusinessPeriod } from "@/lib/business-date";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,7 @@ export default async function CashPage() {
 	const activeId = (await cookies()).get("active_congregation_id")?.value;
 	const activeMembership = memberships.find((membership) => membership.congregationId === activeId) ?? memberships[0];
 	if (!activeMembership) return <div className="empty-state"><strong>Sem congregação ativa</strong><span>Seu usuário não possui uma membership disponível.</span></div>;
-	const period = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1)).toISOString().slice(0, 10);
+	const period = getCurrentBusinessPeriod();
 	const { registers, periods, movements } = await withUserContext(user.id, async (client) => {
 		const registersResult = await client.query(
 			"select id, name, active from public.physical_cash_registers where congregation_id = $1 order by name",
