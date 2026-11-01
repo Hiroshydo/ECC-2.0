@@ -17,6 +17,7 @@ export type CongregationNodeData = {
   parentId: string | null;
   parentLabel: string;
   active: boolean;
+  selected?: boolean;
   organizationType?: OrganizationType;
 } & Record<string, unknown>;
 
