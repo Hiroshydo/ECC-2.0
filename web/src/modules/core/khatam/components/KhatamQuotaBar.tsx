@@ -10,23 +10,23 @@ export function KhatamQuotaBar({ license, children }: { license: LicenseInfo | n
   const expiresAt = license ? new Date(license.expiresAt) : null;
   const validExpiry = expiresAt && Number.isFinite(expiresAt.getTime());
   const daysUntilExpiry = validExpiry
-    ? Math.ceil((expiresAt.getTime() - now.getTime()) / 86_400_000)
+    ? Math.max(0, Math.ceil((expiresAt.getTime() - now.getTime()) / 86_400_000))
     : null;
-  const expired = seatCheck?.reason === "expired";
-  const expiring = !expired && daysUntilExpiry !== null && daysUntilExpiry <= 7;
+  const blocked = seatCheck?.reason === "blocked" || seatCheck?.reason === "expired";
+  const expiring = !blocked && (license?.status === "grace_period" || (daysUntilExpiry !== null && daysUntilExpiry <= 7));
 
   return (
-    <div className={`license-summary${expired ? " is-blocked" : expiring ? " is-expiring" : ""}`}>
+    <div className={`license-summary${blocked ? " is-blocked" : expiring ? " is-expiring" : ""}`}>
       <div className="license-summary__status">
         <LockKeyhole aria-hidden="true" size={20} strokeWidth={1.7} />
         <div>
-          <strong>{!license ? "Licença não configurada" : expired ? "Licença bloqueada" : "Licença ativa"}</strong>
+          <strong>{!license ? "Licença não configurada" : blocked ? "Licença bloqueada" : license.status === "grace_period" ? "Período de carência" : "Licença ativa"}</strong>
           <span>
             {!license
               ? "Configure uma licença para habilitar convites."
               : validExpiry
-                ? `Ciclo de 30 dias · até ${expiresAt.toLocaleDateString("pt-BR")}`
-                : "Ciclo de 30 dias"}
+                ? `Restam ${daysUntilExpiry} dias · Ciclo de ${license.cycleDays ?? 30} dias · vence em ${expiresAt.toLocaleDateString("pt-BR")}`
+                : `Ciclo de ${license.cycleDays ?? 30} dias`}
           </span>
         </div>
       </div>

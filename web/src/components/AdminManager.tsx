@@ -1,8 +1,12 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import type { Node } from "@xyflow/react";
 
 import { allPermissions, permissionsForRole, type Role } from "@/domain/access";
+import { ModuleIcon } from "@/components/brand/ModuleIcon";
+import { CongregationFlowMap } from "@/modules/core/canaa/components/CongregationFlowMap";
+import type { CongregationNodeData } from "@/modules/core/canaa/types";
 import type { OrganizationLevel, OrganizationType } from "@/domain/vocabulary";
 import type { AdminAssignment, AdminOverview, AdminOrganization, AdminPermission, AdminPermissionSet, AdminUser } from "@/lib/admin/types";
 
@@ -64,6 +68,14 @@ function permissionsFor(role: Role): AdminPermissionSet {
   return Object.fromEntries(allPermissions.map((permission) => [permission, defaults[permission] ?? false])) as AdminPermissionSet;
 }
 
+function previewLicenseDate(daysValue: string): string | null {
+  const days = Number(daysValue);
+  if (!Number.isInteger(days) || days < 1 || days > 3650) return null;
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + days);
+  return expiresAt.toLocaleDateString("pt-BR");
+}
+
 async function readApi<T>(response: Response, errorContext = "Falha ao concluir operação"): Promise<T> {
   if (!response.ok) {
     const errorText = await response.text();
@@ -73,7 +85,7 @@ async function readApi<T>(response: Response, errorContext = "Falha ao concluir 
   return result.data as T;
 }
 
-export function AdminManager() {
+export function AdminManager({ focusOrganizationId }: { focusOrganizationId?: string }) {
   const [activeTab, setActiveTab] = useState<"organizations" | "users">("organizations");
   const [overview, setOverview] = useState<AdminOverview>({ organizations: [], users: [] });
   const [loading, setLoading] = useState(true);
@@ -86,6 +98,9 @@ export function AdminManager() {
   const [newUser, setNewUser] = useState({ name: "", email: "", congregationId: "", role: "viewer" as Role });
   const [editingOrganization, setEditingOrganization] = useState<AdminOrganization | null>(null);
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
+  const [editingLicenseId, setEditingLicenseId] = useState<string | null>(null);
+  const [licenseDraft, setLicenseDraft] = useState({ days: "30", maxOperators: "5", status: "active" as "active" | "grace_period" | "blocked" });
+  const [licensePreviewExpiresAt, setLicensePreviewExpiresAt] = useState<string | null>(null);
   const [draftAssignments, setDraftAssignments] = useState<AdminAssignment[]>([]);
   const [organizationDraft, setOrganizationDraft] = useState({ name: "", city: "", state: "", leaderName: "", organizationType: "church" as OrganizationType, organizationLevel: "local_congregation" as OrganizationLevel, parent_id: null as string | null, active: true });
 
@@ -95,6 +110,26 @@ export function AdminManager() {
   const availableEditHeadquarters = overview.organizations.filter((unit) =>
     allowedParentLevels[organizationDraft.organizationLevel].includes(unit.organization_level) && unit.id !== editingOrganization?.id && unit.organization_type === organizationDraft.organizationType
   );
+  const organizationNodes: Node<CongregationNodeData>[] = overview.organizations.map((unit) => ({
+    id: unit.id,
+    type: "congregation",
+    position: { x: 0, y: 0 },
+    data: {
+      id: unit.id,
+      name: unit.name,
+      parentId: unit.parent_id ?? null,
+      parentLabel: unit.parent_id
+        ? `Vinculada a ${overview.organizations.find((parent) => parent.id === unit.parent_id)?.name ?? "unidade não disponível"}`
+        : "Unidade Raiz",
+      active: unit.active,
+      organizationType: unit.organization_type,
+      city: unit.city,
+      state: unit.state,
+      leaderName: unit.leader_name,
+      licenseStatus: unit.license_status,
+      operatorCount: unit.active_operators ?? null,
+    },
+  }));
 
   async function refreshOverview() {
     const data = await readApi<AdminOverview>(await fetch("/api/admin/overview", { cache: "no-store" }));
@@ -110,11 +145,21 @@ export function AdminManager() {
         if (!active) return;
         setOverview(data);
         setNewUser((current) => ({ ...current, congregationId: current.congregationId || data.organizations[0]?.id || "" }));
+        const focusedUnit = data.organizations.find((unit) => unit.id === focusOrganizationId);
+        if (focusedUnit) {
+          setEditingLicenseId(focusedUnit.id);
+          setLicenseDraft({
+            days: String(focusedUnit.license_cycle_days ?? 30),
+            maxOperators: String(focusedUnit.max_operators ?? 5),
+            status: focusedUnit.license_status ?? "active",
+          });
+          setLicensePreviewExpiresAt(previewLicenseDate(String(focusedUnit.license_cycle_days ?? 30)));
+        }
       })
       .catch((loadError: unknown) => { if (active) setError(loadError instanceof Error ? loadError.message : "Falha ao carregar a gestão."); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, []);
+  }, [focusOrganizationId]);
 
   async function createOrganization(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -185,6 +230,47 @@ export function AdminManager() {
     finally { setPending(false); }
   }
 
+  function openLicenseEditor(unit: AdminOrganization) {
+    setEditingLicenseId((current) => current === unit.id ? null : unit.id);
+    setLicenseDraft({
+      days: String(unit.license_cycle_days ?? 30),
+      maxOperators: String(unit.max_operators ?? 5),
+      status: unit.license_status ?? "active",
+    });
+    setLicensePreviewExpiresAt(previewLicenseDate(String(unit.license_cycle_days ?? 30)));
+    setError(null);
+  }
+
+  function updateLicenseDays(days: string) {
+    setLicenseDraft((current) => ({ ...current, days }));
+    setLicensePreviewExpiresAt(previewLicenseDate(days));
+  }
+
+  async function saveLicense(event: FormEvent<HTMLFormElement>, unit: AdminOrganization) {
+    event.preventDefault();
+    setPending(true);
+    setError(null);
+    setNotice(null);
+    try {
+      await readApi<{ id: string }>(await fetch(`/api/admin/congregations/${encodeURIComponent(unit.id)}/license`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          days: Number(licenseDraft.days),
+          maxOperators: Number(licenseDraft.maxOperators),
+          status: licenseDraft.status,
+        }),
+      }), "Falha ao salvar licença");
+      setNotice(`Licença de ${unit.name} atualizada.`);
+      setEditingLicenseId(null);
+      await refreshOverview();
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Não foi possível salvar a licença.");
+    } finally {
+      setPending(false);
+    }
+  }
+
   function openOrganizationEditor(unit: AdminOrganization) {
     setEditingOrganization(unit);
     setOrganizationDraft({
@@ -248,7 +334,7 @@ export function AdminManager() {
   }
 
   return <section className="admin-page">
-    <div className="admin-heading"><div><p className="eyebrow">CONTROLE DA PLATAFORMA</p><h1>Administração</h1><p>Gerencie unidades, usuários e permissões de acesso.</p></div></div>
+    <div className="admin-heading"><div className="admin-heading__identity"><ModuleIcon module="canaa-access" variant="icon" size={40} decorative /><div><p className="eyebrow">GESTÃO DE UNIDADES, LICENÇAS E ACESSOS</p><h1>Canaã Access</h1><p>Administre a estrutura e os perfis de acesso da plataforma.</p></div></div></div>
     <div className="admin-tabs" role="tablist" aria-label="Áreas de administração">
       <button type="button" role="tab" aria-selected={activeTab === "organizations"} className={activeTab === "organizations" ? "is-active" : ""} onClick={() => setActiveTab("organizations")}>Unidades <span>{overview.organizations.length}</span></button>
       <button type="button" role="tab" aria-selected={activeTab === "users"} className={activeTab === "users" ? "is-active" : ""} onClick={() => setActiveTab("users")}>Usuários <span>{overview.users.length}</span></button>
@@ -274,7 +360,32 @@ export function AdminManager() {
         </div>
         <button type="submit" className="admin-primary-button" disabled={pending}>{pending ? "Salvando…" : "Cadastrar unidade"}</button>
       </form>}
-      {loading ? <AdminLoading /> : overview.organizations.length ? <div className="organization-grid">{overview.organizations.map((unit) => <article className="organization-card" key={unit.id}><div className="organization-card-top"><span className={`organization-type ${unit.organization_type}`}>{organizationTypeLabels[unit.organization_type]}</span><div className="admin-card-actions"><span className={`organization-status ${unit.active ? "active" : "inactive"}`}>{unit.active ? "Ativa" : "Inativa"}</span><button type="button" className="admin-link-button" onClick={() => openOrganizationEditor(unit)}>Editar</button></div></div><h3>{unit.name}</h3><p>{unit.city}{unit.state ? ` · ${unit.state}` : ""}</p><span className="headquarters-badge">{organizationLevelLabels[unit.organization_level]}</span></article>)}</div> : <div className="admin-empty">Nenhuma unidade cadastrada.</div>}
+      {loading ? <AdminLoading /> : overview.organizations.length ? <>
+        <div className="organization-grid">{overview.organizations.map((unit) => {
+          const expiresAt = unit.license_expires_at ? new Date(unit.license_expires_at) : null;
+          return <article className="organization-card" key={unit.id}>
+            <div className="organization-card-top"><span className={`organization-type ${unit.organization_type}`}>{organizationTypeLabels[unit.organization_type]}</span><div className="admin-card-actions"><span className={`organization-status ${unit.active ? "active" : "inactive"}`}>{unit.active ? "Ativa" : "Inativa"}</span><button type="button" className="admin-link-button" onClick={() => openOrganizationEditor(unit)}>Editar</button></div></div>
+            <h3>{unit.name}</h3>
+            <p>{unit.city}{unit.state ? ` · ${unit.state}` : ""}</p>
+            <span className="headquarters-badge">{organizationLevelLabels[unit.organization_level]}</span>
+            <div className="organization-license">
+              <span>{unit.license_status ? `Licença ${unit.license_status === "grace_period" ? "em carência" : unit.license_status === "blocked" ? "bloqueada" : "ativa"}` : "Licença não configurada"}</span>
+              <small>{unit.max_operators !== null && unit.max_operators !== undefined ? `${unit.active_operators ?? 0} de ${unit.max_operators} operadores · ` : ""}{expiresAt && Number.isFinite(expiresAt.getTime()) ? `Vence em ${expiresAt.toLocaleDateString("pt-BR")}` : "Sem vencimento configurado"}</small>
+              <button type="button" className="admin-link-button" onClick={() => openLicenseEditor(unit)}>{editingLicenseId === unit.id ? "Fechar licença" : "Configurar licença"}</button>
+              {editingLicenseId === unit.id && <form className="license-editor" onSubmit={(event) => void saveLicense(event, unit)}>
+                <span className="license-editor__label">Adicionar dias de licença</span>
+                <div className="license-editor__quick-days">{[15, 30, 90, 365].map((days) => <button key={days} type="button" className="admin-secondary-button" onClick={() => updateLicenseDays(String(days))}>+{days} dias</button>)}</div>
+                <label>Dias<input type="number" min="1" max="3650" required value={licenseDraft.days} onChange={(event) => updateLicenseDays(event.target.value)} /></label>
+                <label>Cota máxima de operadores<input type="number" min="0" max="10000" required value={licenseDraft.maxOperators} onChange={(event) => setLicenseDraft((current) => ({ ...current, maxOperators: event.target.value }))} /></label>
+                <label>Status<select value={licenseDraft.status} onChange={(event) => setLicenseDraft((current) => ({ ...current, status: event.target.value as typeof current.status }))}><option value="active">Ativa</option><option value="grace_period">Período de carência</option><option value="blocked">Bloqueada</option></select></label>
+                <small>Vencimento após salvar: {licensePreviewExpiresAt ?? "Informe os dias"}</small>
+                <button type="submit" className="admin-primary-button" disabled={pending}>{pending ? "Salvando..." : "Salvar licença"}</button>
+              </form>}
+            </div>
+          </article>;
+        })}</div>
+        <div className="admin-global-map"><h3>Visão global da estrutura</h3><CongregationFlowMap nodes={organizationNodes} /></div>
+      </> : <div className="admin-empty">Nenhuma unidade cadastrada.</div>}
     </section>}
 
     {activeTab === "users" && <section className="admin-section" role="tabpanel">

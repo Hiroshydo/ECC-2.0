@@ -17,7 +17,7 @@ import {
   Wallet,
   type LucideIcon,
 } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 import { ModuleIcon } from "@/components/brand/ModuleIcon";
@@ -57,15 +57,12 @@ const navigation: NavigationItem[] = [
   { label: "Auditoria", href: "/auditoria", icon: "audit", permission: "audit.read" },
   { label: "Relatórios", href: "/relatorios", icon: "reports", permission: "financial.read" },
   { label: "Configurações", href: "/configuracoes", icon: "settings" },
-  { label: "Painel Dev / Gestão", href: "/admin", icon: "terminal", devOnly: true },
-  { label: "Noah Ops", href: "/noah-ops", icon: "terminal", devOnly: true },
+  { label: "Console Dev", href: "/admin", icon: "terminal", devOnly: true },
 ];
 
 export function Sidebar({ userName, membership, memberships, isPlatformAdmin, userEmail }: { userName: string; membership: AuthenticatedMembership | null; memberships: AuthenticatedMembership[]; isPlatformAdmin: boolean; userEmail?: string | null }) {
   const pathname = usePathname();
-  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const isMasterUser = isPlatformAdmin;
   const currentRole = membership?.role ?? "member";
   const roleText = isMasterUser ? "Dev Master" : (currentRole === "viewer" || userEmail?.toLowerCase() === "demo@ecclesia.com" ? "Visualizador" : "Membro");
@@ -77,20 +74,6 @@ export function Sidebar({ userName, membership, memberships, isPlatformAdmin, us
     return Boolean(membership && (item.permission ? can(membership, item.permission) : true));
   });
   const initials = userName.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase() || "U";
-
-  async function handleLogout() {
-    if (isLoggingOut) return;
-    setIsLoggingOut(true);
-    try {
-      const response = await fetch("/api/auth/logout", { method: "POST" });
-      if (!response.ok) throw new Error(`logout_failed_${response.status}`);
-      router.push("/login");
-      router.refresh();
-    } catch (error) {
-      console.error("Sidebar logout failed:", error);
-      setIsLoggingOut(false);
-    }
-  }
 
   return (
     <>
@@ -119,13 +102,8 @@ export function Sidebar({ userName, membership, memberships, isPlatformAdmin, us
           <span className="avatar profile-avatar">{initials}</span>
           <div className="profile-details">
             <b>{userName}</b>
-            <small className="profile-role">{roleText}</small>
-            <small>{memberships.length} {memberships.length === 1 ? "unidade" : "unidades"}</small>
+            <small className="profile-role">{roleText} · {memberships.length} {memberships.length === 1 ? "unidade" : "unidades"}</small>
           </div>
-          <button type="button" className="logout-button" onClick={handleLogout} disabled={isLoggingOut} aria-label="Sair da sessão">
-            <svg viewBox="0 0 24 24" aria-hidden="true" className="logout-icon"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></svg>
-            <span>{isLoggingOut ? "Saindo..." : "Sair"}</span>
-          </button>
         </div>
       </aside>
     </>

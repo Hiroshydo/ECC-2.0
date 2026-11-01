@@ -45,14 +45,14 @@ isOneToOne: false
                   ]
                 },"congregations": {
                   Row: {
-                    "active": boolean,"city": string,"created_at": string,"id": string,"is_headquarters": boolean,"leader_name": string | null,"name": string,"organization_level": Database["public"]['Enums']["congregation_level"],"organization_type": string,"parent_id": string | null,"state": string | null
+                    "active": boolean,"city": string,"created_at": string,"id": string,"is_headquarters": boolean,"leader_name": string | null,"license_cycle_days": number | null,"license_expires_at": string | null,"license_status": string | null,"max_operators": number | null,"name": string,"organization_level": Database["public"]['Enums']["congregation_level"],"organization_type": string,"parent_id": string | null,"state": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "active"?: boolean,"city": string,"created_at"?: string,"id"?: string,"is_headquarters"?: boolean,"leader_name"?: string | null,"name": string,"organization_level"?: Database["public"]['Enums']["congregation_level"],"organization_type"?: string,"parent_id"?: string | null,"state"?: string | null
+                    "active"?: boolean,"city": string,"created_at"?: string,"id"?: string,"is_headquarters"?: boolean,"leader_name"?: string | null,"license_cycle_days"?: number | null,"license_expires_at"?: string | null,"license_status"?: string | null,"max_operators"?: number | null,"name": string,"organization_level"?: Database["public"]['Enums']["congregation_level"],"organization_type"?: string,"parent_id"?: string | null,"state"?: string | null
                   }
                   Update: {
-                    "active"?: boolean,"city"?: string,"created_at"?: string,"id"?: string,"is_headquarters"?: boolean,"leader_name"?: string | null,"name"?: string,"organization_level"?: Database["public"]['Enums']["congregation_level"],"organization_type"?: string,"parent_id"?: string | null,"state"?: string | null
+                    "active"?: boolean,"city"?: string,"created_at"?: string,"id"?: string,"is_headquarters"?: boolean,"leader_name"?: string | null,"license_cycle_days"?: number | null,"license_expires_at"?: string | null,"license_status"?: string | null,"max_operators"?: number | null,"name"?: string,"organization_level"?: Database["public"]['Enums']["congregation_level"],"organization_type"?: string,"parent_id"?: string | null,"state"?: string | null
                   }
                   Relationships: [
                     {

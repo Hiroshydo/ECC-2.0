@@ -49,6 +49,44 @@ export async function GET() {
     ]);
 
     const memberships = membershipResult.rows;
+    const operatorCounts = new Map<string, number>();
+    for (const membership of memberships) {
+      operatorCounts.set(membership.congregation_id, (operatorCounts.get(membership.congregation_id) ?? 0) + 1);
+    }
+    let licenseRows: Array<{ congregation_id: string; seats_total: number; expires_at: string }> = [];
+    let congregationLicenses: Array<{
+      id: string;
+      license_status: "active" | "grace_period" | "blocked" | null;
+      license_expires_at: string | null;
+      license_cycle_days: number | null;
+      max_operators: number | null;
+    }> = [];
+    try {
+      const licenseResult = await adminQuery<{ congregation_id: string; seats_total: number; expires_at: string }>(
+        "select congregation_id, seats_total, expires_at from public.khatam_licenses",
+      );
+      licenseRows = licenseResult.rows;
+    } catch (error) {
+      console.error("Admin license overview query failed:", error);
+    }
+    try {
+      const congregationLicenseResult = await adminQuery<{
+        id: string;
+        license_status: "active" | "grace_period" | "blocked" | null;
+        license_expires_at: string | null;
+        license_cycle_days: number | null;
+        max_operators: number | null;
+      }>(
+        `select id, license_status, license_expires_at, license_cycle_days, max_operators
+           from public.congregations
+          where license_expires_at is not null`,
+      );
+      congregationLicenses = congregationLicenseResult.rows;
+    } catch (error) {
+      console.error("Congregation license columns are unavailable:", error);
+    }
+    const licensesByCongregation = new Map(licenseRows.map((license) => [license.congregation_id, license]));
+    const congregationLicensesById = new Map(congregationLicenses.map((license) => [license.id, license]));
     const overrides = permissionResult.rows;
     const users: AdminUser[] = userResult.rows.map((user) => {
       const assignments: AdminAssignment[] = memberships.filter((membership) => membership.user_id === user.id).map((membership) => {
@@ -66,7 +104,18 @@ export async function GET() {
     });
 
     const overview: AdminOverview = {
-      organizations: organizationResult.rows,
+      organizations: organizationResult.rows.map((organization) => {
+        const license = licensesByCongregation.get(organization.id);
+        const configuredLicense = congregationLicensesById.get(organization.id);
+        return {
+          ...organization,
+          license_status: configuredLicense?.license_status ?? (license ? "active" : null),
+          license_expires_at: configuredLicense?.license_expires_at ?? license?.expires_at ?? null,
+          license_cycle_days: configuredLicense?.license_cycle_days ?? (license ? 30 : null),
+          max_operators: configuredLicense?.max_operators ?? license?.seats_total ?? null,
+          active_operators: operatorCounts.get(organization.id) ?? 0,
+        };
+      }),
       users: users.sort((left, right) => left.name.localeCompare(right.name, "pt-BR")),
     };
     return NextResponse.json({ data: overview }, { headers: { "Cache-Control": "no-store" } });

@@ -2,11 +2,13 @@ export type LicenseInfo = {
   seatsTotal: number;
   seatsUsed: number;
   expiresAt: string;
+  status?: "active" | "grace_period" | "blocked";
+  cycleDays?: number;
 };
 
 export type SeatCheckResult = {
   allowed: boolean;
-  reason?: "expired" | "quota_exceeded";
+  reason?: "expired" | "quota_exceeded" | "blocked";
   remaining: number;
 };
 
@@ -16,6 +18,9 @@ export function checkSeat(license: LicenseInfo, now = new Date()): SeatCheckResu
   const expiresAt = new Date(license.expiresAt);
   const remaining = Math.max(0, total - used);
 
+  if (license.status === "blocked") {
+    return { allowed: false, reason: "blocked", remaining };
+  }
   if (Number.isNaN(expiresAt.getTime()) || expiresAt.getTime() <= now.getTime()) {
     return { allowed: false, reason: "expired", remaining: 0 };
   }

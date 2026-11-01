@@ -108,6 +108,9 @@ export async function inviteOperatorAction(email: string, requestedRole: string,
 
   const license = await getLicense(congregationId);
   if (!license) return { ok: false, message: "Licença Khatam não configurada." };
+  if (license.status !== "active") {
+    return { ok: false, message: license.status === "blocked" ? "Licença bloqueada." : "Licença em período de carência; novos convites estão pausados." };
+  }
   const seatCheck = checkSeat(license);
   if (!seatCheck.allowed) {
     return {

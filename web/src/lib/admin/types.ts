@@ -21,6 +21,11 @@ export type AdminOrganization = {
   organization_level: OrganizationLevel;
   is_headquarters: boolean;
   active: boolean;
+  license_status?: "active" | "grace_period" | "blocked" | null;
+  license_expires_at?: string | null;
+  license_cycle_days?: number | null;
+  max_operators?: number | null;
+  active_operators?: number;
 };
 
 export type AdminUser = {

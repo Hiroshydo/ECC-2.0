@@ -19,6 +19,15 @@ export type CongregationNodeData = {
   active: boolean;
   selected?: boolean;
   organizationType?: OrganizationType;
+  city?: string;
+  state?: string | null;
+  leaderName?: string | null;
+  licenseStatus?: "active" | "grace_period" | "blocked" | null;
+  operatorCount?: number | null;
+  hasChildren?: boolean;
+  childCount?: number;
+  expanded?: boolean;
+  onToggle?: () => void;
 } & Record<string, unknown>;
 
 export type LocalOperator = {

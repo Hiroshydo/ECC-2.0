@@ -1,8 +1,7 @@
 "use client";
 
+import { Network } from "lucide-react";
 import { useState } from "react";
-
-import { ModuleIcon } from "@/components/brand/ModuleIcon";
 
 type FinancialMode = "local" | "consolidated";
 type Movement = {
@@ -148,7 +147,7 @@ export function HierarchicalDashboard({
     </div>
     {mode === "consolidated" && metrics && currentUnit && <div className="hierarchy-dashboard-grid">
       <section className="panel hierarchy-comparison">
-        <div className="panel-title"><div style={{ display: "flex", alignItems: "center", gap: 10 }}><ModuleIcon module="hiram" variant="icon" size={28} decorative /><div><h2>Arrecadação por unidade</h2><p>{currentUnit.name} · selecione uma unidade para detalhar</p></div></div></div>
+        <div className="panel-title"><div style={{ display: "flex", alignItems: "center", gap: 10 }}><Network size={22} strokeWidth={1.6} aria-hidden="true" /><div><h2>Arrecadação por unidade</h2><p>{currentUnit.name} · selecione uma unidade para detalhar</p></div></div></div>
         {children.length ? <div className="hierarchy-bars" role="list" aria-label="Arrecadação das unidades subordinadas">
           {children.map((unit) => {
             const maximum = Math.max(1, ...children.map((item) => item.subtree_total_income));

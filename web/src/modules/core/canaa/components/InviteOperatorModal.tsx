@@ -18,11 +18,15 @@ export function InviteOperatorModal({ congregationId, license }: { congregationI
   const emailRef = useRef<HTMLInputElement>(null);
   const tooltipId = useId();
   const seatCheck = license ? checkSeat(license) : null;
-  const unavailable = !congregationId || !license || !seatCheck?.allowed;
+  const unavailable = !congregationId || !license || license.status !== "active" || !seatCheck?.allowed;
   const unavailableMessage = !license
     ? "Configure a licença para convidar operadores."
     : !congregationId
       ? "Selecione uma congregação para convidar operadores."
+      : license.status === "blocked"
+        ? "A licença está bloqueada. Contate o administrador da plataforma."
+        : license.status === "grace_period"
+          ? "A licença está em período de carência e não permite novos convites."
       : seatCheck?.reason === "expired"
         ? "A licença expirou e não permite novos convites."
         : "Não há assentos disponíveis para novos convites.";

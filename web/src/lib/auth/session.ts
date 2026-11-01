@@ -18,7 +18,7 @@ export type AppUser = {
 const SESSION_COOKIE = "ecclesia_session";
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 8;
 
-type CongregationRow = { id: string; name: string; city: string; active: boolean; state?: string | null; parent_id?: string | null; organization_type?: OrganizationType; is_headquarters?: boolean };
+type CongregationRow = { id: string; name: string; city: string; active: boolean; state?: string | null; parent_id?: string | null; organization_type?: OrganizationType; is_headquarters?: boolean; leader_name?: string | null };
 type PermissionOverrideRow = { financial_read: boolean; financial_write: boolean; financial_approve: boolean; closing_submit: boolean; audit_read: boolean; hierarchy_view?: boolean; hierarchy_financial_read?: boolean };
 
 function sessionSecret() {
@@ -148,6 +148,7 @@ export function toMemberships(user: AppUser, rows: Array<{
           parentId: row.congregation.parent_id ?? null,
           organizationType: row.congregation.organization_type,
           isHeadquarters: row.congregation.is_headquarters,
+          leaderName: row.congregation.leader_name,
         },
       };
     });
