@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { Edge, Node } from "@xyflow/react";
 
+import { ModuleIcon } from "@/components/brand/ModuleIcon";
 import { can, isMasterAdmin } from "@/domain/access";
 import { getCurrentUser, getUserMemberships } from "@/lib/auth/session";
 import { InviteOperatorModal } from "@/modules/core/canaa/components/InviteOperatorModal";
