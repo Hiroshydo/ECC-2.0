@@ -1,6 +1,6 @@
 -- LOCAL ONLY — nunca aplicar na nuvem.
 -- Ecclesia Finance local demonstration seed.
--- Login: teste@teste / teste
+-- Login local: renanmarianosd@hotmail.com / teste
 
 create extension if not exists pgcrypto with schema extensions;
 
@@ -29,7 +29,7 @@ begin
       '00000000-0000-0000-0000-000000000000',
       'authenticated',
       'authenticated',
-      'teste@teste',
+      'renanmarianosd@hotmail.com',
       extensions.crypt('teste', extensions.gen_salt('bf')),
       now(),
       '{"provider":"email","providers":["email"],"role":"central_admin"}'::jsonb,
@@ -43,7 +43,7 @@ begin
   values (
     demo_user::text,
     demo_user,
-    jsonb_build_object('sub', demo_user::text, 'email', 'teste@teste'),
+    jsonb_build_object('sub', demo_user::text, 'email', 'renanmarianosd@hotmail.com'),
     'email',
     now(), now(), now()
   )
