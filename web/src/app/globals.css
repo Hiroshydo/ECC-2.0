@@ -4469,6 +4469,95 @@ html, body { overflow-x: hidden; }
   color: var(--ecc-brand-strong);
 }
 
+.license-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) auto;
+  align-items: center;
+  gap: var(--ecc-space-5);
+  padding: var(--ecc-space-4);
+}
+
+.license-summary__status {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--ecc-space-3);
+  color: var(--ecc-muted);
+}
+
+.license-summary__status > div {
+  display: grid;
+  min-width: 0;
+  gap: var(--ecc-space-1);
+}
+
+.license-summary__status strong {
+  color: var(--ecc-ink);
+  font-size: var(--ecc-subtitle);
+}
+
+.license-summary__status span {
+  color: var(--ecc-muted);
+  font-size: var(--ecc-label);
+}
+
+.license-summary.is-expiring .license-summary__status,
+.license-summary.is-expiring .license-summary__status strong {
+  color: var(--ecc-amber);
+}
+
+.license-summary.is-blocked .license-summary__status,
+.license-summary.is-blocked .license-summary__status strong {
+  color: var(--ecc-danger);
+}
+
+.license-summary__usage {
+  min-width: 0;
+}
+
+.license-summary__usage-label {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ecc-space-2);
+  margin-bottom: var(--ecc-space-2);
+  color: var(--ecc-muted);
+  font-size: var(--ecc-label);
+}
+
+.license-summary__usage-label strong {
+  color: var(--ecc-ink);
+  font-size: var(--ecc-subtitle);
+}
+
+.license-summary__track {
+  height: var(--ecc-space-2);
+  overflow: hidden;
+  border-radius: var(--ecc-radius-card);
+  background: var(--ecc-border-soft);
+}
+
+.license-summary__track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ecc-brand);
+  transition: width var(--dur-1) ease;
+}
+
+.license-summary.is-expiring .license-summary__track span {
+  background: var(--ecc-amber);
+}
+
+.license-summary.is-blocked .license-summary__track span {
+  background: var(--ecc-danger);
+}
+
+.license-summary__action {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
 @media (max-width: 767px) {
   .canaa-page {
     gap: var(--ecc-space-5);
@@ -4480,5 +4569,14 @@ html, body { overflow-x: hidden; }
 
   .ui-section__heading {
     align-items: flex-start;
+  }
+
+  .license-summary {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--ecc-space-4);
+  }
+
+  .license-summary__action {
+    justify-content: flex-start;
   }
 }
