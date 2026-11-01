@@ -2,7 +2,6 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { Edge, Node } from "@xyflow/react";
 
-import { ModuleIcon } from "@/components/brand/ModuleIcon";
 import { can, isMasterAdmin } from "@/domain/access";
 import { getCurrentUser, getUserMemberships } from "@/lib/auth/session";
 import { InviteOperatorModal } from "@/modules/core/canaa/components/InviteOperatorModal";
@@ -11,6 +10,7 @@ import { CongregationFlowMap } from "@/modules/core/canaa/components/Congregatio
 import type { CongregationNodeData } from "@/modules/core/canaa/types";
 import { getLicense } from "@/modules/core/khatam/services/license.service";
 import { KhatamQuotaBar } from "@/modules/core/khatam/components/KhatamQuotaBar";
+import { Section } from "@/modules/core/canaa/components/Section";
 
 export const dynamic = "force-dynamic";
 
@@ -142,28 +142,25 @@ export default async function CanaaPage() {
   const license = activeMembership ? await getLicense(activeMembership.congregationId) : null;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24, paddingTop: 20, width: "100%" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-        <ModuleIcon module="canaa-access" variant="icon" size={48} decorative={false} />
+    <div className="canaa-page">
+      <header className="canaa-page__heading">
+        <ModuleIcon module="canaa-access" variant="icon" size={40} decorative />
         <div>
-          <h1 style={{ margin: 0, fontSize: 32 }}>Canaã Access</h1>
-          <p style={{ margin: "4px 0 0", color: "#52645d" }}>Portal de Identidades</p>
+          <h1>Gestão de congregações</h1>
+          <p>Acessos, licenças e estrutura organizacional.</p>
         </div>
-      </div>
-      <KhatamQuotaBar license={license}>
-        <InviteOperatorModal congregationId={activeMembership?.congregationId ?? null} license={license} />
-      </KhatamQuotaBar>
-      <section aria-labelledby="hiram-title" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <ModuleIcon module="hiram" variant="icon" size={36} decorative />
-          <div>
-            <h2 id="hiram-title" style={{ margin: 0, fontSize: 22 }}>Hiram Architecture</h2>
-            <p style={{ margin: "3px 0 0", color: "#52645d", fontSize: 13 }}>Topologia Multi-Tenant de Congregações</p>
-          </div>
-        </div>
+      </header>
+      <Section title="Acesso e licença" subtitle="Gerencie a capacidade de acesso de operadores." moduleSeal="khatam">
+        <KhatamQuotaBar license={license}>
+          <InviteOperatorModal congregationId={activeMembership?.congregationId ?? null} license={license} />
+        </KhatamQuotaBar>
+      </Section>
+      <Section title="Estrutura de congregações" subtitle="Visualize a organização hierárquica das unidades." moduleSeal="hiram">
         <CongregationFlowMap nodes={nodes} edges={edges} />
-      </section>
-      <LocalTeamManager members={[]} />
+      </Section>
+      <Section title="Equipe" subtitle="Operadores cadastrados na congregação ativa." moduleSeal="khatam">
+        <LocalTeamManager members={[]} />
+      </Section>
     </div>
   );
 }

@@ -4300,3 +4300,185 @@ html, body { overflow-x: hidden; }
   color: var(--ecc-brand-strong);
   box-shadow: none;
 }
+
+.canaa-page {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: var(--ecc-space-6);
+  padding-top: var(--ecc-space-5);
+}
+
+.canaa-page__heading {
+  display: flex;
+  align-items: center;
+  gap: var(--ecc-space-4);
+}
+
+.canaa-page__heading img {
+  flex: 0 0 auto;
+}
+
+.canaa-page__heading h1,
+.canaa-page__heading p,
+.ui-section__text h2,
+.ui-section__text p {
+  margin: 0;
+}
+
+.canaa-page__heading h1 {
+  color: var(--ecc-ink);
+  font-size: 28px;
+  line-height: 1.2;
+}
+
+.canaa-page__heading p {
+  margin-top: var(--ecc-space-1);
+  color: var(--ecc-muted);
+  font-size: var(--ecc-subtitle);
+}
+
+.ui-section {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--ecc-space-3);
+}
+
+.ui-section__heading,
+.ui-section__copy,
+.ui-section__action {
+  display: flex;
+  align-items: center;
+}
+
+.ui-section__heading {
+  justify-content: space-between;
+  gap: var(--ecc-space-4);
+}
+
+.ui-section__copy {
+  min-width: 0;
+  gap: var(--ecc-space-3);
+}
+
+.ui-section__text h2 {
+  color: var(--ecc-ink);
+  font-size: var(--ecc-section-title);
+  line-height: var(--ecc-section-title-line);
+}
+
+.ui-section__text p {
+  margin-top: var(--ecc-space-1);
+  color: var(--ecc-muted);
+  font-size: var(--ecc-subtitle);
+  line-height: 1.4;
+}
+
+.ui-section__card {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--ecc-border);
+  border-radius: var(--ecc-radius-panel);
+  background: var(--ecc-surface);
+  box-shadow: var(--ecc-shadow-card);
+}
+
+.ui-section__seal {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 var(--ecc-space-4) var(--ecc-space-3);
+}
+
+.module-seal {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ecc-space-1);
+  color: var(--ecc-muted);
+  font-size: var(--ecc-label);
+  line-height: 1.3;
+  opacity: .8;
+}
+
+.module-seal img {
+  filter: grayscale(1);
+}
+
+.module-seal:focus-visible {
+  border-radius: var(--ecc-radius-card);
+  outline: 2px solid var(--ecc-brand);
+  outline-offset: 3px;
+}
+
+.local-team {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.local-team__table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--ecc-muted);
+  font-size: var(--ecc-subtitle);
+  text-align: left;
+}
+
+.local-team__table thead {
+  background: var(--ecc-paper);
+  color: var(--ecc-muted);
+  font-size: var(--ecc-label);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.local-team__table th,
+.local-team__table td {
+  padding: var(--ecc-space-3) var(--ecc-space-4);
+}
+
+.local-team__table tbody tr + tr {
+  border-top: 1px solid var(--ecc-border-soft);
+}
+
+.local-team__name {
+  color: var(--ecc-ink);
+  font-weight: 600;
+}
+
+.local-team__role {
+  text-transform: capitalize;
+}
+
+.local-team__empty {
+  color: var(--ecc-muted);
+  text-align: center;
+}
+
+.local-team__status {
+  display: inline-flex;
+  border-radius: var(--ecc-radius-card);
+  background: var(--ecc-border-soft);
+  color: var(--ecc-muted);
+  padding: var(--ecc-space-1) var(--ecc-space-2);
+  font-size: var(--ecc-label);
+  font-weight: 700;
+}
+
+.local-team__status.is-active {
+  background: var(--ecc-brand-soft);
+  color: var(--ecc-brand-strong);
+}
+
+@media (max-width: 767px) {
+  .canaa-page {
+    gap: var(--ecc-space-5);
+  }
+
+  .canaa-page__heading h1 {
+    font-size: var(--ecc-section-title);
+  }
+
+  .ui-section__heading {
+    align-items: flex-start;
+  }
+}
