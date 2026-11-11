@@ -5,6 +5,8 @@
 **Status**: ✅ REVISÃO COMPLETA - PRONTO PARA APLICAÇÃO  
 **Confiança**: ALTA (múltiplas validações executadas)
 
+> **Registro histórico (migration 0004, 2024).** Este documento não descreve a cadeia atual de migrations `0001`–`0013`, não valida o Supabase atual e não é uma aprovação para produção. Consulte [RELATORIO_TECNICO_PROJETO.md](./RELATORIO_TECNICO_PROJETO.md) e [database-tests/supabase-setup.md](./database-tests/supabase-setup.md) para o estado e os procedimentos atuais.
+
 ---
 
 ## 📋 RESUMO EXECUTIVO

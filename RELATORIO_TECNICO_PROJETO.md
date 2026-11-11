@@ -1,6 +1,6 @@
 # Relatorio tecnico do Ecclesia Finance
 
-> Gerado em 30/09/2026. Este documento descreve o estado verificavel do workspace atual.
+> Atualizado em 11/11/2026. A validacao local registrada abaixo foi feita nesta data; informacoes de cloud/Vercel nao foram revalidadas.
 
 ## 1. Identificacao
 
@@ -16,21 +16,12 @@
 
 ## 2. Supabase e chaves
 
-### O que esta configurado agora
+### Ambiente local verificado
 
-O projeto Supabase identificado para configuração é `qkezodddzzitpswtuekg` (`Ecclesia-Finance`, Oregon). As credenciais e variáveis públicas ainda não estão configuradas no workspace ou na Vercel.
-
-Tambem nao foram encontrados:
-
-- `web/.env.local`;
-- `.env.local` na raiz;
-- `DATABASE_URL` configurada;
-- `PGHOST` configurado;
-- URL real de projeto Supabase;
-- chave publica real;
-- chave `service_role`.
-
-Por isso, não há uma chave real para mostrar. O repositório contém apenas placeholders vazios, e isso é o comportamento correto para não vazar credenciais.
+- `web/.env.local` aponta para o Supabase local em `http://127.0.0.1:54321` e contém a chave publicável local; valores secretos não são registrados neste documento.
+- O PostgreSQL local está na porta `54322`, com PostgreSQL 17.
+- As migrations `0001` a `0013` foram aplicadas e a conta demonstrativa autenticou com sucesso no Supabase local.
+- Nenhum banco cloud foi alterado ou validado nesta execução.
 
 ### Variaveis exigidas pelo frontend
 
@@ -98,7 +89,7 @@ Arquivo: `web/supabase/config.toml`
 - Storage: habilitado
 - Limite de resposta da API: 1000 linhas
 
-Essa configuracao local nao identifica nem conecta automaticamente a um projeto cloud. Para usar o Supabase cloud, ainda e necessario preencher `web/.env.local` e vincular/aplicar as migrations no projeto correto.
+Essa configuração local não identifica nem conecta automaticamente a um projeto cloud. Mantenha `web/.env.local` apontado para `127.0.0.1` no desenvolvimento. Cloud deve usar configuração e credenciais próprias, depois de confirmar o ambiente de destino.
 
 ## 5. Migrations do banco
 
@@ -111,6 +102,12 @@ Aplicar nesta ordem:
 5. `web/supabase/migrations/0005_domain_completion_fix.sql`
 6. `web/supabase/migrations/0006_cash_movement_idempotency_fix.sql`
 7. `web/supabase/migrations/0007_performance_indexes.sql`
+8. `web/supabase/migrations/0008_organization_admin_permissions.sql`
+9. `web/supabase/migrations/0009_hierarchical_scope_permissions.sql`
+10. `web/supabase/migrations/0010_congregation_leader_name.sql`
+11. `web/supabase/migrations/0011_admin_create_congregation_parent.sql`
+12. `web/supabase/migrations/0012_hierarchical_financial_architecture.sql`
+13. `web/supabase/migrations/0013_khatam_licenses.sql`
 
 ### Estrutura principal criada
 
@@ -229,69 +226,52 @@ Aplicar nesta ordem:
 
 ## 10. Validacoes executadas
 
-- `npm run lint`: **PASS**
-- `npm run build`: **PASS**
-- Diagnosticos TypeScript nos arquivos alterados: **sem erros**
-- `git diff --check`: **PASS**
-- Suíte SQL de dominio: **BLOCKED** neste ambiente, pois nao ha `bash`, `psql` ou conexao PostgreSQL configurada.
-
-`BLOCKED` nao significa que o banco falhou; significa que o comportamento ainda nao foi provado contra uma instancia real.
+- `npm --prefix web run lint`: **PASS**
+- `npm --prefix web run build`: **PASS**; o Next.js registra mensagens de renderização dinâmica em rotas com cookies, mas conclui o build.
+- Migrations locais `0001` a `0013`: **PASS**
+- Suíte SQL local: **PASS** nos cinco scripts do runner.
+- Login demonstrativo local, `/login` e `/api/health`: **PASS**
+- `bash -n database-tests/run_suite.sh` e `git diff --check`: **PASS**
+- Supabase cloud/Production: **não validado e não alterado**.
 
 ## 11. Comandos principais
 
-### Instalar e rodar o frontend
+### Ambiente local
 
-```powershell
+```bash
 cd web
-npm install
-npm run dev
-```
-
-Abrir: `http://localhost:3000`
-
-### Validar frontend
-
-```powershell
-cd web
-npm run lint
-npm run build
-npm run start
-```
-
-### Aplicar migrations com Supabase CLI
-
-```powershell
-cd web
-supabase login
-supabase link --project-ref SEU_PROJECT_REF
+supabase start
 supabase db push
 ```
 
-### Testar banco
+Para recriar o banco local e carregar o seed, use `supabase db reset` (apaga os dados locais). Na raiz do repositório, inicie o frontend com `npm --prefix web run dev`.
 
-O runner existente esta em `database-tests/run_suite.sh` e requer Bash, `psql` e variaveis de conexao. No Windows, usar Git Bash ou WSL.
+### Testar banco local
 
 ```bash
-bash database-tests/run_suite.sh
+SUPABASE_LOCAL_CONTAINER=supabase_db_web bash database-tests/run_suite.sh
 ```
+
+O nome do container corresponde ao `project_id = "web"` no arquivo de configuração. O runner grava fixtures no banco, então deve ser usado apenas localmente.
+
+### Ambiente cloud
+
+Não reutilize a configuração local nem presuma que um projeto vinculado seja homologação. Confirme o projeto, faça backup e verifique o histórico antes de qualquer comando `supabase ... --remote`.
 
 ## 12. Ordem recomendada para prosseguir
 
-1. Criar ou selecionar o projeto Supabase de desenvolvimento.
-2. Preencher `web/.env.local` com URL e chave publica.
-3. Vincular o projeto com `supabase link`.
-4. Aplicar as migrations 0001 a 0007.
-5. Executar a suíte SQL em Git Bash ou WSL.
-6. Corrigir falhas reais de RLS, RPC, saldo ou concorrencia.
-7. Testar login e fluxos financeiros no frontend.
-8. Configurar as mesmas variaveis na Vercel para Development, Preview e Production.
-9. Implementar sede agregada, configuracoes e conciliacao antes de producao.
+1. Manter o desenvolvimento apontado ao Supabase local.
+2. Repetir a suíte local após mudanças de banco.
+3. Criar ou confirmar um projeto cloud de homologação separado.
+4. Fazer backup, conferir migrations e executar testes nesse projeto antes de qualquer publicação.
+5. Configurar Production separadamente; não copiar credenciais de homologação.
+6. Implementar sede agregada, configurações e conciliação antes de produção.
 
 ## 13. Conclusao
 
-O nucleo financeiro esta implementado e o frontend compila com sucesso. O projeto ainda nao possui, neste workspace, um Supabase cloud identificado nem credenciais configuradas. O proximo marco tecnico e conectar um ambiente Supabase de desenvolvimento, aplicar todas as migrations e executar os testes reais antes de declarar o sistema pronto para producao.
+O núcleo local está funcional, com migrations, seed, testes de domínio e autenticação validados. Isso não declara o sistema pronto para produção: cloud, Vercel, controles operacionais e cenários não cobertos pela suíte precisam de validação independente.
 
-## 14. Publicacao Vercel verificada
+## 14. Publicacao Vercel (snapshot de 30/09/2026, nao revalidado)
 
 - **Conta Vercel:** `hyroshydo`
 - **Equipe ativa:** `hyroshido1`
