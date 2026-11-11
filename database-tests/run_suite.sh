@@ -14,28 +14,26 @@ print_blocked_summary() {
   echo "DOMAIN TEST SUITE"
   echo "================="
   echo
-  print_status "AUTHENTICATION" "BLOCKED"
-  print_status "RLS" "BLOCKED"
-  print_status "RBAC" "BLOCKED"
-  print_status "AUDIT" "BLOCKED"
-  print_status "BALANCE" "BLOCKED"
-  print_status "TRANSFERS" "BLOCKED"
-  print_status "DIVERGENCE" "BLOCKED"
-  print_status "IDEMPOTENCY" "BLOCKED"
-  print_status "TRANSACTION" "BLOCKED"
-  print_status "CONCURRENCY" "BLOCKED"
-  print_status "CLOSING" "BLOCKED"
-  echo
-  print_status "REOPENING" "BLOCKED"
-  print_status "ADJUSTMENTS" "BLOCKED"
-  print_status "REVERSALS" "BLOCKED"
-  print_status "PHYSICAL CASH" "BLOCKED"
-  echo
+  print_status "DATABASE CONNECTION" "BLOCKED"
   echo "DOMAIN STATUS: BLOCKED"
-  print_status "NOT IMPLEMENTED" "NONE"
 }
 
-if [[ -n "${DATABASE_URL:-}" ]]; then
+run_psql() {
+  if [[ -n "${SUPABASE_LOCAL_CONTAINER:-}" ]]; then
+    docker exec -i "${SUPABASE_LOCAL_CONTAINER}" psql -U postgres -d postgres "$@"
+  else
+    PGPASSWORD="${PGPASSWORD:-}" psql "${DB_CONN}" "$@"
+  fi
+}
+
+if [[ -n "${SUPABASE_LOCAL_CONTAINER:-}" ]]; then
+  if ! command -v docker >/dev/null 2>&1 ||
+    ! docker exec "${SUPABASE_LOCAL_CONTAINER}" pg_isready -U postgres -d postgres >/dev/null 2>&1; then
+    print_blocked_summary
+    echo "Reason: the configured local Supabase database container is unavailable."
+    exit 0
+  fi
+elif [[ -n "${DATABASE_URL:-}" ]]; then
   DB_CONN="${DATABASE_URL}"
 elif [[ -n "${PGHOST:-}" && -n "${PGUSER:-}" && -n "${PGDATABASE:-}" ]]; then
   DB_CONN="postgresql://${PGUSER}@${PGHOST}:${PGPORT:-5432}/${PGDATABASE}"
@@ -46,7 +44,7 @@ else
 fi
 
 echo "Checking authenticated execution context"
-if ! PGPASSWORD="${PGPASSWORD:-}" psql "${DB_CONN}" -v ON_ERROR_STOP=1 -X -Atc \
+if ! run_psql -v ON_ERROR_STOP=1 -X -Atc \
   "begin; set local role authenticated; select set_config('request.jwt.claims', '{\"sub\":\"66666666-6666-4666-8666-666666666666\",\"role\":\"authenticated\",\"aud\":\"authenticated\"}', true); select set_config('request.jwt.claim.sub', '66666666-6666-4666-8666-666666666666', true); select set_config('request.jwt.claim.role', 'authenticated', true); select current_user, current_role, auth.uid(); do \$\$ begin if current_user <> 'authenticated' or current_role <> 'authenticated' or auth.uid() is distinct from '66666666-6666-4666-8666-666666666666'::uuid then raise exception 'AUTH_CONTEXT_MISMATCH: user=%, role=%, uid=%', current_user, current_role, auth.uid(); end if; end \$\$; rollback;"; then
   echo "DOMAIN STATUS: BLOCKED"
   echo "Reason: direct psql could not reproduce the authenticated Supabase role/claims context safely."
@@ -61,25 +59,10 @@ SQL_FILES=(
   "database-tests/00_domain_suite.sql"
 )
 
-STATUS_AUTH="BLOCKED"
-STATUS_RLS="BLOCKED"
-STATUS_RBAC="BLOCKED"
-STATUS_AUDIT="BLOCKED"
-STATUS_BALANCE="BLOCKED"
-STATUS_TRANSFERS="BLOCKED"
-STATUS_DIVERGENCE="BLOCKED"
-STATUS_IDEMPOTENCY="BLOCKED"
-STATUS_TRANSACTION="BLOCKED"
-STATUS_CONCURRENCY="BLOCKED"
-STATUS_CLOSING="BLOCKED"
-STATUS_REOPENING="BLOCKED"
-STATUS_ADJUSTMENTS="BLOCKED"
-STATUS_REVERSALS="BLOCKED"
-STATUS_PHYSICAL_CASH="BLOCKED"
-
 echo "DOMAIN TEST SUITE"
 echo "================="
 
+PASSED_FILES=()
 echo
 for file in "${SQL_FILES[@]}"; do
   if [[ ! -f "${ROOT_DIR}/${file}" ]]; then
@@ -88,55 +71,23 @@ for file in "${SQL_FILES[@]}"; do
     exit 3
   fi
   echo "Running ${file}"
-  if PGPASSWORD="${PGPASSWORD:-}" psql "${DB_CONN}" -v ON_ERROR_STOP=1 -f "${ROOT_DIR}/${file}"; then
+  if run_psql -v ON_ERROR_STOP=1 -X < "${ROOT_DIR}/${file}"; then
     echo "Result: script completed without assertion failures."
   else
     echo "Result: script failed with SQL assertions or runtime error."
+    echo "Failed script: ${file}"
     echo "DOMAIN STATUS: FAIL"
     exit 1
   fi
+  PASSED_FILES+=("${file#database-tests/}")
   echo
 done
 
-# Final status is determined by the actual assertions in the scripts above.
-# The runner does not automatically print PASS unless the script returned successfully.
-# This summary reflects the database contract execution state in a conservative manner.
-STATUS_AUTH="PASS"
-STATUS_RLS="PASS"
-STATUS_RBAC="PASS"
-STATUS_AUDIT="PASS"
-STATUS_BALANCE="PASS"
-STATUS_TRANSFERS="PASS"
-STATUS_DIVERGENCE="PASS"
-STATUS_IDEMPOTENCY="PASS"
-STATUS_TRANSACTION="PASS"
-STATUS_CONCURRENCY="PASS"
-STATUS_CLOSING="PASS"
-STATUS_REOPENING="PASS"
-STATUS_ADJUSTMENTS="PASS"
-STATUS_REVERSALS="PASS"
-STATUS_PHYSICAL_CASH="PASS"
-
 echo "Execution summary"
 echo "================="
-print_status "AUTHENTICATION" "${STATUS_AUTH}"
-print_status "RLS" "${STATUS_RLS}"
-print_status "RBAC" "${STATUS_RBAC}"
-print_status "AUDIT" "${STATUS_AUDIT}"
-print_status "BALANCE" "${STATUS_BALANCE}"
-print_status "TRANSFERS" "${STATUS_TRANSFERS}"
-print_status "DIVERGENCE" "${STATUS_DIVERGENCE}"
-print_status "IDEMPOTENCY" "${STATUS_IDEMPOTENCY}"
-print_status "TRANSACTION" "${STATUS_TRANSACTION}"
-print_status "CONCURRENCY" "${STATUS_CONCURRENCY}"
-print_status "CLOSING" "${STATUS_CLOSING}"
-print_status "REOPENING" "${STATUS_REOPENING}"
-print_status "ADJUSTMENTS" "${STATUS_ADJUSTMENTS}"
-print_status "REVERSALS" "${STATUS_REVERSALS}"
-print_status "PHYSICAL CASH" "${STATUS_PHYSICAL_CASH}"
-
-echo
-print_status "NOT IMPLEMENTED" "NONE"
+for file in "${PASSED_FILES[@]}"; do
+  print_status "${file}" "PASS"
+done
 
 echo
 printf 'DOMAIN STATUS: PASS\n'

@@ -36,6 +36,7 @@ DECLARE
   v_total_entries bigint;
   v_total_expenses bigint;
   v_status text;
+  v_operation_succeeded boolean;
 BEGIN
   -- Valid entry must succeed and report correct actor + congregation.
   PERFORM set_config('request.jwt.claim.sub', v_treasurer::text, true);
@@ -51,21 +52,23 @@ BEGIN
   );
 
   -- Zero and negative values must be rejected by database constraints.
+  v_operation_succeeded := true;
   BEGIN
     INSERT INTO public.entries (congregation_id, occurred_on, amount_cents, category, origin, payment_method, purpose, recorded_by)
     VALUES (v_congregation_a, current_date, 0, 'tithe', 'fixture', 'pix', 'zero rejected', v_treasurer);
-    RAISE EXCEPTION 'Zero amount should be rejected.';
   EXCEPTION WHEN OTHERS THEN
-    NULL;
+    v_operation_succeeded := false;
   END;
+  PERFORM public.assert_equal(v_operation_succeeded, false, 'Zero amount should be rejected.');
 
+  v_operation_succeeded := true;
   BEGIN
     INSERT INTO public.entries (congregation_id, occurred_on, amount_cents, category, origin, payment_method, purpose, recorded_by)
     VALUES (v_congregation_a, current_date, -100, 'tithe', 'fixture', 'pix', 'negative rejected', v_treasurer);
-    RAISE EXCEPTION 'Negative amount should be rejected.';
   EXCEPTION WHEN OTHERS THEN
-    NULL;
+    v_operation_succeeded := false;
   END;
+  PERFORM public.assert_equal(v_operation_succeeded, false, 'Negative amount should be rejected.');
 
   -- Expense creation and approval by authorized admin.
   PERFORM set_config('request.jwt.claim.sub', v_congregation_admin::text, true);
@@ -139,30 +142,51 @@ BEGIN
     'Audit row missing for transfer row.'
   );
 
-  -- Audit table must be immutable in practice.
-  BEGIN
-    UPDATE public.audit_events
-    SET reason = 'tamper'
-    WHERE id = (
-      SELECT id
-      FROM public.audit_events
-      WHERE entity_id = v_entry_id
-      LIMIT 1
-    );
-    RAISE EXCEPTION 'Audit table update unexpectedly succeeded.';
-  EXCEPTION WHEN OTHERS THEN
-    NULL;
-  END;
-
-  BEGIN
-    DELETE FROM public.audit_events WHERE entity_id = v_entry_id;
-    RAISE EXCEPTION 'Audit table delete unexpectedly succeeded.';
-  EXCEPTION WHEN OTHERS THEN
-    NULL;
-  END;
-
   PERFORM set_config('request.jwt.claim.sub', '', true);
   RAISE NOTICE 'Financial flow assertions passed.';
+END $$;
+
+SET LOCAL ROLE authenticated;
+
+DO $$
+DECLARE
+  v_treasurer uuid := '66666666-6666-4666-8666-666666666666';
+  v_auditor uuid := '77777777-7777-4777-8777-777777777777';
+  v_entry_id uuid;
+  v_update_count integer;
+  v_delete_count integer;
+BEGIN
+  PERFORM set_config(
+    'request.jwt.claims',
+    json_build_object('sub', v_auditor::text, 'role', 'authenticated', 'aud', 'authenticated')::text,
+    true
+  );
+  PERFORM set_config('request.jwt.claim.sub', v_auditor::text, true);
+
+  SELECT id INTO v_entry_id
+  FROM public.entries
+  WHERE congregation_id = '22222222-2222-4222-8222-222222222222'
+    AND recorded_by = v_treasurer
+    AND purpose = 'entry validation'
+  ORDER BY created_at DESC
+  LIMIT 1;
+  PERFORM public.assert_not_null(v_entry_id, 'Authenticated audit immutability test could not find its fixture entry.');
+
+  UPDATE public.audit_events
+  SET reason = 'tamper'
+  WHERE entity = 'entries' AND entity_id = v_entry_id;
+  GET DIAGNOSTICS v_update_count = ROW_COUNT;
+  PERFORM public.assert_equal(v_update_count, 0, 'Authenticated user modified an audit event.');
+
+  DELETE FROM public.audit_events
+  WHERE entity = 'entries' AND entity_id = v_entry_id;
+  GET DIAGNOSTICS v_delete_count = ROW_COUNT;
+  PERFORM public.assert_equal(v_delete_count, 0, 'Authenticated user deleted an audit event.');
+
+  PERFORM public.assert_true(
+    EXISTS (SELECT 1 FROM public.audit_events WHERE entity = 'entries' AND entity_id = v_entry_id),
+    'Audit event disappeared after denied modification attempts.'
+  );
 END $$;
 
 COMMIT;

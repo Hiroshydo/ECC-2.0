@@ -25,38 +25,39 @@ BEGIN
 END;
 $$;
 
+SET LOCAL ROLE authenticated;
+
 DO $$
 DECLARE
   v_congregation_a uuid := '22222222-2222-4222-8222-222222222222';
   v_congregation_b uuid := '33333333-3333-4333-8333-333333333333';
   v_treasurer uuid := '66666666-6666-4666-8666-666666666666';
   v_central_admin uuid := '44444444-4444-4444-8444-444444444444';
-  v_entry_count integer;
-  v_expense_count integer;
-  v_transfer_count integer;
-  v_audit_count integer;
+  v_headquarters uuid := '11111111-1111-4111-8111-111111111111';
+  v_visible_count integer;
 BEGIN
-  PERFORM set_config('request.jwt.claim.sub', v_treasurer::text, true);
-  SELECT count(*) INTO v_entry_count FROM public.entries WHERE congregation_id = v_congregation_a;
-  PERFORM public.assert_true(v_entry_count >= 0, 'Entry count should be queryable with real auth context.');
+  IF current_user <> 'authenticated' OR current_role <> 'authenticated' THEN
+    RAISE EXCEPTION 'BLOCKED: aggregate RLS assertions must run as authenticated.';
+  END IF;
 
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', v_treasurer::text, 'role', 'authenticated', 'aud', 'authenticated')::text, true);
   PERFORM set_config('request.jwt.claim.sub', v_treasurer::text, true);
-  PERFORM public.assert_true(
-    NOT EXISTS (SELECT 1 FROM public.expenses WHERE congregation_id = v_congregation_b),
-    'A user from A must not see B expense rows in a valid cross-congregation test.'
-  );
+  PERFORM public.assert_equal(auth.uid(), v_treasurer, 'Authenticated claims must resolve to the fixture treasurer.');
+  SELECT count(*) INTO v_visible_count
+  FROM public.congregations
+  WHERE id IN (v_congregation_a, v_congregation_b);
+  PERFORM public.assert_equal(v_visible_count, 1, 'Treasurer from A must see A and not B.');
 
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', v_central_admin::text, 'role', 'authenticated', 'aud', 'authenticated')::text, true);
   PERFORM set_config('request.jwt.claim.sub', v_central_admin::text, true);
-  PERFORM public.assert_true(
-    EXISTS (SELECT 1 FROM public.congregations WHERE id = v_congregation_a),
-    'Central admin should access designated congregations.'
-  );
+  SELECT count(*) INTO v_visible_count
+  FROM public.congregations
+  WHERE id IN (v_headquarters, v_congregation_a);
+  PERFORM public.assert_equal(v_visible_count, 1, 'Central admin must see its headquarters but not an unrelated congregation.');
 
-  SELECT count(*) INTO v_audit_count FROM public.audit_events;
-  PERFORM public.assert_true(v_audit_count >= 0, 'Audit table must remain queryable.');
-
+  PERFORM set_config('request.jwt.claims', '{}', true);
   PERFORM set_config('request.jwt.claim.sub', '', true);
-  RAISE NOTICE 'Domain suite contract assertions passed.';
+  RAISE NOTICE 'Aggregate RLS assertions passed as authenticated.';
 END $$;
 
 COMMIT;

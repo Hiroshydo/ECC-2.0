@@ -1,27 +1,19 @@
 ECCLESIA FINANCE
-DOMAIN VALIDATION
+DATABASE DOMAIN SUITE
 
-Authentication    PASS
-RLS               PASS
-RBAC              PASS
-Audit             PASS
-Balance           PASS
-Transfers         PASS
-Divergence        PASS
-Idempotency       PASS
-Transaction       PASS
-Concurrency       PASS
-Closing           PASS
+Target environment: [local / staging / production]
+Migration range: 0001-0013
 
-Reopening         NOT IMPLEMENTED
-Adjustments       NOT IMPLEMENTED
-Reversals         NOT IMPLEMENTED
-Physical Cash     NOT IMPLEMENTED
+SQL scripts:
+01_test_seed.sql          [PASS / FAIL / BLOCKED]
+02_security_rls.sql       [PASS / FAIL / BLOCKED]
+03_financial_flow.sql     [PASS / FAIL / BLOCKED]
+04_domain_completion.sql  [PASS / FAIL / BLOCKED]
+00_domain_suite.sql       [PASS / FAIL / BLOCKED]
 
-IMPLEMENTED RULES
-11 PASS
-0 FAIL
-0 BLOCKED
+DOMAIN STATUS: [PASS / FAIL / BLOCKED]
 
-KNOWN DOMAIN GAPS
-4 NOT IMPLEMENTED
+Coverage notes:
+- Report only scenarios that were actually executed.
+- A script-level PASS does not imply untested concurrency or other missing cases passed.
+- Never report a remote database as validated based on local execution.

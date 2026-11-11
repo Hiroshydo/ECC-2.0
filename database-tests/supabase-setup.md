@@ -1,116 +1,66 @@
-# Supabase setup for Ecclesia Finance
+# Supabase local e testes
 
-## Goal
+Este fluxo usa o projeto local definido em `web/supabase/config.toml`. Os comandos abaixo não precisam de credenciais cloud e não devem receber a flag `--remote`.
 
-Prepare a real PostgreSQL/Supabase environment to execute the database contract tests without exposing secrets in Git.
+## Pré-requisitos
 
-## 1. Create or select the Supabase project
+- Docker em execução e acessível pelo usuário atual;
+- Supabase CLI;
+- acesso ao container local do PostgreSQL para a suíte de banco.
 
-1. Open the Supabase dashboard.
-2. Create a new project or select an existing one.
-3. Note the project URL and keys.
+Se Docker responder `permission denied`, atualize a sessão do usuário após conceder acesso apropriado ao daemon. Não altere as permissões do socket com `chmod 666`.
 
-## 2. Configure environment variables locally
+## Iniciar e aplicar migrations
 
-Create a local environment file at the repository root:
-
-```bash
-cp .env.example .env.local
-```
-
-Then fill the values with the project-specific credentials you receive from Supabase.
-
-Important:
-
-- never commit `.env.local`;
-- never put `service_role` in frontend code;
-- never place secrets in Git-tracked files.
-
-## 3. Configure the app environment
-
-The Next.js app in `web/` expects:
-
-```bash
-web/.env.local
-```
-
-with at least:
-
-```bash
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
-```
-
-The database runner may use:
-
-```bash
-DATABASE_URL=
-# or
-PGHOST=
-PGUSER=
-PGPASSWORD=
-PGDATABASE=
-PGPORT=5432
-```
-
-## 4. Apply the schema migrations
-
-Run the migrations in order:
+Na raiz do repositório:
 
 ```bash
 cd web
+supabase start
+supabase status
+supabase migration list
 supabase db push
 ```
 
-If using SQL files directly, apply them in this order:
+O CLI usa o stack local quando executado em `web/`; confirme que o destino exibido é `local stack` antes de aplicar. O repositório contém migrations de `0001_finance_core.sql` até `0013_khatam_licenses.sql`.
 
-1. `supabase/migrations/0001_finance_core.sql`
-2. `supabase/migrations/0002_integrity_and_documents.sql`
-3. `supabase/migrations/0003_financial_cycle_commands.sql`
-4. `supabase/migrations/0004_domain_completion.sql`
-5. `supabase/migrations/0005_domain_completion_fix.sql`
-6. `supabase/migrations/0006_cash_movement_idempotency_fix.sql`
-7. `supabase/migrations/0007_performance_indexes.sql`
-
-## 5. Confirm the objects were created
-
-Check that the following exist in the database:
-
-- `public.congregations`
-- `public.memberships`
-- `public.entries`
-- `public.expenses`
-- `public.headquarters_transfers`
-- `public.monthly_closings`
-- `public.audit_events`
-- `public.documents`
-- security functions and triggers
-- row-level security policies
-
-## 6. Execute the contract suite
-
-From the repository root:
+Para recriar o banco local, aplicar todas as migrations e carregar o seed:
 
 ```bash
-bash database-tests/run_suite.sh
+supabase db reset
 ```
 
-## 7. Interpret the report
+**Atenção:** `db reset` apaga todos os dados do banco local. Não use em um projeto remoto ou de produção. O seed cria dados e o usuário demonstrativo `teste@teste`; as credenciais fracas são exclusivas de desenvolvimento/homologação.
 
-- `PASS`: domain rule proved correct
-- `FAIL`: domain rule is broken
-- `NOT IMPLEMENTED`: known gap
-- `BLOCKED`: infrastructure is the blocker
+## Executar a suíte
 
-## 8. Do not commit secrets
+Na raiz do repositório, rode a suíte usando o `psql` do container:
 
-This file must remain local only:
+```bash
+SUPABASE_LOCAL_CONTAINER=supabase_db_web bash database-tests/run_suite.sh
+```
 
-- `.env.local`
-- `web/.env.local`
+O nome padrão corresponde a `project_id = "web"` em `web/supabase/config.toml`; para outro projeto local, informe o nome do container ativo. Como alternativa, instale `psql` no host e configure `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD` e `PGDATABASE` ou `DATABASE_URL` no ambiente do processo. Não cole credenciais no código nem as salve em arquivos versionados.
 
-The versioned file is only:
+O runner cria fixtures persistentes, por isso use somente o banco local de desenvolvimento. O resultado `DOMAIN STATUS: PASS` confirma que os cinco scripts executaram suas assertions; não significa que cenários ausentes da suíte, como concorrência entre conexões, foram validados.
 
-- `.env.example`
+## Verificar a aplicação local
 
-It contains variable names, not secrets.
+Em `web/.env.local`, configure:
+
+```dotenv
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<chave-publicavel-local>
+```
+
+Obtenha a chave com `supabase status` dentro de `web/`; não use a chave ou a URL de produção. Na raiz:
+
+```bash
+npm --prefix web run dev
+```
+
+Abra `http://localhost:3000`. O seed deve ser carregado antes de usar a conta demonstrativa.
+
+## Banco remoto
+
+`supabase db push --remote` e `supabase migration list --remote` acessam um banco remoto. Antes de usá-los, confirme o projeto de destino, faça backup e verifique o histórico de migrations. Não execute a suíte de fixtures em produção.

@@ -1,85 +1,65 @@
-# Ambiente de homologacao
+# Ambiente de homologação
 
 ## Objetivo
 
-A homologacao e um ambiente separado para clientes conhecerem o Ecclesia Finance com dados demonstrativos. Ela nao deve compartilhar banco, usuarios ou credenciais com Production.
+A homologação é um ambiente isolado para demonstração com dados fictícios. Não compartilhe banco, usuários ou credenciais com Production.
 
-## Projetos
-
-- **Vercel Production:** `ecclesia-finance`
-- **Vercel Homologacao:** `ecclesia-finance-a8cp`
-- **Supabase homologacao recomendado:** projeto separado do projeto de producao
-- **Project ref atualmente identificado:** `qkezodddzzitpswtuekg`
-
-> O project ref identificado nao deve ser usado como homologacao sem confirmar no painel que ele nao e o banco de producao.
-
-## Usuario demonstrativo
-
-O seed cria, apenas para homologacao:
-
-```text
-E-mail: teste@teste
-Senha: teste
-```
-
-Essas credenciais sao intencionalmente fracas e nunca podem ser usadas em Production. Depois da demonstracao, o usuario deve ser removido ou a senha deve ser trocada.
-
-## Dados incluidos
+## Seed demonstrativo
 
 O arquivo `web/supabase/seed.sql` cria de forma idempotente:
 
-- quatro congregacoes;
-- um usuario com papel `central_admin` nas quatro congregacoes;
-- entradas de dizimos e ofertas;
-- despesas aprovadas e pendentes;
-- repasses confirmados e aguardando confirmacao;
-- um caixa fisico com entrada e saida;
-- fechamentos mensais abertos;
-- dados suficientes para dashboard, relatorios, auditoria, ajustes e navegacao.
+- quatro congregações e um usuário `central_admin`;
+- entradas, despesas aprovadas e pendentes e repasses;
+- caixa físico, movimentos e fechamento mensal;
+- dados para testar dashboard, relatórios e navegação.
 
-## Execucao local
+O seed cria o login `teste@teste` com senha `teste`. Essas credenciais são fracas e devem existir somente em ambiente local ou de homologação, nunca em produção.
 
-Com Docker e Supabase CLI instalados:
+## Execução local
 
-```powershell
+Com Docker e Supabase CLI instalados, a partir da raiz:
+
+```bash
 cd web
-npx supabase start
-npx supabase db reset
+supabase start
+supabase db reset
 ```
 
-O `db reset` aplica as migrations e o `seed.sql` configurado em `supabase/config.toml`.
+`db reset` recria o banco local, aplica as migrations `0001` a `0013` e executa o seed de `supabase/config.toml`. **Todos os dados atuais do banco local são apagados.** Para preservar os dados, aplique apenas migrations pendentes com `supabase db push` e carregue o seed explicitamente.
 
-## Execucao em Supabase cloud de homologacao
+Configure `web/.env.local` com `NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321` e a chave publicável apresentada por `supabase status`. Na raiz do repositório, rode `npm --prefix web run dev` e acesse `http://localhost:3000`.
 
-O `seed.sql` nao e aplicado automaticamente por `supabase db push`. Para cloud:
+Para validar as regras de banco, siga [database-tests/supabase-setup.md](../database-tests/supabase-setup.md). A suíte grava fixtures no banco; use somente o ambiente local descartável.
 
-1. Crie ou confirme um projeto Supabase exclusivo de homologacao.
-2. Aplique as migrations `0001` a `0007`.
-3. Execute o conteudo de `web/supabase/seed.sql` no SQL Editor autenticado como administrador, ou use um pipeline protegido.
-4. Nunca execute esse seed no banco de producao.
-5. Confirme no painel Auth que `teste@teste` foi criado e esta confirmado.
+## Supabase cloud de homologação
+
+1. Crie ou confirme um projeto Supabase exclusivo de homologação; não presuma que um projeto já vinculado ao CLI seja homologação.
+2. Faça backup e confirme o projeto de destino.
+3. Aplique as migrations `0001` a `0013`, em ordem.
+4. Execute o seed por um fluxo protegido, autenticado como administrador, somente nesse projeto.
+5. Confirme no painel Auth que o usuário demonstrativo foi criado.
+
+O seed não é aplicado por `supabase db push` sem a opção de seed. Nunca execute o seed ou a suíte de fixtures em produção.
 
 ## Vercel
 
-No projeto `ecclesia-finance-a8cp`:
+No projeto de homologação:
 
 - Root Directory: `web`;
 - Framework: Next.js;
-- `NEXT_PUBLIC_SUPABASE_URL`: URL do Supabase de homologacao;
-- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`: chave publica do Supabase de homologacao.
+- `NEXT_PUBLIC_SUPABASE_URL`: URL do Supabase de homologação;
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`: chave publicável do Supabase de homologação.
 
-Configure as variaveis em `Preview` e `Development`. Nao coloque `service_role`, senha do banco ou `DATABASE_URL` na Vercel frontend.
+Configure as variáveis em Preview e Development. Não coloque `service_role`, senha de banco ou `DATABASE_URL` nas variáveis públicas da aplicação.
 
-## Validacao do cliente
+## Validação
 
-1. Abrir a URL Preview da Vercel.
-2. Acessar `/login`.
-3. Entrar com `teste@teste` e `teste`.
-4. Alternar entre as quatro congregacoes.
-5. Conferir dashboard, entradas, despesas, repasses, caixa, fechamento, ajustes, estornos, auditoria e relatorios.
-6. Testar uma operacao de escrita apenas no banco de homologacao.
-7. Confirmar que nenhum dado aparece no projeto Production.
+1. Abra `/login` no ambiente de homologação.
+2. Entre com o usuário demonstrativo.
+3. Alterne entre as congregações e confira dashboard, entradas, despesas, repasses, caixa, fechamento, ajustes, estornos, auditoria e relatórios.
+4. Teste escritas somente no banco de homologação.
+5. Confirme que nenhum dado aparece no projeto Production.
 
-## Estado atual
+## Estado
 
-O seed foi criado no repositorio, mas a aplicacao cloud ainda nao foi populada porque o acesso Supabase nao foi concluido nesta sessao. O deploy sem banco exibe a pre-visualizacao publica; o login e os dados demonstrativos exigem as variaveis do Supabase de homologacao.
+O Supabase local recebeu as migrations até `0013_khatam_licenses.sql` e a suíte de domínio passou localmente. Isso não valida nem altera os projetos Supabase cloud; a homologação cloud e produção devem ser verificadas separadamente.

@@ -12,9 +12,9 @@ O Ecclesia Finance foi desenvolvido para ajudar igrejas e organizações a contr
 
 ## 📌 Status atual
 
-O núcleo financeiro e as telas principais estão implementados e o aplicativo passa por lint e build de produção. A suíte de domínio ainda precisa ser executada contra um PostgreSQL/Supabase configurado; sem essa execução, o status correto do banco é `BLOCKED`, não `PASS`.
+O núcleo financeiro e as telas principais estão implementados. As migrations locais foram aplicadas até `0013_khatam_licenses.sql` e a suíte de domínio passou no Supabase local. Esse resultado não valida nem altera o banco remoto.
 
-As migrations devem ser aplicadas em ordem até `0007_performance_indexes.sql`. Recursos como dashboard agregado da sede, contas financeiras, Pix operacional, maquininha, governança configurável e configurações administrativas permanecem fora do núcleo implementado.
+Para iniciar o ambiente local e repetir a validação, siga [database-tests/supabase-setup.md](database-tests/supabase-setup.md). Recursos como dashboard agregado da sede, contas financeiras, Pix operacional, maquininha e governança configurável permanecem fora do núcleo implementado.
 
 O ambiente separado de homologação está publicado em `https://ecclesia-finance-a8cp.vercel.app`. O seed demonstrativo e os passos para conectar um Supabase exclusivo de homologação estão em [docs/homologacao.md](docs/homologacao.md).
 

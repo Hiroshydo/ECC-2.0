@@ -1,146 +1,48 @@
-# Database test suite for Ecclesia Finance
+# Suíte de testes de banco
 
-This directory contains the database-first behavior suite for the product contract defined in:
+A suíte valida o contrato de domínio em PostgreSQL/Supabase usando fixtures e assertions SQL. Execute-a somente em um banco local descartável: os scripts criam usuários, memberships e movimentações de teste.
 
-- `docs/domain-spec.md`
-- `docs/migration-conformance-review.md`
-- `docs/domain-test-plan.md`
+## Pré-requisitos
 
-The goal is to validate real behavior at the database layer before creating any functional UI.
+- Supabase local iniciado com Docker;
+- migrations `0001` a `0013` aplicadas;
+- acesso ao container local do PostgreSQL (o `psql` do container pode ser usado diretamente);
+- acesso de banco que possa criar fixtures em `auth.users` (no Supabase local, use o usuário `postgres`).
 
-## Principle
+Consulte [supabase-setup.md](supabase-setup.md) para preparar o ambiente local. Não use a URL, senha ou credenciais de produção.
 
-No feature is considered implemented unless the expected behavior is proven by a real database assertion in PostgreSQL/Supabase.
+## Executar
 
-- Security is tested before feature flows.
-- Financial rules are tested before interface work.
-- Auditing and RLS are treated as non-optional.
-- Anything marked `NOT IMPLEMENTED` is intentionally outside the current contract scope.
-
-## Pre-conditions
-
-The database suite requires:
-
-- a real PostgreSQL or Supabase connection;
-- the schema already applied through the migration files;
-- a context that can create fixture rows in `auth.users` when required;
-- access to the correct project reference for Ecclesia Finance.
-
-## Environment configuration
-
-Use local environment variables without committing secrets:
+Na raiz do repositório:
 
 ```bash
-cp .env.example .env.local
+SUPABASE_LOCAL_CONTAINER=supabase_db_web bash database-tests/run_suite.sh
 ```
 
-Then fill values for the selected environment, including:
+O nome padrão corresponde a `project_id = "web"` em `web/supabase/config.toml`. Para outro ambiente, informe o nome do container ativo. Também é possível usar `psql` instalado no host configurando `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD` e `PGDATABASE`.
 
-```bash
-DATABASE_URL=
-# or
-PGHOST=
-PGUSER=
-PGPASSWORD=
-PGDATABASE=
-PGPORT=5432
-```
+Também é possível fornecer `DATABASE_URL` no ambiente. Não salve credenciais em arquivos versionados.
 
-Do not commit `.env.local`.
-Do not put `service_role` in the frontend.
-Do not store credentials in Git-tracked files.
+## Scripts executados
 
-## How to run
+O runner executa os SQLs nesta ordem:
 
-From the repository root:
+1. `01_test_seed.sql` — cria fixtures isoladas;
+2. `02_security_rls.sql` — testa RLS e permissões;
+3. `03_financial_flow.sql` — testa entradas, despesas, repasses e auditoria;
+4. `04_domain_completion.sql` — testa reabertura, ajustes, estornos e caixa físico;
+5. `00_domain_suite.sql` — confirma isolamento agregado como `authenticated`.
 
-```bash
-bash database-tests/run_suite.sh
-```
+O runner informa `PASS` por arquivo e `DOMAIN STATUS: PASS` somente se todos terminarem sem erro. Esse resumo não declara automaticamente que cenários ausentes, como concorrência entre conexões, foram testados.
 
-If the environment is ready, the runner executes the test scripts in order.
+## Interpretação
 
-## What the runner checks
+- `PASS`: o script executou suas assertions no banco;
+- `FAIL`: uma assertion ou operação SQL falhou; o runner identifica o arquivo;
+- `BLOCKED`: conexão, contexto autenticado ou infraestrutura não permitiu executar a suíte.
 
-The runner reports only real outcomes:
+Um `RAISE NOTICE`, parse válido ou existência de tabela não é suficiente para passar: cada script deve realizar as verificações definidas nele.
 
-- PASS: the rule ran and the assertion passed.
-- FAIL: the rule executed but the real assertion failed.
-- NOT IMPLEMENTED: the rule is still absent from the domain implementation.
-- BLOCKED: environment or database access prevented execution.
+## Dados e segurança
 
-## Test priorities
-
-1. Security
-2. Authentication
-3. Isolation and RBAC
-4. Audit
-5. Closing
-6. Balances
-7. Transfer reconciliation
-8. Idempotency
-9. Transactions
-10. Concurrency
-11. Reopening
-12. Adjustments
-13. Integral reversals
-14. Physical cash
-
-## Real test contract
-
-Important:
-
-- `RAISE NOTICE` is not a test.
-- a successful SQL parse is not a PASS.
-- table existence is not proof of correct behavior.
-- a real assertion is required.
-
-A test is only `PASS` when it executed an actual action and forced a real condition check.
-
-## Final status model
-
-```text
-AUTHENTICATION     PASS / FAIL / BLOCKED
-RLS                PASS / FAIL / BLOCKED
-RBAC               PASS / FAIL / BLOCKED
-AUDIT              PASS / FAIL / BLOCKED
-BALANCE            PASS / FAIL / BLOCKED
-TRANSFERS          PASS / FAIL / BLOCKED
-DIVERGENCE         PASS / FAIL / BLOCKED
-IDEMPOTENCY        PASS / FAIL / BLOCKED
-TRANSACTION        PASS / FAIL / BLOCKED
-CONCURRENCY        PASS / FAIL / BLOCKED
-CLOSING            PASS / FAIL / BLOCKED
-REOPENING          PASS / FAIL / BLOCKED
-ADJUSTMENTS        PASS / FAIL / BLOCKED
-REVERSALS          PASS / FAIL / BLOCKED
-PHYSICAL CASH      PASS / FAIL / BLOCKED
-
-NOT IMPLEMENTED    NONE
-```
-
-Final domain status:
-
-```text
-DOMAIN STATUS: PASS
-```
-
-when implemented rules pass.
-
-```text
-DOMAIN STATUS: FAIL
-```
-
-when a rule exists but behaves incorrectly.
-
-```text
-DOMAIN STATUS: BLOCKED
-```
-
-when infrastructure prevents execution.
-
-## Important limitation
-
-If the current environment cannot create test users in `auth.users` or cannot run the database suite against the target Supabase project, the correct classification is `BLOCKED`, not a fake `PASS`.
-
-This task is intentionally limited to database validation and does not modify the UI or any migration.
+Os scripts fazem `COMMIT`; fixtures e movimentos permanecem no banco local após a execução. Para começar de uma base limpa, use `supabase db reset` dentro de `web/`. Esse comando apaga os dados locais e carrega o seed de demonstração. Nunca o execute em um projeto remoto ou de produção.
