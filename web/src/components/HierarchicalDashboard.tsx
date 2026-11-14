@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, WalletCards } from "lucide-react";
 import { useState } from "react";
 
 import { ModuleIcon } from "@/components/brand/ModuleIcon";
@@ -129,6 +130,7 @@ export function HierarchicalDashboard({
         <button type="button" aria-pressed={mode === "local"} className={mode === "local" ? "is-active" : ""} onClick={showLocal}>Caixa Local</button>
         <button type="button" aria-pressed={mode === "consolidated"} className={mode === "consolidated" ? "is-active" : ""} disabled={!canReadConsolidated || pending} title={!canReadConsolidated ? "Permissão consolidada não concedida para esta unidade" : undefined} onClick={() => void showConsolidated()}>{pending ? "Carregando…" : "Visão Consolidada"}</button>
       </div>
+      {!canReadConsolidated && <span className="hierarchy-permission-hint">Visão consolidada não liberada para esta unidade.</span>}
       {mode === "consolidated" && currentUnit && <nav className="hierarchy-breadcrumb" aria-label="Navegação da hierarquia">
         {breadcrumbs.map((unit, index) => <span key={unit.unit_id}>
           {index > 0 && <span aria-hidden="true">›</span>}
@@ -173,37 +175,18 @@ export function HierarchicalDashboard({
 }
 
 function SummaryMetric({ label, value, theme, detail }: { label: string; value: string; theme: string; detail: string }) {
-  const icon = theme === "balance"
-    ? <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 16.5V7.5A2.5 2.5 0 0 1 6.5 5h11A2.5 2.5 0 0 1 20 7.5v9" /><path d="M4 13h16" /><path d="M8 19h8" /><path d="M12 7.5V18" /></svg>
-    : theme === "entries"
-      ? <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v12" /><path d="m5 15 7 5 7-5" /><path d="M5 9l7-5 7 5" /></svg>
-      : theme === "expenses"
-        ? <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V8" /><path d="m5 9 7-5 7 5" /><path d="M5 15l7 5 7-5" /></svg>
-        : <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16" /><path d="M7 4v6" /><path d="M17 20v-6" /><path d="m7 12 5 5 5-5" /></svg>;
-
-  const badgeText = theme === "balance" ? "Positivo" : theme === "entries" ? "Entradas" : theme === "expenses" ? "Despesas" : "Repasses";
-  const sparklinePath = theme === "balance"
-    ? "M0 18 C12 10, 18 12, 24 8 S41 2, 48 9 S62 14, 74 4"
-    : theme === "entries"
-      ? "M0 18 C10 13, 18 16, 24 11 S38 5, 48 8 S62 4, 74 6"
-      : theme === "expenses"
-        ? "M0 10 C12 16, 20 15, 26 13 S42 17, 48 10 S63 6, 74 12"
-        : "M0 14 C8 14, 18 10, 24 8 S38 12, 48 8 S64 7, 74 10";
+  const Icon = theme === "balance" ? WalletCards : theme === "entries" ? ArrowDownToLine : theme === "expenses" ? ArrowUpFromLine : ArrowLeftRight;
 
   return <article className={`metric metric-${theme}`}>
     <div className="metric-topline">
       <div className="metric-label-wrap">
-        <span className={`metric-icon metric-icon-${theme}`} aria-hidden="true">{icon}</span>
+        <span className={`metric-icon metric-icon-${theme}`} aria-hidden="true"><Icon size={20} strokeWidth={1.8} /></span>
         <small>{label}</small>
       </div>
     </div>
     <div className="metric-value-row"><strong>{value}</strong></div>
     <div className="metric-footer">
-      <span className={`metric-badge metric-badge-${theme}`}>{badgeText}</span>
       <span className="metric-detail">{detail}</span>
-      <svg className="metric-sparkline" viewBox="0 0 74 26" preserveAspectRatio="none" aria-hidden="true">
-        <path d={sparklinePath} />
-      </svg>
     </div>
   </article>;
 }

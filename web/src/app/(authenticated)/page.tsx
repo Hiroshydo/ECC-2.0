@@ -2,13 +2,13 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { ModuleIcon } from "@/components/brand/ModuleIcon";
 import { can } from "@/domain/access";
 import { createClient } from "@/lib/supabase/server";
 import { toMemberships } from "@/lib/auth/session";
 import { presentStatus } from "@/lib/presentation";
 import { getVocabulary } from "@/domain/vocabulary";
 import { HierarchicalDashboard } from "@/components/HierarchicalDashboard";
+import { AlertTriangle, ArrowLeftRight, Landmark, ReceiptText } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -66,26 +66,31 @@ export default async function Home() {
   let memberships: ReturnType<typeof toMemberships> = [];
   let activeMembership: ReturnType<typeof toMemberships>[number] | null = null;
 
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) redirect("/login");
-
-    const { data: membershipRows, error: membershipError } = await supabase
-      .from("memberships")
-      .select("congregation_id, role, congregations(id, name, city, state, active, organization_type, is_headquarters), permission_overrides:membership_permission_overrides(financial_read, financial_write, financial_approve, closing_submit, audit_read, hierarchy_view, hierarchy_financial_read)")
-      .eq("user_id", user.id);
-
-    if (membershipError) {
-      console.error("Dashboard membership query failed:", membershipError);
-      dashboardError = "Não foi possível carregar as congregações do utilizador.";
-    } else {
-      memberships = toMemberships(user, membershipRows ?? []);
-      const activeId = (await cookies()).get("active_congregation_id")?.value;
-      activeMembership = memberships.find((membership) => membership.congregationId === activeId) ?? memberships[0] ?? null;
-    }
-  } catch (error) {
-    console.error("Dashboard auth/membership fallback failed:", error);
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError) {
+    console.error("Dashboard auth validation failed:", authError);
     dashboardError = "Não foi possível validar o acesso ao dashboard.";
+  } else if (!user) {
+    redirect("/login");
+  } else {
+    try {
+      const { data: membershipRows, error: membershipError } = await supabase
+        .from("memberships")
+        .select("congregation_id, role, congregations(id, name, city, state, active, organization_type, is_headquarters), permission_overrides:membership_permission_overrides(financial_read, financial_write, financial_approve, closing_submit, audit_read, hierarchy_view, hierarchy_financial_read)")
+        .eq("user_id", user.id);
+
+      if (membershipError) {
+        console.error("Dashboard membership query failed:", membershipError);
+        dashboardError = "Não foi possível carregar as congregações do utilizador.";
+      } else {
+        memberships = toMemberships(user, membershipRows ?? []);
+        const activeId = (await cookies()).get("active_congregation_id")?.value;
+        activeMembership = memberships.find((membership) => membership.congregationId === activeId) ?? memberships[0] ?? null;
+      }
+    } catch (error) {
+      console.error("Dashboard membership load failed:", error);
+      dashboardError = "Não foi possível carregar as congregações do utilizador.";
+    }
   }
 
   const { start, end } = currentPeriod();
@@ -186,8 +191,49 @@ export default async function Home() {
         <HierarchicalDashboard unitId={activeMembership.congregationId} unitName={activeMembership.congregation.name} startDate={start} endDate={end} localBalance={summary.closing_balance} localIncome={summary.entries} localExpenses={summary.expenses} localTransfers={summary.transfers} canReadConsolidated={canReadConsolidated} incomeLabel={terms.dashboardEntries}/>
       </div>
       <div className="analytics-grid"><section className="panel analytics-panel"><div className="panel-title"><div><h2>Fluxo de caixa</h2><p>Entradas e despesas · últimos 6 meses</p></div><div className="chart-legend"><span><i className="legend-entry"/>Entradas</span><span><i className="legend-expense"/>Despesas</span></div></div><CashFlowChart data={chartData}/></section><section className="panel analytics-panel"><div className="panel-title"><div><h2>Composição das entradas</h2><p>{periodLabel(start)} · distribuição por categoria</p></div></div><EntryCompositionChart data={categoryComposition.length ? categoryComposition : [{ label: terms.freeIncome, value: 0, color: "#059669" }, { label: "Outros", value: 0, color: "#94a3b8" }]}/></section></div>
-      <div className="dashboard-grid"><section className="panel"><div className="panel-title"><div style={{ display: "flex", alignItems: "center", gap: 10 }}><ModuleIcon module="elias" variant="icon" size={28} decorative /><div><h2>Fechamento do período</h2><p>Resumo publicado pelo backend financeiro.</p></div></div><span className="pill">{presentStatus(summary?.closing_status, "Sem fechamento")}</span></div>{summary ? <div className="equation"><Row label="Saldo inicial" value={summary.opening_balance}/><Row label="+ Entradas" value={summary.entries} positive/><Row label="- Despesas" value={-summary.expenses}/><Row label="- Repasses" value={-summary.transfers}/><Row label="+ Ajustes" value={summary.adjustments} positive/><div className="total"><b>= Saldo atual</b><strong>{money(summary.closing_balance)}</strong></div></div> : <EmptyState text="Ainda não há resumo financeiro para este período."/>}</section><section className="panel"><div className="panel-title"><div><h2>Atenção necessária</h2><p>Itens identificados nos registros reais.</p></div></div><ul className="attention"><li><span className="signal amber">!</span><div><b>{missingReceipts} comprovante(s) ausente(s)</b><small>Entradas, despesas e repasses sem documento vinculado</small></div></li><li><span className="signal blue">↗</span><div><b>{pendingTransfersCount} repasse(s) enviado(s)</b><small>Aguardando confirmação do destino</small></div></li></ul></section></div>
-      <section className="panel recent-panel"><div className="panel-title"><div><h2>Últimos lançamentos</h2><p>Registros mais recentes da congregação ativa.</p></div></div>{recent.length ? recent.map((item) => <article className="movement" key={`${item.kind}-${item.id}`}><time>{movementDate(item.occurred_on ?? item.reference_period)}</time><div className="movement-copy"><b>{item.title}</b><small>{item.detail}</small></div><span className={`movement-type ${item.kind.toLowerCase()}`}>{item.kind}</span><strong className={item.amount >= 0 ? "amount-in" : "amount-out"}>{item.amount < 0 ? "−" : "+"} {money(Math.abs(item.amount))}</strong></article>) : <EmptyState text={`Nenhuma movimentação registrada em ${periodLabel(start)}`} description="Inicie o movimento financeiro da congregação lançando uma entrada ou abrindo o caixa do mês." showQuickActions={canWrite}/>}</section>
+      <div className="dashboard-grid">
+        <section className="panel closing-summary">
+          <div className="panel-title closing-summary-header">
+            <div className="panel-heading">
+              <span className="panel-heading-icon" aria-hidden="true"><Landmark size={18}/></span>
+              <div><h2>Fechamento do período</h2><p>Resumo publicado pelo backend financeiro.</p></div>
+            </div>
+            <span className="pill">{presentStatus(summary?.closing_status, "Sem fechamento")}</span>
+          </div>
+          {summary ? <div className="equation">
+            <Row label="Saldo inicial" value={summary.opening_balance}/>
+            <Row label="+ Entradas" value={summary.entries} positive/>
+            <Row label="- Despesas" value={-summary.expenses}/>
+            <Row label="- Repasses" value={-summary.transfers}/>
+            <Row label="+ Ajustes" value={summary.adjustments} positive/>
+            <div className="total"><b>= Saldo atual</b><strong>{money(summary.closing_balance)}</strong></div>
+          </div> : <EmptyState text="Ainda não há resumo financeiro para este período."/>}
+        </section>
+        <section className="panel attention-panel">
+          <div className="panel-title">
+            <div className="panel-heading">
+              <span className="panel-heading-icon attention-heading-icon" aria-hidden="true"><AlertTriangle size={18}/></span>
+              <div><h2>Atenção necessária</h2><p>Itens identificados nos registros reais.</p></div>
+            </div>
+          </div>
+          <ul className="attention">
+            <li>
+              <span className={`attention-icon ${missingReceipts ? "warning" : "clear"}`} aria-hidden="true"><ReceiptText size={17}/></span>
+              <div><b>{missingReceipts === 1 ? "1 comprovante ausente" : `${missingReceipts} comprovantes ausentes`}</b><small>{missingReceipts ? "Entradas, despesas e repasses sem documento vinculado" : "Todos os registros têm comprovante vinculado."}</small></div>
+              <span className={`attention-count ${missingReceipts ? "has-items" : ""}`}>{missingReceipts}</span>
+            </li>
+            <li>
+              <span className="attention-icon transfer" aria-hidden="true"><ArrowLeftRight size={17}/></span>
+              <div><b>{pendingTransfersCount === 1 ? "1 repasse pendente" : `${pendingTransfersCount} repasses pendentes`}</b><small>{pendingTransfersCount ? "Aguardando confirmação do destino" : "Nenhum repasse aguarda confirmação."}</small></div>
+              <span className="attention-count">{pendingTransfersCount}</span>
+            </li>
+          </ul>
+        </section>
+      </div>
+      <section className="panel recent-panel">
+        <div className="panel-title recent-panel-title"><div><h2>Últimos lançamentos</h2><p>Registros mais recentes da congregação ativa.</p></div></div>
+        {recent.length ? recent.map((item) => <article className="movement" key={`${item.kind}-${item.id}`}><time>{movementDate(item.occurred_on ?? item.reference_period)}</time><div className="movement-copy"><b>{item.title}</b><small>{item.detail}</small></div><span className={`movement-type ${item.kind.toLowerCase()}`}>{item.kind}</span><strong className={item.amount >= 0 ? "amount-in" : "amount-out"}>{item.amount < 0 ? "−" : "+"} {money(Math.abs(item.amount))}</strong></article>) : <EmptyState text={`Nenhuma movimentação registrada em ${periodLabel(start)}`} description="Inicie o movimento financeiro da congregação lançando uma entrada ou abrindo o caixa do mês." showQuickActions={canWrite}/>}
+      </section>
     </section>
   );
 }
