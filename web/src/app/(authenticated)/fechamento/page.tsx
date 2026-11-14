@@ -8,7 +8,8 @@ import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-export default async function ClosingPage() {
+export default async function ClosingPage({ searchParams }: { searchParams: Promise<{ period?: string | string[] }> }) {
+	const params = await searchParams;
 	const supabase = await createClient();
 	const { data: { user } } = await supabase.auth.getUser();
 	if (!user) redirect("/login");
@@ -18,8 +19,13 @@ export default async function ClosingPage() {
 	const activeId = (await cookies()).get("active_congregation_id")?.value;
 	const activeMembership = memberships.find((membership) => membership.congregationId === activeId) ?? memberships[0];
 	if (!activeMembership) return <div className="empty-state"><strong>Sem congregação ativa</strong><span>Seu usuário não possui uma membership disponível.</span></div>;
+	const period = typeof params.period === "string" ? params.period : "";
+	const match = /^(\d{4})-(\d{2})$/.exec(period);
+	const year = match ? Number(match[1]) : NaN;
+	const month = match ? Number(match[2]) : NaN;
+	const isValidPeriod = Number.isInteger(year) && Number.isInteger(month) && month >= 1 && month <= 12;
 	const now = new Date();
-	const referencePeriod = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString().slice(0, 10);
+	const referencePeriod = new Date(Date.UTC(isValidPeriod ? year : now.getUTCFullYear(), isValidPeriod ? month - 1 : now.getUTCMonth(), 1)).toISOString().slice(0, 10);
 	const [summaryResult, closingResult] = await Promise.all([
 		supabase.from("congregation_monthly_summary").select("opening_balance, entries, expenses, transfers, adjustments, closing_balance").eq("congregation_id", activeMembership.congregationId).eq("reference_period", referencePeriod).maybeSingle(),
 		supabase.from("monthly_closings").select("status, closed_at").eq("congregation_id", activeMembership.congregationId).eq("reference_period", referencePeriod).maybeSingle(),

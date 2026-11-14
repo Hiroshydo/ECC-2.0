@@ -1,7 +1,8 @@
 "use client";
 
-import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, WalletCards } from "lucide-react";
+import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, LockKeyhole, WalletCards } from "lucide-react";
 import { useState } from "react";
+import Link from "next/link";
 
 import { ModuleIcon } from "@/components/brand/ModuleIcon";
 
@@ -42,6 +43,7 @@ type Props = {
   localIncome: number;
   localExpenses: number;
   localTransfers: number;
+  canWrite: boolean;
   canReadConsolidated: boolean;
   incomeLabel: string;
 };
@@ -64,6 +66,7 @@ export function HierarchicalDashboard({
   localIncome,
   localExpenses,
   localTransfers,
+  canWrite,
   canReadConsolidated,
   incomeLabel,
 }: Props) {
@@ -130,7 +133,7 @@ export function HierarchicalDashboard({
         <button type="button" aria-pressed={mode === "local"} className={mode === "local" ? "is-active" : ""} onClick={showLocal}>Caixa Local</button>
         <button type="button" aria-pressed={mode === "consolidated"} className={mode === "consolidated" ? "is-active" : ""} disabled={!canReadConsolidated || pending} title={!canReadConsolidated ? "Permissão consolidada não concedida para esta unidade" : undefined} onClick={() => void showConsolidated()}>{pending ? "Carregando…" : "Visão Consolidada"}</button>
       </div>
-      {!canReadConsolidated && <span className="hierarchy-permission-hint">Visão consolidada não liberada para esta unidade.</span>}
+      {!canReadConsolidated && <span className="hierarchy-permission-hint"><LockKeyhole size={14} aria-hidden="true"/> Visão consolidada não liberada para esta unidade.</span>}
       {mode === "consolidated" && currentUnit && <nav className="hierarchy-breadcrumb" aria-label="Navegação da hierarquia">
         {breadcrumbs.map((unit, index) => <span key={unit.unit_id}>
           {index > 0 && <span aria-hidden="true">›</span>}
@@ -145,7 +148,7 @@ export function HierarchicalDashboard({
       <SummaryMetric label={incomeLabel} value={money(displayedIncome)} theme="entries" detail={mode === "local" ? "Entradas da unidade ativa" : `Receitas em ${currentUnit?.name ?? unitName}`} />
       <SummaryMetric label="Despesas" value={money(displayedExpenses)} theme="expenses" detail={mode === "local" ? "Despesas da unidade ativa" : `Despesas em ${currentUnit?.name ?? unitName}`} />
       {mode === "local"
-        ? <SummaryMetric label="Repasses" value={money(localTransfers)} theme="transfers" detail="Repasses registrados no período" />
+        ? <SummaryMetric label="Repasses" value={money(localTransfers)} theme="transfers" detail="Repasses registrados no período" actionHref={localTransfers === 0 && canWrite ? "/repasses" : undefined} actionLabel={localTransfers === 0 && canWrite ? "Registrar repasse" : undefined} />
         : <SummaryMetric label="Unidades Integradas" value={String(descendantsCount)} theme="transfers" detail={`Unidades subordinadas a ${currentUnit?.name ?? unitName}`} />}
     </div>
     {mode === "consolidated" && metrics && currentUnit && <div className="hierarchy-dashboard-grid">
@@ -174,7 +177,7 @@ export function HierarchicalDashboard({
   </>;
 }
 
-function SummaryMetric({ label, value, theme, detail }: { label: string; value: string; theme: string; detail: string }) {
+function SummaryMetric({ label, value, theme, detail, actionHref, actionLabel }: { label: string; value: string; theme: string; detail: string; actionHref?: string; actionLabel?: string }) {
   const Icon = theme === "balance" ? WalletCards : theme === "entries" ? ArrowDownToLine : theme === "expenses" ? ArrowUpFromLine : ArrowLeftRight;
 
   return <article className={`metric metric-${theme}`}>
@@ -185,8 +188,9 @@ function SummaryMetric({ label, value, theme, detail }: { label: string; value: 
       </div>
     </div>
     <div className="metric-value-row"><strong>{value}</strong></div>
-    <div className="metric-footer">
+    <div className={`metric-footer${actionHref ? " has-action" : ""}`}>
       <span className="metric-detail">{detail}</span>
+      {actionHref && actionLabel && <Link className="metric-action" href={actionHref}>{actionLabel}</Link>}
     </div>
   </article>;
 }

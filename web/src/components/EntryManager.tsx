@@ -12,13 +12,13 @@ const paymentLabel = (value: string) => ({ cash: "Dinheiro", pix: "Pix", transfe
 
 function categoryLabel(category: string, organizationType: OrganizationType) {
   const terms = getVocabulary(organizationType);
-  const normalized = category.toLocaleLowerCase("pt-BR");
-  if (["tithe", "dizimo", "dizimos"].includes(normalized)) return terms.recurringIncome;
-  if (["offering", "oferta", "ofertas"].includes(normalized)) return terms.freeIncome;
-  if (category === "campaign") return terms.campaigns;
-  if (category === "donation") return organizationType === "ong" ? terms.recurringIncome : "Doação";
-  if (category === "other") return organizationType === "ong" ? terms.freeIncome : "Outra";
-  if (category === "event") return terms.gathering;
+  const normalized = category.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[\s-]+/g, "_");
+  if (["tithe", "tithe_donation", "recurring_donation", "doacao_recorrente", "dizimo", "dizimos"].includes(normalized)) return terms.recurringIncome;
+  if (["offering", "doacao_livre", "oferta", "ofertas"].includes(normalized)) return terms.freeIncome;
+  if (["campaign", "campanha", "campanhas"].includes(normalized)) return terms.campaigns;
+  if (["donation", "doacao"].includes(normalized)) return organizationType === "ong" ? terms.recurringIncome : "Doação";
+  if (["other", "outra", "outro"].includes(normalized)) return organizationType === "ong" ? terms.freeIncome : "Outra";
+  if (["event", "evento"].includes(normalized)) return terms.gathering;
   return category;
 }
 
