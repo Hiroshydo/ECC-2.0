@@ -8,6 +8,16 @@ tags: [ecc, auditoria, trilha, enoch]
 
 # Enoch Audit
 
+<img src="../assets/branding/Modulos/2_Badges_Com_Nome_Interno/05-enoch-audit.svg" alt="Enoch Audit" width="220">
+
+| Aspecto | Detalhe |
+|---|---|
+| Status Real | **Implementado no código** |
+| Camada | Core / Auditoria |
+| Rotas | `/auditoria` |
+| Tabelas/RPCs | `audit_events` |
+| Arquivos principais | `AuditLog.tsx`, página `/auditoria`, migrations `0001`–`0004` |
+
 ## Propósito
 
 Registrar uma trilha consultável das operações críticas e preservar contexto before/after quando disponível.

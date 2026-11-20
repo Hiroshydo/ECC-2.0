@@ -8,6 +8,16 @@ tags: [ecc, relatorios, pdf, excel, sefer]
 
 # Sefer Reports
 
+<img src="../assets/branding/Modulos/2_Badges_Com_Nome_Interno/07-sefer-reports.svg" alt="Sefer Reports" width="220">
+
+| Aspecto | Detalhe |
+|---|---|
+| Status Real | **Implementado no código** |
+| Camada | Core / Relatórios |
+| Rotas | `/relatorios` |
+| Tabelas/RPCs | `congregation_monthly_summary`, `entries`, `expenses`, `headquarters_transfers`, `audit_events` |
+| Arquivos principais | `ReportSummary.tsx`, `lib/reports/data.ts`, `api/reports/route.ts` |
+
 ## Propósito
 
 Consolidar dados da unidade ativa para prestação de contas e exportação em PDF e Excel.

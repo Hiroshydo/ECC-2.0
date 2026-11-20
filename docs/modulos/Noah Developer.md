@@ -8,6 +8,16 @@ tags: [ecc, devops, observabilidade, noah]
 
 # Noah Developer / Noah Ops
 
+<img src="../assets/branding/Modulos/2_Badges_Com_Nome_Interno/10-noah-developer.svg" alt="Noah Developer" width="220">
+
+| Aspecto | Detalhe |
+|---|---|
+| Status Real | **Parcialmente implementado** |
+| Camada | Core / Observabilidade |
+| Rotas | `/noah-ops` |
+| Tabelas/RPCs | Nenhuma consulta de telemetria real |
+| Arquivos principais | página `/noah-ops`, `NoahTelemetryGrid.tsx`, `ModuleArchitectureMap.tsx` |
+
 ## Propósito
 
 Console técnica exclusiva do Dev Master para governança da plataforma e monitoramento dos módulos.

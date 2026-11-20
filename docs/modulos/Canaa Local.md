@@ -8,6 +8,16 @@ tags: [ecc, unidade, equipe, canaa, react-flow]
 
 # Canaã Local
 
+<img src="../assets/branding/Modulos/2_Badges_Com_Nome_Interno/09-canaa-local.svg" alt="Canaã Local" width="220">
+
+| Aspecto | Detalhe |
+|---|---|
+| Status Real | **Parcialmente implementado** |
+| Camada | Core / Unidade |
+| Rotas | `/canaa` |
+| Tabelas/RPCs | `congregations`, `memberships`, `khatam_licenses` |
+| Arquivos principais | `CongregationFlowMap.tsx`, `CongregationNode.tsx`, `canaa.actions.ts` |
+
 ## Propósito
 
 Gerenciar a unidade ativa: hierarquia visível, membros da unidade e cotas Khatam.

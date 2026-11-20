@@ -8,6 +8,16 @@ tags: [ecc, plugin, seguranca, pix, worm, gideon]
 
 # Gideon Security
 
+<img src="../assets/branding/Modulos/2_Badges_Com_Nome_Interno/02-gideon-security.svg" alt="Gideon Security" width="220">
+
+| Aspecto | Detalhe |
+|---|---|
+| Status Real | **Planejado / não integrado** |
+| Camada | Plug-in |
+| Rotas | Nenhuma |
+| Tabelas/RPCs | Nenhuma implementação ativa |
+| Arquivos principais | `src/modules/plugins/gideon/README.md` |
+
 ## Propósito
 
 Plug-in planejado para defesa em profundidade, proteção da borda, validação bancária Pix e preservação imutável de documentos ou fechamentos.

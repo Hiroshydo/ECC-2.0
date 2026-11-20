@@ -12,6 +12,16 @@ tags:
 
 # Relatório Técnico Mestre — Ecclesia Finance ECC 2.0
 
+<img src="assets/branding/ecclesia-finance-logo.png" alt="Ecclesia Finance" width="320">
+
+| Aspecto | Estado real |
+|---|---|
+| Status geral | Parcialmente implementado |
+| Arquitetura | Monólito Modular Next.js + Supabase |
+| Páginas protegidas | Dashboard, entradas, despesas, repasses, caixa, fechamento, ajustes, estornos, auditoria, relatórios, Canaã, Admin e Noah Ops |
+| Segurança | Auth SSR, memberships, RBAC/overrides e RLS PostgreSQL |
+| Documentação visual | [[01 - Arquitetura Viva ECC.canvas|Canvas Vivo]] |
+
 Este documento é o índice técnico oficial do repositório. O estado deve ser conferido contra o código e as migrations.
 
 ## Fonte única
@@ -37,6 +47,28 @@ Este documento é o índice técnico oficial do repositório. O estado deve ser 
 - React Flow.
 - jsPDF e ExcelJS.
 - Vercel como destino previsto.
+
+## Por que Monólito Modular
+
+O ECC 2.0 usa um único deploy Next.js e um único banco lógico, mas separa responsabilidades por domínio. Microsserviços seriam prematuros neste estágio: introduziriam rede, consistência distribuída, observabilidade distribuída e deploy separados sem eliminar a necessidade de transações financeiras compartilhadas.
+
+## Passo a passo de uma operação
+
+1. O navegador chama um Manager.
+2. `proxy.ts` atualiza/verifica a sessão.
+3. O layout autenticado carrega memberships e unidade ativa.
+4. `can(...)` aplica papel e override.
+5. API Route/Action valida autenticação e chama uma RPC.
+6. O PostgreSQL valida membership, período, papel e RLS.
+7. [[Elias Temp]] bloqueia competência fechada.
+8. [[Enoch Audit]] registra o evento.
+9. [[Sefer Reports]] agrega dados e exporta PDF/Excel.
+
+## Multi-Tenant Hierárquico
+
+[[Hiram Architecture]] usa `congregations.parent_id`, `organization_level`, `organization_type`, memberships e overrides. Os níveis são `national_hq`, `state_hq`, `sub_hq` e `local_congregation`. O vocabulário aplica termos reais de igreja ou ONG.
+
+Na consolidação, o RPC recursivo soma apenas o alcance autorizado e exclui lançamentos marcados como `is_internal_transfer`, impedindo contagem duplicada de repasses internos.
 
 ## Arquitetura
 

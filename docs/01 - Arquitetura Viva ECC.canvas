@@ -1,0 +1,166 @@
+{
+  "nodes": [
+    {
+      "id": "group-governance",
+      "type": "group",
+      "x": -760,
+      "y": -560,
+      "width": 1480,
+      "height": 430,
+      "label": "1. Entrada e Governança",
+      "color": "2"
+    },
+    {
+      "id": "khatam",
+      "type": "file",
+      "file": "assets/branding/Modulos/2_Badges_Com_Nome_Interno/01-khatam-authenticate.svg",
+      "x": -690,
+      "y": -470,
+      "width": 300,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "canaa",
+      "type": "file",
+      "file": "assets/branding/Modulos/2_Badges_Com_Nome_Interno/08-canaa-access.svg",
+      "x": -330,
+      "y": -470,
+      "width": 300,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "hiram",
+      "type": "file",
+      "file": "assets/branding/Modulos/2_Badges_Com_Nome_Interno/04-hiram-architecture.svg",
+      "x": 30,
+      "y": -470,
+      "width": 300,
+      "height": 220,
+      "color": "5"
+    },
+    {
+      "id": "group-core",
+      "type": "group",
+      "x": -760,
+      "y": -90,
+      "width": 1480,
+      "height": 390,
+      "label": "2. Núcleo Transacional ECC Core",
+      "color": "4"
+    },
+    {
+      "id": "ecclesia-logo",
+      "type": "file",
+      "file": "assets/branding/ecclesia-finance-logo.png",
+      "x": -690,
+      "y": 0,
+      "width": 330,
+      "height": 200,
+      "color": "4"
+    },
+    {
+      "id": "core-motors",
+      "type": "text",
+      "text": "# Motores financeiros\n\n- `/entradas`\n- `/despesas`\n- `/repasses`\n- `/caixa`\n- `/ajustes`\n- `/estornos`\n\nRPCs PostgreSQL, RPC por comando, RLS e idempotência.",
+      "x": -290,
+      "y": -20,
+      "width": 490,
+      "height": 250,
+      "color": "4"
+    },
+    {
+      "id": "group-base",
+      "type": "group",
+      "x": -760,
+      "y": 340,
+      "width": 1480,
+      "height": 390,
+      "label": "3. Fechamento, Auditoria e Consolidação",
+      "color": "5"
+    },
+    {
+      "id": "elias",
+      "type": "file",
+      "file": "assets/branding/Modulos/2_Badges_Com_Nome_Interno/06-elias-temp.svg",
+      "x": -690,
+      "y": 430,
+      "width": 300,
+      "height": 220,
+      "color": "2"
+    },
+    {
+      "id": "enoch",
+      "type": "file",
+      "file": "assets/branding/Modulos/2_Badges_Com_Nome_Interno/05-enoch-audit.svg",
+      "x": -330,
+      "y": 430,
+      "width": 300,
+      "height": 220,
+      "color": "5"
+    },
+    {
+      "id": "sefer",
+      "type": "file",
+      "file": "assets/branding/Modulos/2_Badges_Com_Nome_Interno/07-sefer-reports.svg",
+      "x": 30,
+      "y": 430,
+      "width": 300,
+      "height": 220,
+      "color": "5"
+    },
+    {
+      "id": "group-observability",
+      "type": "group",
+      "x": 790,
+      "y": -560,
+      "width": 430,
+      "height": 1290,
+      "label": "4. Observabilidade e Plug-ins",
+      "color": "6"
+    },
+    {
+      "id": "noah",
+      "type": "file",
+      "file": "assets/branding/Modulos/2_Badges_Com_Nome_Interno/10-noah-developer.svg",
+      "x": 840,
+      "y": -470,
+      "width": 300,
+      "height": 220,
+      "color": "6"
+    },
+    {
+      "id": "gideon",
+      "type": "file",
+      "file": "assets/branding/Modulos/2_Badges_Com_Nome_Interno/02-gideon-security.svg",
+      "x": 840,
+      "y": -120,
+      "width": 300,
+      "height": 220,
+      "color": "6"
+    },
+    {
+      "id": "shofeet",
+      "type": "file",
+      "file": "assets/branding/Modulos/2_Badges_Com_Nome_Interno/03-shofeet-note.svg",
+      "x": 840,
+      "y": 230,
+      "width": 300,
+      "height": 220,
+      "color": "6"
+    }
+  ],
+  "edges": [
+    {"id": "khatam-canaa","fromNode":"khatam","fromSide":"right","toNode":"canaa","toSide":"left","label":"Licença e vagas"},
+    {"id":"canaa-hiram","fromNode":"canaa","fromSide":"right","toNode":"hiram","toSide":"left","label":"Unidades e equipe"},
+    {"id":"hiram-core","fromNode":"hiram","fromSide":"bottom","toNode":"ecclesia-logo","toSide":"top","label":"Contexto hierárquico"},
+    {"id":"ecclesia-elias","fromNode":"ecclesia-logo","fromSide":"bottom","toNode":"elias","toSide":"top","label":"Competência mensal"},
+    {"id":"elias-enoch","fromNode":"elias","fromSide":"right","toNode":"enoch","toSide":"left","label":"Eventos fechados"},
+    {"id":"enoch-sefer","fromNode":"enoch","fromSide":"right","toNode":"sefer","toSide":"left","label":"Prestação auditada"},
+    {"id":"core-gideon","fromNode":"ecclesia-logo","fromSide":"right","toNode":"gideon","toSide":"left","label":"Planejado: borda/Pix/WORM"},
+    {"id":"core-shofeet","fromNode":"core-motors","fromSide":"right","toNode":"shofeet","toSide":"left","label":"Adiado: fiscal/SPED"},
+    {"id":"noah-governance","fromNode":"noah","fromSide":"left","toNode":"canaa","toSide":"right","label":"Governança Dev Master"},
+    {"id":"sefer-noah","fromNode":"sefer","fromSide":"right","toNode":"noah","toSide":"bottom","label":"Telemetria futura"}
+  ]
+}

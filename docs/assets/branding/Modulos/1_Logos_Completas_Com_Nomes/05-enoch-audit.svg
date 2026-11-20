@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 820" width="100%" height="100%">
+  <defs>
+    <!-- Main Squircle Background Gradient -->
+    <linearGradient id="bgGrad_enoch" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#14B8A6" />
+      <stop offset="35%" stop-color="#0D9488" />
+      <stop offset="70%" stop-color="#065F46" />
+      <stop offset="100%" stop-color="#042F2E" />
+    </linearGradient>
+
+    <!-- Diagonal Glossy Facet Top-Left -->
+    <linearGradient id="glossTL_enoch" x1="0%" y1="0%" x2="70%" y2="70%">
+      <stop offset="0%" stop-color="#5EEAD4" stop-opacity="0.45" />
+      <stop offset="50%" stop-color="#10B981" stop-opacity="0.15" />
+      <stop offset="100%" stop-color="#064E3B" stop-opacity="0.0" />
+    </linearGradient>
+
+    <!-- Diagonal Deep Shadow Bottom-Right -->
+    <linearGradient id="SombraBR_enoch" x1="30%" y1="30%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#042F2E" stop-opacity="0.0" />
+      <stop offset="100%" stop-color="#021716" stop-opacity="0.55" />
+    </linearGradient>
+
+    <!-- Inner Bevel Border Gradient -->
+    <linearGradient id="rimGrad_enoch" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#99F6E4" stop-opacity="0.7" />
+      <stop offset="50%" stop-color="#14B8A6" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#022C22" stop-opacity="0.8" />
+    </linearGradient>
+
+    <!-- Accent Mint-Emerald Gradient for Icon Highlights -->
+    <linearGradient id="mintGrad_enoch" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#99F6E4" />
+      <stop offset="50%" stop-color="#2DD4BF" />
+      <stop offset="100%" stop-color="#0D9488" />
+    </linearGradient>
+
+    <!-- Dark Emerald Core Fill -->
+    <linearGradient id="darkCore_enoch" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F766E" />
+      <stop offset="100%" stop-color="#042F2E" />
+    </linearGradient>
+
+    <!-- Crisp Metallic White Gradient -->
+    <linearGradient id="whiteGrad_enoch" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#E2E8F0" />
+    </linearGradient>
+
+    <!-- Soft Drop Shadow for Squircle Badge -->
+    <filter id="badgeShadow_enoch" x="-15%" y="-10%" width="130%" height="135%">
+      <feDropShadow dx="0" dy="14" stdDeviation="16" flood-color="#042F2E" flood-opacity="0.28" />
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0D9488" flood-opacity="0.15" />
+    </filter>
+
+    <!-- Crisp Inner Icon Drop Shadow -->
+    <filter id="iconShadow_enoch" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#021716" flood-opacity="0.45" />
+    </filter>
+
+    <!-- Clip Path for Squircle Facets -->
+    <clipPath id="squircleClip_enoch">
+      <rect x="150" y="50" width="500" height="500" rx="115" />
+    </clipPath>
+  </defs>
+  <!-- Squircle Base with 3D Facets & Gloss -->
+  <g filter="url(#badgeShadow_enoch)">
+    <rect x="150" y="50" width="500" height="500" rx="115" fill="url(#bgGrad_enoch)" />
+  </g>
+  <g clip-path="url(#squircleClip_enoch)">
+    <!-- Top-Left Sweeping Light Facet (Ecclesia Signature Style) -->
+    <path d="M 120 50 L 520 50 C 440 220 280 380 120 460 Z" fill="url(#glossTL_enoch)" />
+    <!-- Secondary Geometric Facet -->
+    <path d="M 150 50 L 650 50 L 650 220 C 480 240 310 350 150 550 Z" fill="#2DD4BF" fill-opacity="0.08" />
+    <!-- Bottom-Right Deep Contrast Curve -->
+    <path d="M 650 180 C 520 340 380 460 180 550 L 650 550 Z" fill="url(#SombraBR_enoch)" />
+  </g>
+  <!-- Outer & Inner Precision Bevel Borders -->
+  <rect x="153" y="53" width="494" height="494" rx="112" fill="none" stroke="url(#rimGrad_enoch)" stroke-width="5" />
+  <rect x="166" y="66" width="468" height="468" rx="102" fill="none" stroke="#99F6E4" stroke-width="1.5" stroke-opacity="0.25" />
+  <g transform="translate(400, 245)" filter="url(#iconShadow_enoch)">
+    <!-- Outer All-Seeing Audit Eye (Almond Shape) -->
+    <path d="M -165 0 C -105 -105 45 -105 125 -15 C 65 85 -105 95 -165 0 Z" fill="url(#darkCore_enoch)" stroke="#FFFFFF" stroke-width="18" stroke-linejoin="round" />
+
+    <!-- Eye Iris & Specular Pupil -->
+    <circle cx="-25" cy="-2" r="56" fill="url(#mintGrad_enoch)" stroke="#FFFFFF" stroke-width="10" />
+    <circle cx="-25" cy="-2" r="26" fill="#042F2E" />
+    <!-- Bright Specular Reflection Cutout -->
+    <circle cx="-6" cy="-18" r="14" fill="#FFFFFF" />
+    <circle cx="-40" cy="12" r="6" fill="#99F6E4" fill-opacity="0.8" />
+
+    <!-- Upper Verification Checkmark Sweeping Out of Eye -->
+    <path d="M 22 -52 L 56 -18 L 132 -95" fill="none" stroke="url(#mintGrad_enoch)" stroke-width="22" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M 22 -52 L 56 -18 L 132 -95" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-opacity="0.5" stroke-linecap="round" stroke-linejoin="round" />
+
+    <!-- Bottom-Right Immutable Audit Trail Document (O Escriba Incorruptível) -->
+    <g transform="translate(88, 68)">
+      <!-- Document Scroll Body -->
+      <rect x="-42" y="-55" width="84" height="108" rx="10" fill="url(#darkCore_enoch)" stroke="#99F6E4" stroke-width="8" />
+      <!-- Curled Bottom Edge -->
+      <path d="M -42 42 C -42 56 -30 64 -15 64 L 48 64 C 58 64 65 56 65 46 L 42 46" fill="#2DD4BF" stroke="#99F6E4" stroke-width="6" stroke-linejoin="round" />
+      <!-- Log Lines Inside Document -->
+      <line x1="-22" y1="-32" x2="22" y2="-32" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" />
+      <line x1="-22" y1="-14" x2="18" y2="-14" stroke="#99F6E4" stroke-width="6" stroke-linecap="round" />
+      <line x1="-22" y1="4" x2="8" y2="4" stroke="#99F6E4" stroke-width="6" stroke-linecap="round" />
+      <!-- Mini Audit Checkmark Over Document -->
+      <path d="M -8 18 L 10 35 L 58 -15" fill="none" stroke="#2DD4BF" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" />
+    </g>
+  </g>
+  <!-- Official Module Typography -->
+  <g>
+    <text x="400" y="645" text-anchor="middle" font-family="'Montserrat', 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="64" font-weight="800" fill="#0B3B35" letter-spacing="3">ENOCH</text>
+    <text x="400" y="693" text-anchor="middle" font-family="'Montserrat', 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="34" font-weight="600" fill="#115E59" letter-spacing="7">AUDIT</text>
+    <line x1="220" y1="721" x2="580" y2="721" stroke="#0D9488" stroke-width="2" stroke-opacity="0.4" />
+    <text x="400" y="751" text-anchor="middle" font-family="'Montserrat', 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="18" font-weight="600" fill="#0F766E" letter-spacing="4">REGISTRADOR IMUTÁVEL DE TRILHA</text>
+  </g>
+</svg>

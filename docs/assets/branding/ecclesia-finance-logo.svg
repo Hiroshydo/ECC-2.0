@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" role="img" aria-labelledby="title desc">
+  <title id="title">Ecclesia Finance</title>
+  <desc id="desc">Logo Ecclesia Finance with green rounded square and stylized letter e.</desc>
+
+  <defs>
+    <linearGradient id="iconGradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#18A887"/>
+      <stop offset="100%" stop-color="#0D6659"/>
+    </linearGradient>
+    <clipPath id="iconClip">
+      <rect x="35" y="35" width="290" height="290" rx="58"/>
+    </clipPath>
+  </defs>
+
+  <!-- Icon -->
+  <rect x="35" y="35" width="290" height="290" rx="58" fill="url(#iconGradient)"/>
+  <g clip-path="url(#iconClip)">
+    <path d="M-30 250 C95 185 170 70 355 20 L355 125 C225 150 130 225 -30 315 Z"
+          fill="#20B995" opacity="0.58"/>
+    <path d="M40 335 C170 260 235 175 350 145 L350 345 L40 345 Z"
+          fill="#07584F" opacity="0.32"/>
+  </g>
+
+  <!-- Stylized e -->
+  <path d="M110 184
+           C110 125 151 91 202 91
+           C255 91 288 126 288 180
+           L288 199
+           L153 199
+           C158 225 177 238 205 238
+           C224 238 241 231 255 219
+           L280 244
+           C260 266 234 278 202 278
+           C145 278 110 242 110 184 Z
+           M153 171
+           L247 171
+           C243 147 228 134 204 134
+           C180 134 160 147 153 171 Z"
+        fill="#FFFFFF" fill-rule="evenodd"/>
+
+  <!-- Brand name -->
+  <text x="365" y="185"
+        font-family="Inter, Manrope, Arial, sans-serif"
+        font-size="112"
+        font-weight="700"
+        letter-spacing="-5"
+        fill="#063D39">ecclesia</text>
+
+  <!-- Finance -->
+  <text x="520" y="263"
+        font-family="Inter, Manrope, Arial, sans-serif"
+        font-size="38"
+        font-weight="700"
+        letter-spacing="18"
+        fill="#10947E">FINANCE</text>
+
+  <!-- Decorative lines -->
+  <rect x="365" y="243" width="120" height="4" rx="2" fill="#10947E"/>
+  <rect x="960" y="243" width="120" height="4" rx="2" fill="#10947E"/>
+</svg>

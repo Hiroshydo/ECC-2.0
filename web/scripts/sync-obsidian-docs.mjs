@@ -9,6 +9,27 @@ const repoDir = path.resolve(webDir, "..");
 const routesDir = path.join(webDir, "src", "app", "(authenticated)");
 const migrationsDir = path.join(webDir, "supabase", "migrations");
 const modulesDir = path.join(webDir, "src", "modules");
+const brandingDir = path.join(webDir, "public", "branding");
+const docsAssetsDir = path.join(repoDir, "docs", "assets", "branding");
+
+function copyDirectory(source, target) {
+  if (!fs.existsSync(source)) return 0;
+  fs.mkdirSync(target, { recursive: true });
+  let copied = 0;
+  for (const entry of fs.readdirSync(source, { withFileTypes: true })) {
+    const sourcePath = path.join(source, entry.name);
+    const targetPath = path.join(target, entry.name);
+    if (entry.isDirectory()) {
+      copied += copyDirectory(sourcePath, targetPath);
+    } else if (entry.isFile()) {
+      fs.copyFileSync(sourcePath, targetPath);
+      copied += 1;
+    }
+  }
+  return copied;
+}
+
+const copiedBrandingFiles = copyDirectory(brandingDir, docsAssetsDir);
 
 function walk(directory, extension) {
   if (!fs.existsSync(directory)) return [];
@@ -74,4 +95,4 @@ for (const target of [
   }
 }
 
-console.log(`Sincronização Obsidian concluída: ${routeFiles.length} rotas, ${migrations.length} migrations, ${moduleFiles.length} README de módulos.`);
+console.log(`Sincronização Obsidian concluída: ${routeFiles.length} rotas, ${migrations.length} migrations, ${moduleFiles.length} README de módulos, ${copiedBrandingFiles} arquivos de branding.`);

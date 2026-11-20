@@ -39,6 +39,11 @@ O sistema foi modelado como um **ERP financeiro hierárquico e multi-tenant**:
 - [[Gideon Security]]
 - [[Shofeet Note]]
 
+## Visualização técnica
+
+- [[docs/01 - Arquitetura Viva ECC.canvas|Arquitetura Viva ECC]]
+- [[docs/00 - Visao Geral ECC|Visão Geral ECC]]
+
 ## Arquitetura em resumo
 
 ```mermaid

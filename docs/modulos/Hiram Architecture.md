@@ -8,6 +8,16 @@ tags: [ecc, hierarquia, multitenant, rls, hiram]
 
 # Hiram Architecture
 
+<img src="../assets/branding/Modulos/2_Badges_Com_Nome_Interno/04-hiram-architecture.svg" alt="Hiram Architecture" width="220">
+
+| Aspecto | Detalhe |
+|---|---|
+| Status Real | **Implementado no código** |
+| Camada | Core |
+| Rotas | `/`, `/canaa`, `/admin` |
+| Tabelas/RPCs | `congregations`, `memberships`, `membership_permission_overrides`, `get_hierarchical_financial_metrics` |
+| Arquivos principais | migrations `0008`–`0012`, `hierarchical-metrics/route.ts`, `HierarchicalDashboard.tsx` |
+
 ## Propósito e identidade
 
 Estrutura a hierarquia organizacional, o contexto multi-tenant e a consolidação financeira. O nome Hiram representa o módulo de arquitetura da rede.

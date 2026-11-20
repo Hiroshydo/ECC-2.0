@@ -8,6 +8,16 @@ tags: [ecc, licencas, operadores, khatam]
 
 # Khatam Authenticate
 
+<img src="../assets/branding/Modulos/2_Badges_Com_Nome_Interno/01-khatam-authenticate.svg" alt="Khatam Authenticate" width="220">
+
+| Aspecto | Detalhe |
+|---|---|
+| Status Real | **Parcialmente implementado** |
+| Camada | Core / Licenciamento |
+| Rotas | `/canaa`, convite de operadores |
+| Tabelas/RPCs | `khatam_licenses`, `memberships` |
+| Arquivos principais | `license.service.ts`, `license.shared.ts`, `KhatamQuotaBar.tsx`, migration `0013` |
+
 ## Propósito
 
 Controlar licenças comerciais da unidade por número de vagas e data de validade.

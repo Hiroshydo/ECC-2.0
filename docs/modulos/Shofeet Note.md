@@ -8,6 +8,16 @@ tags: [ecc, plugin, fiscal, nota, sped, itg2002, shofeet]
 
 # Shofeet Note
 
+<img src="../assets/branding/Modulos/2_Badges_Com_Nome_Interno/03-shofeet-note.svg" alt="Shofeet Note" width="220">
+
+| Aspecto | Detalhe |
+|---|---|
+| Status Real | **Planejado / adiado** |
+| Camada | Plug-in fiscal |
+| Rotas | Nenhuma |
+| Tabelas/RPCs | Nenhuma implementação ativa |
+| Arquivos principais | `src/modules/plugins/shofeet/README.md` |
+
 ## Propósito
 
 Plug-in fiscal planejado para integrar notas fiscais, XML, certificados A1 e padrões contábeis sem acoplar essas regras ao núcleo financeiro.

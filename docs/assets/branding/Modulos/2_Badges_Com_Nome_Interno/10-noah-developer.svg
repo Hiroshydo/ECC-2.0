@@ -1,0 +1,142 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="110 20 580 580" width="100%" height="100%">
+  <defs>
+    <!-- Main Squircle Background Gradient -->
+    <linearGradient id="bgGrad_noah" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#14B8A6" />
+      <stop offset="35%" stop-color="#0D9488" />
+      <stop offset="70%" stop-color="#065F46" />
+      <stop offset="100%" stop-color="#042F2E" />
+    </linearGradient>
+
+    <!-- Diagonal Glossy Facet Top-Left -->
+    <linearGradient id="glossTL_noah" x1="0%" y1="0%" x2="70%" y2="70%">
+      <stop offset="0%" stop-color="#5EEAD4" stop-opacity="0.45" />
+      <stop offset="50%" stop-color="#10B981" stop-opacity="0.15" />
+      <stop offset="100%" stop-color="#064E3B" stop-opacity="0.0" />
+    </linearGradient>
+
+    <!-- Diagonal Deep Shadow Bottom-Right -->
+    <linearGradient id="SombraBR_noah" x1="30%" y1="30%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#042F2E" stop-opacity="0.0" />
+      <stop offset="100%" stop-color="#021716" stop-opacity="0.55" />
+    </linearGradient>
+
+    <!-- Inner Bevel Border Gradient -->
+    <linearGradient id="rimGrad_noah" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#99F6E4" stop-opacity="0.7" />
+      <stop offset="50%" stop-color="#14B8A6" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#022C22" stop-opacity="0.8" />
+    </linearGradient>
+
+    <!-- Accent Mint-Emerald Gradient for Icon Highlights -->
+    <linearGradient id="mintGrad_noah" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#99F6E4" />
+      <stop offset="50%" stop-color="#2DD4BF" />
+      <stop offset="100%" stop-color="#0D9488" />
+    </linearGradient>
+
+    <!-- Dark Emerald Core Fill -->
+    <linearGradient id="darkCore_noah" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F766E" />
+      <stop offset="100%" stop-color="#042F2E" />
+    </linearGradient>
+
+    <!-- Crisp Metallic White Gradient -->
+    <linearGradient id="whiteGrad_noah" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#E2E8F0" />
+    </linearGradient>
+
+    <!-- Soft Drop Shadow for Squircle Badge -->
+    <filter id="badgeShadow_noah" x="-15%" y="-10%" width="130%" height="135%">
+      <feDropShadow dx="0" dy="14" stdDeviation="16" flood-color="#042F2E" flood-opacity="0.28" />
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0D9488" flood-opacity="0.15" />
+    </filter>
+
+    <!-- Crisp Inner Icon Drop Shadow -->
+    <filter id="iconShadow_noah" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#021716" flood-opacity="0.45" />
+    </filter>
+
+    <!-- Clip Path for Squircle Facets -->
+    <clipPath id="squircleClip_noah">
+      <rect x="150" y="50" width="500" height="500" rx="115" />
+    </clipPath>
+  </defs>
+  <defs>
+    <filter id="iconShadow_internal" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#021716" flood-opacity="0.5" />
+    </filter>
+  </defs>
+  <!-- Squircle Base with 3D Facets & Gloss -->
+  <g filter="url(#badgeShadow_noah)">
+    <rect x="150" y="50" width="500" height="500" rx="115" fill="url(#bgGrad_noah)" />
+  </g>
+  <g clip-path="url(#squircleClip_noah)">
+    <!-- Top-Left Sweeping Light Facet (Ecclesia Signature Style) -->
+    <path d="M 120 50 L 520 50 C 440 220 280 380 120 460 Z" fill="url(#glossTL_noah)" />
+    <!-- Secondary Geometric Facet -->
+    <path d="M 150 50 L 650 50 L 650 220 C 480 240 310 350 150 550 Z" fill="#2DD4BF" fill-opacity="0.08" />
+    <!-- Bottom-Right Deep Contrast Curve -->
+    <path d="M 650 180 C 520 340 380 460 180 550 L 650 550 Z" fill="url(#SombraBR_noah)" />
+  </g>
+  <!-- Outer & Inner Precision Bevel Borders -->
+  <rect x="153" y="53" width="494" height="494" rx="112" fill="none" stroke="url(#rimGrad_noah)" stroke-width="5" />
+  <rect x="166" y="66" width="468" height="468" rx="102" fill="none" stroke="#99F6E4" stroke-width="1.5" stroke-opacity="0.25" />
+  <g transform="translate(400, 300) translate(0, -10) scale(0.92) translate(-400, -300)">
+  <g transform="translate(400, 240)" filter="url(#iconShadow_noah)">
+    <!-- Cloud Resilience Backdrop Arcs -->
+    <path d="M -125 18 C -152 -2 -145 -48 -110 -58 C -105 -95 -68 -108 -42 -92 C -25 -135 35 -135 55 -92 C 88 -102 122 -75 112 -38 C 145 -22 145 20 118 32" fill="url(#darkCore_noah)" fill-opacity="0.55" stroke="#FFFFFF" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" />
+
+    <!-- Telemetry Nodes Inside Cloud -->
+    <line x1="2" y1="-98" x2="2" y2="-65" stroke="#99F6E4" stroke-width="6" />
+    <circle cx="2" cy="-102" r="8" fill="#042F2E" stroke="#99F6E4" stroke-width="5" />
+    <line x1="-65" y1="-65" x2="-65" y2="-35" stroke="#99F6E4" stroke-width="5" />
+    <circle cx="-65" cy="-70" r="7" fill="#042F2E" stroke="#99F6E4" stroke-width="4" />
+
+    <!-- Data Center / SRE Server Towers (3 Columns) -->
+    <!-- Left Server Rack -->
+    <rect x="-82" y="-35" width="44" height="72" rx="4" fill="url(#darkCore_noah)" stroke="#99F6E4" stroke-width="6" />
+    <line x1="-72" y1="-18" x2="-48" y2="-18" stroke="#FFFFFF" stroke-width="4" stroke-dasharray="4,4" />
+    <line x1="-72" y1="-2" x2="-48" y2="-2" stroke="#FFFFFF" stroke-width="4" stroke-dasharray="4,4" />
+    <line x1="-72" y1="14" x2="-48" y2="14" stroke="#FFFFFF" stroke-width="4" stroke-dasharray="4,4" />
+
+    <!-- Right Server Rack -->
+    <rect x="38" y="-35" width="44" height="72" rx="4" fill="url(#darkCore_noah)" stroke="#99F6E4" stroke-width="6" />
+    <line x1="48" y1="-18" x2="72" y2="-18" stroke="#FFFFFF" stroke-width="4" stroke-dasharray="4,4" />
+    <line x1="48" y1="-2" x2="72" y2="-2" stroke="#FFFFFF" stroke-width="4" stroke-dasharray="4,4" />
+    <line x1="48" y1="14" x2="72" y2="14" stroke="#FFFFFF" stroke-width="4" stroke-dasharray="4,4" />
+
+    <!-- Center Mainframe Server Tower -->
+    <rect x="-38" y="-65" width="76" height="102" rx="6" fill="url(#mintGrad_noah)" fill-opacity="0.35" stroke="#FFFFFF" stroke-width="8" />
+    <rect x="-26" y="-48" width="22" height="10" rx="2" fill="#99F6E4" />
+    <rect x="4" y="-48" width="22" height="10" rx="2" fill="#99F6E4" />
+    <!-- Peace Dove Icon Inside Center Tower (Resilience & Disaster Recovery) -->
+    <path d="M -18 2 C -8 2 -2 -8 8 -14 C 6 -2 12 4 22 -2 C 16 14 2 22 -14 18 C -20 16 -22 8 -18 2 Z" fill="#FFFFFF" />
+    <path d="M -8 -2 C -14 -12 -22 -14 -26 -8 C -20 -2 -14 0 -8 -2 Z" fill="#99F6E4" />
+
+    <!-- High-Availability / Uptime Sweeping Arrow (Top Right) -->
+    <path d="M 38 -8 L 118 -98" fill="none" stroke="url(#mintGrad_noah)" stroke-width="18" stroke-linecap="round" />
+    <path d="M 38 -8 L 118 -98" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" />
+    <polygon points="140,-122 92,-106 126,-72" fill="#99F6E4" stroke="#FFFFFF" stroke-width="4" stroke-linejoin="round" />
+
+    <!-- Noah's Ark Hull (A Arca Tecnológica) -->
+    <g transform="translate(0, 35)">
+      <!-- Ark Hull Outer Shape -->
+      <path d="M -135 0 L 135 0 C 125 65 78 102 0 102 C -78 102 -125 65 -135 0 Z" fill="url(#darkCore_noah)" stroke="#FFFFFF" stroke-width="10" stroke-linejoin="round" />
+      <!-- Ribbed Hull Planks -->
+      <path d="M -128 20 C -45 42 45 42 128 20" fill="none" stroke="#99F6E4" stroke-width="6" />
+      <path d="M -116 42 C -40 62 40 62 116 42" fill="none" stroke="#99F6E4" stroke-width="6" />
+      <path d="M -98 64 C -35 82 35 82 98 64" fill="none" stroke="#99F6E4" stroke-width="6" />
+      <path d="M -72 84 C -25 94 25 94 72 84" fill="none" stroke="#99F6E4" stroke-width="5" />
+      <!-- Base Keel Line -->
+      <line x1="-108" y1="112" x2="108" y2="112" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" />
+    </g>
+  </g>
+  </g>
+  <!-- Internal Badge Typography -->
+  <g filter="url(#iconShadow_internal)">
+    <text x="400" y="472" text-anchor="middle" font-family="'Montserrat', 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="44" font-weight="800" fill="#FFFFFF" letter-spacing="2.5">NOAH</text>
+    <text x="400" y="510" text-anchor="middle" font-family="'Montserrat', 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="24" font-weight="600" fill="#99F6E4" letter-spacing="5.5">DEVELOPER</text>
+  </g>
+</svg>

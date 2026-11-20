@@ -8,6 +8,16 @@ tags: [ecc, fechamento, competencia, elias]
 
 # Elias Temp
 
+<img src="../assets/branding/Modulos/2_Badges_Com_Nome_Interno/06-elias-temp.svg" alt="Elias Temp" width="220">
+
+| Aspecto | Detalhe |
+|---|---|
+| Status Real | **Implementado no código** |
+| Camada | Core / Temporal |
+| Rotas | `/fechamento` |
+| Tabelas/RPCs | `monthly_closings`, `period_reopening_requests`, `congregation_monthly_summary`, `close_monthly_period` |
+| Arquivos principais | `ClosingManager.tsx`, `api/closing/route.ts`, migrations `0002`–`0004` |
+
 ## Propósito
 
 Controlar o fechamento mensal, consolidar o saldo da competência e impedir alterações retroativas diretamente no período fechado.

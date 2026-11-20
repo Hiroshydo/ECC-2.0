@@ -12,6 +12,18 @@ tags:
 
 # Visão Geral — Ecclesia Finance ECC 2.0
 
+<img src="assets/branding/ecclesia-finance-logo.png" alt="Ecclesia Finance ECC 2.0" width="320">
+
+| Aspecto | Estado real |
+|---|---|
+| Status geral | **Parcialmente implementado** |
+| Camada | Core financeiro, arquitetural e módulos planejados |
+| Arquitetura | Monólito Modular Next.js + Supabase |
+| Banco | PostgreSQL, RLS e RPCs |
+| Rotas principais | `/`, `/entradas`, `/despesas`, `/repasses`, `/caixa`, `/fechamento`, `/ajustes`, `/estornos`, `/auditoria`, `/relatorios`, `/canaa`, `/admin`, `/noah-ops` |
+
+> Abrir o mapa visual: [[01 - Arquitetura Viva ECC.canvas|Arquitetura Viva ECC]]
+
 ## Identidade do produto
 
 O ECC 2.0 é um ERP financeiro multi-tenant e hierárquico voltado à gestão financeira de **igrejas** e **ONGs/associações**. A aplicação usa Next.js 16 App Router, React 19, TypeScript, Tailwind CSS e Supabase/PostgreSQL.
@@ -19,6 +31,35 @@ O ECC 2.0 é um ERP financeiro multi-tenant e hierárquico voltado à gestão fi
 A configuração organizacional aceita `church` ou `ong` e altera os termos apresentados pela tela. A implementação está em [[Hiram Architecture]] e [vocabulary.ts](../web/src/domain/vocabulary.ts).
 
 ## Monólito Modular
+
+O ECC 2.0 é um **monólito modular**: uma única aplicação Next.js é implantada e compartilha autenticação, sessão, componentes, build e banco; internamente, o domínio é separado em módulos reconhecíveis. Essa escolha reduz latência entre operações, evita a coordenação distribuída entre microsserviços e simplifica transações PostgreSQL/RLS neste estágio do produto.
+
+A separação não é apenas visual: cada módulo possui responsabilidade, identidade, documentos e, quando aplicável, migrations/RPCs próprias. [[Gideon Security]] e [[Shofeet Note]] foram isolados como plug-ins futuros para que regras fiscais ou de segurança externa não contaminem o núcleo financeiro.
+
+```mermaid
+flowchart LR
+    K["Khatam\nLicença / vagas"] --> C["Canaã\nUnidades / equipe"]
+    C --> H["Hiram\nHierarquia / RLS"]
+    H --> E["Ecclesia Core\nOperações"]
+    E --> T["Elias\nFechamento"]
+    T --> A["Enoch\nAuditoria"]
+    A --> R["Sefer\nRelatórios"]
+    E -.-> G["Gideon\nPlanejado"]
+    E -.-> S["Shofeet\nAdiádo"]
+    N["Noah Ops\nObservabilidade"] -.-> C
+    N -.-> R
+
+    classDef control fill:#f7a83a,color:#1c170c,stroke:#c27b12,stroke-width:2px;
+    classDef core fill:#287b65,color:#fff,stroke:#173e32,stroke-width:2px;
+    classDef report fill:#2675a8,color:#fff,stroke:#16435f,stroke-width:2px;
+    classDef plugin fill:#7455a6,color:#fff,stroke:#49376b,stroke-width:2px;
+    classDef sre fill:#39434f,color:#fff,stroke:#252c33,stroke-width:2px;
+    class K,C,H control;
+    class E,T,A core;
+    class R report;
+    class G,S plugin;
+    class N sre;
+```
 
 ```mermaid
 flowchart LR
@@ -96,6 +137,52 @@ sequenceDiagram
     D-->>Q: Atualiza dados e auditoria
     Q-->>C: Resultado
 ```
+
+## Como uma operação financeira funciona por dentro
+
+```mermaid
+sequenceDiagram
+    actor User as Operador
+    participant Browser as React Manager
+    participant Proxy as proxy.ts
+    participant Layout as Layout autenticado
+    participant API as API Route / Action
+    participant RPC as RPC PostgreSQL
+    participant Elias as Elias Temp
+    participant Enoch as Enoch Audit
+    participant Sefer as Sefer Reports
+
+    User->>Browser: Preenche entrada/despesa/repassa
+    Browser->>Proxy: POST com cookies SSR
+    Proxy->>Layout: Atualiza sessão Supabase
+    Layout->>API: Unidade ativa + membership
+    API->>RPC: Parâmetros validados
+    RPC->>Elias: require_open_period
+    Elias-->>RPC: Período aberto ou bloqueado
+    RPC->>RPC: Verifica papel e permission
+    RPC-->>Enoch: before/after ou dados registrados
+    Enoch-->>RPC: Evento em audit_events
+    RPC-->>Browser: Registro criado
+    Browser->>Sefer: Consulta relatório/consolidação
+```
+
+1. **Navegador:** um componente `*Manager` converte valores monetários para centavos e envia JSON.
+2. **Sessão:** `proxy.ts` usa `updateSession()` para recuperar/refrescar o usuário Supabase SSR.
+3. **Contexto:** o layout consulta memberships e lê `active_congregation_id` do cookie.
+4. **RBAC:** `can(...)` aplica papel padrão ou override de `membership_permission_overrides`.
+5. **Transporte:** API Route ou Server Action autentica novamente e chama uma RPC.
+6. **PostgreSQL:** a RPC valida rol, período aberto e relacionamentos; o RLS continua como última barreira.
+7. **Fechamento:** `period_is_closed` e `require_open_period` bloqueiam alterações retroativas.
+8. **Auditoria:** operações críticas inserem before/after e identificam `actor_id`.
+9. **Consolidação:** `congregation_monthly_summary` calcula o saldo da competência e o relatório coleta os dados.
+
+## Multi-Tenant Hierárquico Hiram
+
+`congregations` usa `parent_id` para representar a hierarquia. `organization_level` aceita `national_hq`, `state_hq`, `sub_hq` e `local_congregation`. As migrations também restringem pais compatíveis e já adicionaram controle de ciclos no editor visual.
+
+O `organization_type` aceita `church` ou `ong`. `getVocabulary()` troca Congregação/Congregações, Sede/Matriz, Pastoral/Diretoria e demais termos sem duplicar regras financeiras.
+
+No modo consolidado, `get_hierarchical_financial_metrics` percorre recursivamente a árvore com CTE. Entradas e despesas marcadas com `is_internal_transfer = true` são excluídas da soma consolidada. Isso evita que dinheiro transferido internamente seja contado duas vezes como receita nova e despesa nova em níveis superiores.
 
 ## Autenticação e contexto
 

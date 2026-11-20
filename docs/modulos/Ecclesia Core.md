@@ -8,6 +8,16 @@ tags: [ecc, financeiro, core, entradas, despesas, caixa]
 
 # Ecclesia Core — Núcleo Transacional
 
+<img src="../assets/branding/Modulos/2_Badges_Com_Nome_Interno/00-ecclesia-finance-core.svg" alt="Ecclesia Core" width="220">
+
+| Aspecto | Detalhe |
+|---|---|
+| Status Real | **Parcialmente implementado** |
+| Camada | Core |
+| Rotas | `/entradas`, `/despesas`, `/repasses`, `/caixa`, `/ajustes`, `/estornos` |
+| Tabelas/RPCs | `entries`, `expenses`, `headquarters_transfers`, `physical_cash_*`, `create_*`, `approve_*`, `confirm_transfer` |
+| Arquivos principais | `src/components/*Manager.tsx`, `src/app/api/*`, `src/app/actions/finance.ts` |
+
 ## Propósito e identidade
 
 Responsável pelas operações financeiras da unidade ativa: entradas, despesas, repasses, caixa físico, ajustes e estornos.

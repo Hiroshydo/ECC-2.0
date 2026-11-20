@@ -8,6 +8,16 @@ tags: [ecc, administracao, acessos, canaa]
 
 # Canaã Access
 
+<img src="../assets/branding/Modulos/2_Badges_Com_Nome_Interno/08-canaa-access.svg" alt="Canaã Access" width="220">
+
+| Aspecto | Detalhe |
+|---|---|
+| Status Real | **Parcialmente implementado** |
+| Camada | Core / Administração global |
+| Rotas | `/admin`, APIs administrativas |
+| Tabelas/RPCs | `congregations`, `memberships`, `membership_permission_overrides`, `admin_*` |
+| Arquivos principais | `AdminManager.tsx`, `lib/admin/platform.ts`, `api/admin/*` |
+
 ## Propósito
 
 Representar a administração global de unidades, hierarquia e licenças.
