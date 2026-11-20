@@ -8,19 +8,27 @@ tags: [ecc, arquitetura, nextjs, supabase, core]
 
 # Visão Geral — Ecclesia Finance ECC 2.0
 
-<img src="assets/branding/ecclesia-finance-logo.png" alt="Ecclesia Finance ECC 2.0" width="320">
+<div class="ecc-hero">
+  <img src="assets/branding/Modulos/2_Badges_Com_Nome_Interno/00-ecclesia-finance-core.svg" alt="Símbolo Ecclesia Finance" class="ecc-brand-mark">
+  <div class="ecc-hero-copy">
+    <p class="ecc-eyebrow">ECC 2.0 · VISÃO GERAL</p>
+    <p class="ecc-hero-title">Gestão financeira,<br>sem ruído.</p>
+    <p>Uma plataforma modular para igrejas e ONGs, com hierarquia clara, controles confiáveis e operação integrada.</p>
+  </div>
+</div>
 
-| Aspecto | Estado real |
-|---|---|
-| Status geral | **Parcialmente implementado** |
-| Camada | Core financeiro, arquitetural e módulos planejados |
-| Arquitetura | Monólito Modular Next.js + Supabase |
-| Banco | PostgreSQL, RLS e RPCs |
-| Rotas principais | `/`, `/entradas`, `/despesas`, `/repasses`, `/caixa`, `/fechamento`, `/ajustes`, `/estornos`, `/auditoria`, `/relatorios`, `/canaa`, `/admin`, `/noah-ops` |
+<div class="ecc-quicklinks">
+  <a class="ecc-quicklink" href="01%20-%20Arquitetura%20Viva%20ECC.canvas"><span class="ecc-quicklink-number">01</span><span><strong>Arquitetura viva</strong><small>Explore o mapa dos módulos</small></span><span class="ecc-quicklink-arrow">↗</span></a>
+  <a class="ecc-quicklink" href="modulos/README.md"><span class="ecc-quicklink-number">02</span><span><strong>Módulos ECC</strong><small>Conheça cada área do produto</small></span><span class="ecc-quicklink-arrow">↗</span></a>
+  <a class="ecc-quicklink" href="02%20-%20Telemetria%20%26%20Contas%20Ao%20Vivo.md"><span class="ecc-quicklink-number">03</span><span><strong>Telemetria ao vivo</strong><small>Contas, licenças e auditoria</small></span><span class="ecc-quicklink-arrow">↗</span></a>
+</div>
 
-> Abrir o mapa visual: [[01 - Arquitetura Viva ECC.canvas|Arquitetura Viva ECC]]
-
-Índice do vault: [[modulos/README|Módulos ECC]]
+<div class="ecc-facts">
+  <div><span>STATUS</span><strong>Em evolução</strong></div>
+  <div><span>ARQUITETURA</span><strong>Monólito modular</strong></div>
+  <div><span>PLATAFORMA</span><strong>Next.js + Supabase</strong></div>
+  <div><span>DADOS</span><strong>PostgreSQL · RLS</strong></div>
+</div>
 
 ## Identidade do produto
 
@@ -220,16 +228,25 @@ No modo consolidado, `get_hierarchical_financial_metrics` percorre recursivament
 
 ## Mapa de documentação
 
-- [[Ecclesia Core]]
-- [[Hiram Architecture]]
-- [[Elias Temp]]
-- [[Enoch Audit]]
-- [[Sefer Reports]]
-- [[Khatam Authenticate]]
-- [[Canaã Access & Local]]
-- [[Noah Ops]]
-- [[Gideon Security]]
-- [[Shofeet Note]]
+### Core
+
+<div class="ecc-module-grid">
+  <a class="ecc-module-card" href="modulos/Ecclesia%20Core.md"><img src="assets/branding/Modulos/2_Badges_Com_Nome_Interno/00-ecclesia-finance-core.svg" alt=""><span>Ecclesia Core</span></a>
+  <a class="ecc-module-card" href="modulos/Khatam%20Authenticate.md"><img src="assets/branding/Modulos/2_Badges_Com_Nome_Interno/01-khatam-authenticate.svg" alt=""><span>Khatam Authenticate</span></a>
+  <a class="ecc-module-card" href="modulos/Hiram%20Architecture.md"><img src="assets/branding/Modulos/2_Badges_Com_Nome_Interno/04-hiram-architecture.svg" alt=""><span>Hiram Architecture</span></a>
+  <a class="ecc-module-card" href="modulos/Cana%C3%A3%20Access%20%26%20Local.md"><img src="assets/branding/Modulos/2_Badges_Com_Nome_Interno/08-canaa-access.svg" alt=""><span>Canaã Access &amp; Local</span></a>
+  <a class="ecc-module-card" href="modulos/Elias%20Temp.md"><img src="assets/branding/Modulos/2_Badges_Com_Nome_Interno/06-elias-temp.svg" alt=""><span>Elias Temp</span></a>
+  <a class="ecc-module-card" href="modulos/Enoch%20Audit.md"><img src="assets/branding/Modulos/2_Badges_Com_Nome_Interno/05-enoch-audit.svg" alt=""><span>Enoch Audit</span></a>
+  <a class="ecc-module-card" href="modulos/Sefer%20Reports.md"><img src="assets/branding/Modulos/2_Badges_Com_Nome_Interno/07-sefer-reports.svg" alt=""><span>Sefer Reports</span></a>
+  <a class="ecc-module-card" href="modulos/Noah%20Ops.md"><img src="assets/branding/Modulos/2_Badges_Com_Nome_Interno/10-noah-developer.svg" alt=""><span>Noah Ops</span></a>
+</div>
+
+### Extensões planejadas
+
+<div class="ecc-module-grid ecc-module-grid-compact">
+  <a class="ecc-module-card" href="modulos/Gideon%20Security.md"><img src="assets/branding/Modulos/2_Badges_Com_Nome_Interno/02-gideon-security.svg" alt=""><span>Gideon Security</span></a>
+  <a class="ecc-module-card" href="modulos/Shofeet%20Note.md"><img src="assets/branding/Modulos/2_Badges_Com_Nome_Interno/03-shofeet-note.svg" alt=""><span>Shofeet Note</span></a>
+</div>
 
 <!-- AUTO-SYNC:START -->
 ## Inventário sincronizado do código

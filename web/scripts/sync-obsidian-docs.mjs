@@ -675,11 +675,11 @@ writeCanvas();
 
 const graphSettings = {
   "collapse-filter": false,
-  search: "path:docs -path:docs/assets",
+  search: '-path:assets -file:"README" -file:"Canaa Local" -file:"Canaa Access" -file:"Noah Developer"',
   showTags: false,
   showAttachments: false,
   hideUnresolved: false,
-  showOrphans: true,
+  showOrphans: false,
   "collapse-color-groups": false,
   colorGroups: [
     { query: 'path:"00 - Visao Geral ECC"', color: { a: 1, rgb: 0xd9a441 } },
@@ -689,17 +689,22 @@ const graphSettings = {
   "collapse-display": false,
   showArrow: true,
   textFadeMultiplier: 0,
-  nodeSizeMultiplier: 1,
-  lineSizeMultiplier: 1,
+  nodeSizeMultiplier: 0.9,
+  lineSizeMultiplier: 0.85,
   "collapse-forces": false,
-  centerStrength: 0.518713248970312,
-  repelStrength: 15,
+  centerStrength: 0.42,
+  repelStrength: 28,
   linkStrength: 1,
   linkDistance: 220,
   scale: 0.0078125,
   close: false,
 };
 writeText(path.join(docsDir, ".obsidian", "graph.json"), `${JSON.stringify(graphSettings, null, 2)}\n`);
+const appearanceSettings = {
+  theme: "obsidian",
+  enabledCssSnippets: ["ecc-futuristic"],
+};
+writeText(path.join(docsDir, ".obsidian", "appearance.json"), `${JSON.stringify(appearanceSettings, null, 2)}\n`);
 
 console.log(`Obsidian sincronizado: ${authenticatedPages.length} rotas, ${apiRoutes.length} APIs, ${migrations.length} migrations, ${moduleSources.length} arquivos de módulo, ${modules.length} módulos Canvas, ${copiedBrandingFiles} assets oficiais.`);
 }

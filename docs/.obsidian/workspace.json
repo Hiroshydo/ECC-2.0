@@ -11,17 +11,14 @@
             "id": "c6e8bcd65bcc91dc",
             "type": "leaf",
             "state": {
-              "type": "canvas",
+              "type": "markdown",
               "state": {
-                "file": "Sem título 2.canvas",
-                "viewState": {
-                  "x": 0,
-                  "y": 0,
-                  "zoom": 0
-                }
+                "file": "00 - Visao Geral ECC.md",
+                "mode": "source",
+                "source": false
               },
-              "icon": "lucide-layout-dashboard",
-              "title": "Sem título 2"
+              "icon": "lucide-file-text",
+              "title": "Visão Geral ECC"
             }
           }
         ]
