@@ -4,11 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "371e354725082b09",
+        "id": "1347f612ed118004",
         "type": "tabs",
         "children": [
           {
-            "id": "040ef071c15fd169",
+            "id": "c6e8bcd65bcc91dc",
             "type": "leaf",
             "state": {
               "type": "graph",
@@ -80,7 +80,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 300,
+    "collapsed": true
   },
   "right": {
     "id": "5762497a10784349",
@@ -182,7 +183,7 @@
       "bases:Criar nova base": false
     }
   },
-  "active": "040ef071c15fd169",
+  "active": "c6e8bcd65bcc91dc",
   "lastOpenFiles": [
     "01 - Arquitetura Viva ECC.canvas",
     "assets/branding/Modulos/2_Badges_Com_Nome_Interno/10-noah-developer.svg",
