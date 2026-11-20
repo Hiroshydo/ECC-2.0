@@ -1,5 +1,5 @@
 import type { CongregationId, UserId } from "./finance";
-import type { OrganizationType } from "./vocabulary";
+import type { OrganizationLevel, OrganizationType } from "./vocabulary";
 
 export type Role = "central_admin" | "congregation_admin" | "treasurer" | "auditor" | "viewer";
 export type Permission =
@@ -13,7 +13,7 @@ export type Permission =
   | "hierarchy.financial.read";
 
 export type User = { id: UserId; name: string; email: string };
-export type Congregation = { id: CongregationId; name: string; city: string; active: boolean; state?: string | null; parentId?: string | null; organizationType?: OrganizationType; isHeadquarters?: boolean };
+export type Congregation = { id: CongregationId; name: string; city: string; active: boolean; state?: string | null; parentId?: string | null; organizationType?: OrganizationType; organizationLevel?: OrganizationLevel; isHeadquarters?: boolean };
 export type MembershipPermissions = Partial<Record<Permission, boolean>>;
 export type Membership = { userId: UserId; congregationId: CongregationId; role: Role; permissions?: MembershipPermissions };
 

@@ -146,3 +146,54 @@ sequenceDiagram
 - [[Noah Developer]]
 - [[Gideon Security]]
 - [[Shofeet Note]]
+
+<!-- AUTO-SYNC:START -->
+## Estrutura sincronizada automaticamente
+
+> Gerado por `npm run docs:sync`. Não edite manualmente o conteúdo entre os marcadores.
+
+### Rotas protegidas
+
+- [web/src/app/(authenticated)/admin/page.tsx](web/src/app/(authenticated)/admin/page.tsx)
+- [web/src/app/(authenticated)/ajustes/page.tsx](web/src/app/(authenticated)/ajustes/page.tsx)
+- [web/src/app/(authenticated)/auditoria/page.tsx](web/src/app/(authenticated)/auditoria/page.tsx)
+- [web/src/app/(authenticated)/caixa/page.tsx](web/src/app/(authenticated)/caixa/page.tsx)
+- [web/src/app/(authenticated)/canaa/page.tsx](web/src/app/(authenticated)/canaa/page.tsx)
+- [web/src/app/(authenticated)/configuracoes/page.tsx](web/src/app/(authenticated)/configuracoes/page.tsx)
+- [web/src/app/(authenticated)/despesas/page.tsx](web/src/app/(authenticated)/despesas/page.tsx)
+- [web/src/app/(authenticated)/entradas/page.tsx](web/src/app/(authenticated)/entradas/page.tsx)
+- [web/src/app/(authenticated)/estornos/page.tsx](web/src/app/(authenticated)/estornos/page.tsx)
+- [web/src/app/(authenticated)/fechamento/page.tsx](web/src/app/(authenticated)/fechamento/page.tsx)
+- [web/src/app/(authenticated)/noah-ops/page.tsx](web/src/app/(authenticated)/noah-ops/page.tsx)
+- [web/src/app/(authenticated)/page.tsx](web/src/app/(authenticated)/page.tsx)
+- [web/src/app/(authenticated)/relatorios/page.tsx](web/src/app/(authenticated)/relatorios/page.tsx)
+- [web/src/app/(authenticated)/repasses/page.tsx](web/src/app/(authenticated)/repasses/page.tsx)
+
+### Migrations
+
+- `web/supabase/migrations/0001_finance_core.sql`
+- `web/supabase/migrations/0002_integrity_and_documents.sql`
+- `web/supabase/migrations/0003_financial_cycle_commands.sql`
+- `web/supabase/migrations/0004_domain_completion.sql`
+- `web/supabase/migrations/0005_domain_completion_fix.sql`
+- `web/supabase/migrations/0006_cash_movement_idempotency_fix.sql`
+- `web/supabase/migrations/0007_performance_indexes.sql`
+- `web/supabase/migrations/0008_organization_admin_permissions.sql`
+- `web/supabase/migrations/0009_hierarchical_scope_permissions.sql`
+- `web/supabase/migrations/0010_congregation_leader_name.sql`
+- `web/supabase/migrations/0011_admin_create_congregation_parent.sql`
+- `web/supabase/migrations/0012_hierarchical_financial_architecture.sql`
+- `web/supabase/migrations/0013_khatam_licenses.sql`
+
+### Módulos
+
+- [web/src/modules/core/canaa/README.md](web/src/modules/core/canaa/README.md)
+- [web/src/modules/core/elias/README.md](web/src/modules/core/elias/README.md)
+- [web/src/modules/core/enoch/README.md](web/src/modules/core/enoch/README.md)
+- [web/src/modules/core/hiram/README.md](web/src/modules/core/hiram/README.md)
+- [web/src/modules/core/khatam/README.md](web/src/modules/core/khatam/README.md)
+- [web/src/modules/core/sefer/README.md](web/src/modules/core/sefer/README.md)
+- [web/src/modules/plugins/gideon/README.md](web/src/modules/plugins/gideon/README.md)
+- [web/src/modules/plugins/shofeet/README.md](web/src/modules/plugins/shofeet/README.md)
+
+<!-- AUTO-SYNC:END -->

@@ -1,10 +1,10 @@
 import type { User } from "@supabase/supabase-js";
 import type { Congregation, Membership, MembershipPermissions, Role } from "@/domain/access";
-import type { OrganizationType } from "@/domain/vocabulary";
+import type { OrganizationLevel, OrganizationType } from "@/domain/vocabulary";
 
 export type AuthenticatedMembership = Membership & { congregation: Congregation };
 
-type CongregationRow = { id: string; name: string; city: string; active: boolean; state?: string | null; parent_id?: string | null; organization_type?: OrganizationType; is_headquarters?: boolean };
+type CongregationRow = { id: string; name: string; city: string; active: boolean; state?: string | null; parent_id?: string | null; organization_type?: OrganizationType; organization_level?: OrganizationLevel; is_headquarters?: boolean };
 type PermissionOverrideRow = { financial_read: boolean; financial_write: boolean; financial_approve: boolean; closing_submit: boolean; audit_read: boolean; hierarchy_view?: boolean; hierarchy_financial_read?: boolean };
 
 export function toMemberships(user: User, rows: Array<{
@@ -44,6 +44,7 @@ export function toMemberships(user: User, rows: Array<{
           state: row.congregation.state,
           parentId: row.congregation.parent_id ?? null,
           organizationType: row.congregation.organization_type,
+          organizationLevel: row.congregation.organization_level,
           isHeadquarters: row.congregation.is_headquarters,
         },
       };

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { ModuleIcon } from "@/components/brand/ModuleIcon";
 import { isMasterAdmin } from "@/domain/access";
 import { createClient } from "@/lib/supabase/server";
-import { CongregationFlowMap } from "@/modules/core/canaa/components/CongregationFlowMap";
+import { ModuleArchitectureMap } from "@/modules/core/canaa/components/ModuleArchitectureMap";
 import { NoahTelemetryGrid } from "@/modules/core/canaa/components/NoahTelemetryGrid";
 import type { ModuleTelemetry } from "@/modules/core/canaa/types";
 
@@ -45,7 +45,13 @@ export default async function NoahOpsPage() {
           </div>
         </div>
       </div>
-      <CongregationFlowMap nodes={[]} edges={[]} />
+      <section style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <div>
+          <p className="eyebrow" style={{ color: "#78bba2" }}>MAPA VIVO · ARQUITETURA ECC</p>
+          <h2 style={{ margin: "4px 0", color: "#10241e" }}>Dependências do monólito modular</h2>
+        </div>
+        <ModuleArchitectureMap />
+      </section>
     </div>
   );
 }

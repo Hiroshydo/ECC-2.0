@@ -14,7 +14,17 @@ export type CongregationNodeData = {
   id: string;
   name: string;
   parentId: string | null;
+  parentName?: string | null;
   active: boolean;
+  organizationType?: "church" | "ong";
+  organizationLevel?: "national_hq" | "state_hq" | "sub_hq" | "local_congregation";
+  licenseActive?: boolean;
+  seatsUsed?: number;
+  seatsTotal?: number;
+  editable?: boolean;
+  expanded?: boolean;
+  onToggleExpand?: () => void;
+  onDisconnect?: () => void;
 } & Record<string, unknown>;
 
 export type LocalOperator = {

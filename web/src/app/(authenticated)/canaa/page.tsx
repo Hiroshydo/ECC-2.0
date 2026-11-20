@@ -22,7 +22,7 @@ export default async function CanaaPage() {
 
   const { data: membershipRows, error: membershipError } = await supabase
     .from("memberships")
-    .select("congregation_id, role, congregations!inner(id, name, city, active, state, parent_id, organization_type, is_headquarters), permission_overrides:membership_permission_overrides(financial_read, financial_write, financial_approve, closing_submit, audit_read, hierarchy_view, hierarchy_financial_read)")
+    .select("congregation_id, role, congregations!inner(id, name, city, active, state, parent_id, organization_type, organization_level, is_headquarters), permission_overrides:membership_permission_overrides(financial_read, financial_write, financial_approve, closing_submit, audit_read, hierarchy_view, hierarchy_financial_read)")
     .eq("user_id", user.id);
   if (membershipError) throw new Error(membershipError.message);
 
@@ -37,6 +37,11 @@ export default async function CanaaPage() {
     ? memberships
     : memberships.filter((membership) => can(membership, "hierarchy.view"));
   const visibleIds = new Set(visibleMemberships.map((membership) => membership.congregationId));
+  const parentNames = new Map(visibleMemberships.map((membership) => [membership.congregationId, membership.congregation.name]));
+  const licenses = new Map(await Promise.all(visibleMemberships.map(async (membership) => [
+    membership.congregationId,
+    await getLicense(membership.congregationId),
+  ] as const)));
   const nodes: Node<CongregationNodeData>[] = visibleMemberships.map((membership, index) => ({
     id: membership.congregationId,
     type: "congregation",
@@ -45,7 +50,14 @@ export default async function CanaaPage() {
       id: membership.congregationId,
       name: membership.congregation.name,
       parentId: membership.congregation.parentId ?? null,
+      parentName: membership.congregation.parentId ? parentNames.get(membership.congregation.parentId) ?? null : null,
       active: membership.congregation.active,
+      organizationType: membership.congregation.organizationType,
+      organizationLevel: membership.congregation.organizationLevel,
+      licenseActive: Boolean(licenses.get(membership.congregationId)?.expiresAt && new Date(licenses.get(membership.congregationId)!.expiresAt).getTime() > new Date().getTime()),
+      seatsUsed: licenses.get(membership.congregationId)?.seatsUsed ?? 0,
+      seatsTotal: licenses.get(membership.congregationId)?.seatsTotal ?? 0,
+      editable: masterAdmin,
     },
   }));
   const edges: Edge[] = visibleMemberships.flatMap((membership) => {
@@ -63,7 +75,7 @@ export default async function CanaaPage() {
         <h1 style={{ margin: 0, fontSize: 32 }}>Canaã Local</h1>
       </div>
       <KhatamQuotaBar license={license} />
-      <CongregationFlowMap nodes={nodes} edges={edges} />
+      <CongregationFlowMap nodes={nodes} edges={edges} editable={masterAdmin} />
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>

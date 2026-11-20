@@ -35,6 +35,93 @@ export async function PUT(
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
 
+  // Ligação hierárquica parcial usada pelo editor visual do React Flow.
+  // Mantém o mesmo contexto Dev Master e valida ciclos antes de persistir.
+  const isPartialHierarchyUpdate =
+    input.parent_id !== undefined &&
+    input.name === undefined &&
+    input.city === undefined &&
+    input.state === undefined &&
+    input.organizationType === undefined &&
+    input.organization_type === undefined &&
+    input.organizationLevel === undefined &&
+    input.organization_level === undefined;
+
+  if (isPartialHierarchyUpdate) {
+    if (input.parent_id !== null && typeof input.parent_id !== "string") {
+      return NextResponse.json({ error: "parent_id_invalid" }, { status: 400 });
+    }
+    const parentId = input.parent_id as string | null;
+    if (parentId === id) {
+      return NextResponse.json({ error: "congregation_cannot_parent_itself" }, { status: 400 });
+    }
+
+    const { data: organizations, error: graphError } = await authorization.serviceClient
+      .from("congregations")
+      .select("id, parent_id, organization_type, organization_level");
+    if (graphError) return NextResponse.json({ error: graphError.message }, { status: 400 });
+
+    const target = (organizations ?? []).find((organization) => organization.id === id);
+    if (!target) return NextResponse.json({ error: "congregation_not_found" }, { status: 404 });
+
+    if (parentId) {
+      const parent = (organizations ?? []).find((organization) => organization.id === parentId);
+      if (!parent) return NextResponse.json({ error: "parent_congregation_not_found" }, { status: 404 });
+      if (parent.organization_type !== target.organization_type) {
+        return NextResponse.json({ error: "parent_organization_type_invalid" }, { status: 400 });
+      }
+      const allowedParents: Record<OrganizationLevel, OrganizationLevel[]> = {
+        national_hq: [],
+        state_hq: ["national_hq"],
+        sub_hq: ["national_hq", "state_hq"],
+        local_congregation: ["national_hq", "state_hq", "sub_hq"],
+      };
+      if (!allowedParents[target.organization_level as OrganizationLevel]?.includes(parent.organization_level as OrganizationLevel)) {
+        return NextResponse.json({ error: "parent_organization_level_invalid" }, { status: 400 });
+      }
+
+      const visited = new Set<string>();
+      let cursor: string | null = parentId;
+      while (cursor) {
+        if (cursor === id) return NextResponse.json({ error: "circular_hierarchy_not_allowed" }, { status: 400 });
+        if (visited.has(cursor)) return NextResponse.json({ error: "existing_hierarchy_cycle" }, { status: 400 });
+        visited.add(cursor);
+        cursor = (organizations ?? []).find((organization) => organization.id === cursor)?.parent_id ?? null;
+      }
+    }
+
+    const previousParentId = target.parent_id as string | null;
+    const { data, error } = await authorization.serviceClient
+      .from("congregations")
+      .update({ parent_id: parentId })
+      .eq("id", id)
+      .select("id, name, city, state, parent_id, leader_name, organization_type, organization_level, is_headquarters, active")
+      .maybeSingle();
+    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (!data) return NextResponse.json({ error: "congregation_not_found" }, { status: 404 });
+
+    const { error: auditError } = await authorization.serviceClient
+      .from("audit_events")
+      .insert({
+        actor_id: authorization.user.id,
+        congregation_id: id,
+        action: "updated",
+        entity: "congregations",
+        entity_id: id,
+        before_data: { parent_id: previousParentId },
+        after_data: { parent_id: parentId },
+        reason: "congregation_parent_linked",
+      });
+    if (auditError) {
+      await authorization.serviceClient
+        .from("congregations")
+        .update({ parent_id: previousParentId })
+        .eq("id", id);
+      return NextResponse.json({ error: auditError.message }, { status: 400 });
+    }
+    return NextResponse.json({ data }, { headers: { "Cache-Control": "no-store" } });
+  }
+
   const organizationType = input.organizationType ?? input.organization_type;
   const organizationLevel = input.organizationLevel ?? input.organization_level;
   const validLevels: OrganizationLevel[] = ["national_hq", "state_hq", "sub_hq", "local_congregation"];
