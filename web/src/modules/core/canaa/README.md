@@ -10,8 +10,8 @@ tags: [ecc, canaa, hierarquia, equipe]
 
 ## Submódulos
 
-- [[Canaa Local]]
-- [[Canaa Access]]
+- [Canaa Local](../../../../../docs/modulos/Canaa%20Local.md)
+- [Canaa Access](../../../../../docs/modulos/Canaa%20Access.md)
 
 ## Implementação real
 

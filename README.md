@@ -23,26 +23,11 @@ O sistema foi modelado como um **ERP financeiro hierárquico e multi-tenant**:
 
 > “Implementado” neste repositório significa que existe código e migrations versionados. Não significa que o recurso foi publicado ou validado em um ambiente cloud externo.
 
-## Índice Obsidian
+## Documentação
 
-- [[00 - Visao Geral ECC]]
-- [[RELATORIO_TECNICO_PROJETO|Relatório técnico mestre]]
-- [[Ecclesia Core]]
-- [[Hiram Architecture]]
-- [[Elias Temp]]
-- [[Enoch Audit]]
-- [[Sefer Reports]]
-- [[Khatam Authenticate]]
-- [[Canaa Local]]
-- [[Canaa Access]]
-- [[Noah Developer]]
-- [[Gideon Security]]
-- [[Shofeet Note]]
-
-## Visualização técnica
-
-- [[docs/01 - Arquitetura Viva ECC.canvas|Arquitetura Viva ECC]]
-- [[docs/00 - Visao Geral ECC|Visão Geral ECC]]
+- [Visão geral do sistema](docs/00%20-%20Visao%20Geral%20ECC.md)
+- [Índice dos módulos](docs/modulos/README.md)
+- [Relatório técnico mestre](RELATORIO_TECNICO_PROJETO.md)
 
 ## Arquitetura em resumo
 
@@ -90,22 +75,22 @@ flowchart TD
 
 | Módulo | Estado |
 |---|---|
-| [[Ecclesia Core]] | Implementado parcialmente |
-| [[Hiram Architecture]] | Implementado no código |
-| [[Elias Temp]] | Implementado no código |
-| [[Enoch Audit]] | Implementado no código |
-| [[Sefer Reports]] | Implementado no código |
-| [[Khatam Authenticate]] | Licença básica implementada; UI/middleware comerciais incompletos |
-| [[Canaa Local]] | Parcialmente implementado |
-| [[Canaa Access]] | Parcialmente implementado |
-| [[Noah Developer]] | Interface e autorização básicas |
+| [Ecclesia Core](docs/modulos/Ecclesia%20Core.md) | Implementado parcialmente |
+| [Hiram Architecture](docs/modulos/Hiram%20Architecture.md) | Implementado no código |
+| [Elias Temp](docs/modulos/Elias%20Temp.md) | Implementado no código |
+| [Enoch Audit](docs/modulos/Enoch%20Audit.md) | Implementado no código |
+| [Sefer Reports](docs/modulos/Sefer%20Reports.md) | Implementado no código |
+| [Khatam Authenticate](docs/modulos/Khatam%20Authenticate.md) | Licença básica implementada; UI/middleware comerciais incompletos |
+| [Canaa Local](docs/modulos/Canaa%20Local.md) | Parcialmente implementado |
+| [Canaa Access](docs/modulos/Canaa%20Access.md) | Parcialmente implementado |
+| [Noah Developer](docs/modulos/Noah%20Developer.md) | Interface e autorização básicas |
 
 ## Roadmap explícito
 
 | Módulo | Estado |
 |---|---|
-| [[Gideon Security]] | Planejado |
-| [[Shofeet Note]] | Planejado/adialo no roadmap atual |
+| [Gideon Security](docs/modulos/Gideon%20Security.md) | Planejado |
+| [Shofeet Note](docs/modulos/Shofeet%20Note.md) | Planejado/adialo no roadmap atual |
 
 ## Estrutura principal
 
@@ -121,4 +106,4 @@ flowchart TD
 
 ## Execução local
 
-Consulte [[documentacao-interna/web-README|web/README.md]] e [a configuração local do Supabase](database-tests/supabase-setup.md).
+Consulte [web/README.md](web/README.md) e [a configuração local do Supabase](database-tests/supabase-setup.md).

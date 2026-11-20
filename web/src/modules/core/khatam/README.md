@@ -10,7 +10,7 @@ tags: [ecc, khatam, licencas]
 
 Implementação de licenças por unidade com `seats_total` e `expires_at`.
 
-Consulte [[Khatam Authenticate]] para status completo.
+Consulte [Khatam Authenticate](../../../../../docs/modulos/Khatam%20Authenticate.md) para status completo.
 
 ## Arquivos
 

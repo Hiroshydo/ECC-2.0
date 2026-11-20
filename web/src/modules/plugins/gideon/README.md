@@ -12,4 +12,4 @@ Responsabilidade prevista: blindagem de borda, Pix mTLS/DICT e cofre WORM.
 
 ## Status
 
-**Planejado.** Consulte [[Gideon Security]]. Não há integração ativa nos arquivos executáveis atuais.
+**Planejado.** Consulte [Gideon Security](../../../../../docs/modulos/Gideon%20Security.md). Não há integração ativa nos arquivos executáveis atuais.

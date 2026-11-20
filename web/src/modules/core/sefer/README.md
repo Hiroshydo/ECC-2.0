@@ -12,7 +12,7 @@ Responsabilidade: consolidar relatórios da unidade ativa e exportá-los em PDF/
 
 ## Status
 
-Implementado no código. Consulte [[Sefer Reports]].
+Implementado no código. Consulte [Sefer Reports](../../../../../docs/modulos/Sefer%20Reports.md).
 
 ## Evidências
 

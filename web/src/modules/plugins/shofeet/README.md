@@ -12,4 +12,4 @@ Responsabilidade prevista: integrar notas fiscais, XML e contabilidade conforme 
 
 ## Status
 
-**Planejado/adialo.** Consulte [[Shofeet Note]]. Não há integração fiscal implementada no workspace.
+**Planejado/adialo.** Consulte [Shofeet Note](../../../../../docs/modulos/Shofeet%20Note.md). Não há integração fiscal implementada no workspace.

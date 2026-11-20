@@ -8,39 +8,22 @@ tags: [ecc, arquitetura, nextjs, supabase, core]
 
 # Visão Geral — Ecclesia Finance ECC 2.0
 
-<div class="ecc-hero">
-  <img src="assets/branding/Modulos/2_Badges_Com_Nome_Interno/00-ecclesia-finance-core.svg" alt="Símbolo Ecclesia Finance" class="ecc-brand-mark">
-  <div class="ecc-hero-copy">
-    <p class="ecc-eyebrow">ECC 2.0 · VISÃO GERAL</p>
-    <p class="ecc-hero-title">Gestão financeira,<br>sem ruído.</p>
-    <p>Uma plataforma modular para igrejas e ONGs, com hierarquia clara, controles confiáveis e operação integrada.</p>
-  </div>
-</div>
+ERP financeiro modular para igrejas e ONGs, com hierarquia organizacional, controle de acesso e auditoria.
 
-<div class="ecc-quicklinks">
-  <a class="ecc-quicklink" href="01%20-%20Arquitetura%20Viva%20ECC.canvas"><span class="ecc-quicklink-number">01</span><span><strong>Arquitetura viva</strong><small>Explore o mapa dos módulos</small></span><span class="ecc-quicklink-arrow">↗</span></a>
-  <a class="ecc-quicklink" href="modulos/README.md"><span class="ecc-quicklink-number">02</span><span><strong>Módulos ECC</strong><small>Conheça cada área do produto</small></span><span class="ecc-quicklink-arrow">↗</span></a>
-  <a class="ecc-quicklink" href="02%20-%20Telemetria%20%26%20Contas%20Ao%20Vivo.md"><span class="ecc-quicklink-number">03</span><span><strong>Telemetria ao vivo</strong><small>Contas, licenças e auditoria</small></span><span class="ecc-quicklink-arrow">↗</span></a>
-</div>
-
-<div class="ecc-facts">
-  <div><span>STATUS</span><strong>Em evolução</strong></div>
-  <div><span>ARQUITETURA</span><strong>Monólito modular</strong></div>
-  <div><span>PLATAFORMA</span><strong>Next.js + Supabase</strong></div>
-  <div><span>DADOS</span><strong>PostgreSQL · RLS</strong></div>
-</div>
+- [Índice dos módulos](modulos/README.md)
+- [Relatório técnico mestre](../RELATORIO_TECNICO_PROJETO.md)
 
 ## Identidade do produto
 
 O ECC 2.0 é um ERP financeiro multi-tenant e hierárquico voltado à gestão financeira de **igrejas** e **ONGs/associações**. A aplicação usa Next.js 16 App Router, React 19, TypeScript, Tailwind CSS e Supabase/PostgreSQL.
 
-A configuração organizacional aceita `church` ou `ong` e altera os termos apresentados pela tela. A implementação está em [[Hiram Architecture]] e [vocabulary.ts](../web/src/domain/vocabulary.ts).
+A configuração organizacional aceita `church` ou `ong` e altera os termos apresentados pela tela. A implementação está em [Hiram Architecture](modulos/Hiram%20Architecture.md) e [vocabulary.ts](../web/src/domain/vocabulary.ts).
 
 ## Monólito Modular
 
 O ECC 2.0 é um **monólito modular**: uma única aplicação Next.js é implantada e compartilha autenticação, sessão, componentes, build e banco; internamente, o domínio é separado em módulos reconhecíveis. Essa escolha reduz latência entre operações, evita a coordenação distribuída entre microsserviços e simplifica transações PostgreSQL/RLS neste estágio do produto.
 
-A separação não é apenas visual: cada módulo possui responsabilidade, identidade, documentos e, quando aplicável, migrations/RPCs próprias. [[Gideon Security]] e [[Shofeet Note]] foram isolados como plug-ins futuros para que regras fiscais ou de segurança externa não contaminem o núcleo financeiro.
+A separação não é apenas visual: cada módulo possui responsabilidade, identidade, documentos e, quando aplicável, migrations/RPCs próprias. [Gideon Security](modulos/Gideon%20Security.md) e [Shofeet Note](modulos/Shofeet%20Note.md) foram isolados como plug-ins futuros para que regras fiscais ou de segurança externa não contaminem o núcleo financeiro.
 
 ```mermaid
 flowchart LR
@@ -223,118 +206,23 @@ No modo consolidado, `get_hierarchical_financial_metrics` percorre recursivament
 
 ### Planejado / adiado
 
-- [[Gideon Security]]: Pix mTLS/DICT, defesa de borda, nonce e WORM.
-- [[Shofeet Note]]: NF-e/NFC-e/NFS-e, XML, certificado A1 e ITG 2002/SPED.
+- [Gideon Security](modulos/Gideon%20Security.md): Pix mTLS/DICT, defesa de borda, nonce e WORM.
+- [Shofeet Note](modulos/Shofeet%20Note.md): NF-e/NFC-e/NFS-e, XML, certificado A1 e ITG 2002/SPED.
 
 ## Mapa de documentação
 
 ### Core
 
-<div class="ecc-module-grid">
-  <a class="ecc-module-card" href="modulos/Ecclesia%20Core.md"><img src="assets/branding/Modulos/2_Badges_Com_Nome_Interno/00-ecclesia-finance-core.svg" alt=""><span>Ecclesia Core</span></a>
-  <a class="ecc-module-card" href="modulos/Khatam%20Authenticate.md"><img src="assets/branding/Modulos/2_Badges_Com_Nome_Interno/01-khatam-authenticate.svg" alt=""><span>Khatam Authenticate</span></a>
-  <a class="ecc-module-card" href="modulos/Hiram%20Architecture.md"><img src="assets/branding/Modulos/2_Badges_Com_Nome_Interno/04-hiram-architecture.svg" alt=""><span>Hiram Architecture</span></a>
-  <a class="ecc-module-card" href="modulos/Cana%C3%A3%20Access%20%26%20Local.md"><img src="assets/branding/Modulos/2_Badges_Com_Nome_Interno/08-canaa-access.svg" alt=""><span>Canaã Access &amp; Local</span></a>
-  <a class="ecc-module-card" href="modulos/Elias%20Temp.md"><img src="assets/branding/Modulos/2_Badges_Com_Nome_Interno/06-elias-temp.svg" alt=""><span>Elias Temp</span></a>
-  <a class="ecc-module-card" href="modulos/Enoch%20Audit.md"><img src="assets/branding/Modulos/2_Badges_Com_Nome_Interno/05-enoch-audit.svg" alt=""><span>Enoch Audit</span></a>
-  <a class="ecc-module-card" href="modulos/Sefer%20Reports.md"><img src="assets/branding/Modulos/2_Badges_Com_Nome_Interno/07-sefer-reports.svg" alt=""><span>Sefer Reports</span></a>
-  <a class="ecc-module-card" href="modulos/Noah%20Ops.md"><img src="assets/branding/Modulos/2_Badges_Com_Nome_Interno/10-noah-developer.svg" alt=""><span>Noah Ops</span></a>
-</div>
+- [Ecclesia Core](modulos/Ecclesia%20Core.md)
+- [Khatam Authenticate](modulos/Khatam%20Authenticate.md)
+- [Hiram Architecture](modulos/Hiram%20Architecture.md)
+- [Canaã Access & Local](modulos/Cana%C3%A3%20Access%20%26%20Local.md)
+- [Elias Temp](modulos/Elias%20Temp.md)
+- [Enoch Audit](modulos/Enoch%20Audit.md)
+- [Sefer Reports](modulos/Sefer%20Reports.md)
+- [Noah Ops](modulos/Noah%20Ops.md)
 
 ### Extensões planejadas
 
-<div class="ecc-module-grid ecc-module-grid-compact">
-  <a class="ecc-module-card" href="modulos/Gideon%20Security.md"><img src="assets/branding/Modulos/2_Badges_Com_Nome_Interno/02-gideon-security.svg" alt=""><span>Gideon Security</span></a>
-  <a class="ecc-module-card" href="modulos/Shofeet%20Note.md"><img src="assets/branding/Modulos/2_Badges_Com_Nome_Interno/03-shofeet-note.svg" alt=""><span>Shofeet Note</span></a>
-</div>
-
-<!-- AUTO-SYNC:START -->
-## Inventário sincronizado do código
-
-> Gerado por `npm run docs:sync`. Conteúdo entre estes marcadores não deve ser editado manualmente.
-
-### Rotas autenticadas
-
-- `/admin` — [web/src/app/(authenticated)/admin/page.tsx](../web/src/app/(authenticated)/admin/page.tsx)
-- `/ajustes` — [web/src/app/(authenticated)/ajustes/page.tsx](../web/src/app/(authenticated)/ajustes/page.tsx)
-- `/auditoria` — [web/src/app/(authenticated)/auditoria/page.tsx](../web/src/app/(authenticated)/auditoria/page.tsx)
-- `/caixa` — [web/src/app/(authenticated)/caixa/page.tsx](../web/src/app/(authenticated)/caixa/page.tsx)
-- `/canaa` — [web/src/app/(authenticated)/canaa/page.tsx](../web/src/app/(authenticated)/canaa/page.tsx)
-- `/configuracoes` — [web/src/app/(authenticated)/configuracoes/page.tsx](../web/src/app/(authenticated)/configuracoes/page.tsx)
-- `/despesas` — [web/src/app/(authenticated)/despesas/page.tsx](../web/src/app/(authenticated)/despesas/page.tsx)
-- `/entradas` — [web/src/app/(authenticated)/entradas/page.tsx](../web/src/app/(authenticated)/entradas/page.tsx)
-- `/estornos` — [web/src/app/(authenticated)/estornos/page.tsx](../web/src/app/(authenticated)/estornos/page.tsx)
-- `/fechamento` — [web/src/app/(authenticated)/fechamento/page.tsx](../web/src/app/(authenticated)/fechamento/page.tsx)
-- `/noah-ops` — [web/src/app/(authenticated)/noah-ops/page.tsx](../web/src/app/(authenticated)/noah-ops/page.tsx)
-- `/` — [web/src/app/(authenticated)/page.tsx](../web/src/app/(authenticated)/page.tsx)
-- `/relatorios` — [web/src/app/(authenticated)/relatorios/page.tsx](../web/src/app/(authenticated)/relatorios/page.tsx)
-- `/repasses` — [web/src/app/(authenticated)/repasses/page.tsx](../web/src/app/(authenticated)/repasses/page.tsx)
-
-### APIs
-
-- [web/src/app/api/adjustments/route.ts](../web/src/app/api/adjustments/route.ts)
-- [web/src/app/api/admin/congregations/[id]/route.ts](../web/src/app/api/admin/congregations/[id]/route.ts)
-- [web/src/app/api/admin/congregations/route.ts](../web/src/app/api/admin/congregations/route.ts)
-- [web/src/app/api/admin/overview/route.ts](../web/src/app/api/admin/overview/route.ts)
-- [web/src/app/api/admin/users/[userId]/access/route.ts](../web/src/app/api/admin/users/[userId]/access/route.ts)
-- [web/src/app/api/admin/users/route.ts](../web/src/app/api/admin/users/route.ts)
-- [web/src/app/api/cash/movements/route.ts](../web/src/app/api/cash/movements/route.ts)
-- [web/src/app/api/cash/periods/route.ts](../web/src/app/api/cash/periods/route.ts)
-- [web/src/app/api/cash/registers/route.ts](../web/src/app/api/cash/registers/route.ts)
-- [web/src/app/api/closing/route.ts](../web/src/app/api/closing/route.ts)
-- [web/src/app/api/entries/route.ts](../web/src/app/api/entries/route.ts)
-- [web/src/app/api/expenses/approve/route.ts](../web/src/app/api/expenses/approve/route.ts)
-- [web/src/app/api/expenses/route.ts](../web/src/app/api/expenses/route.ts)
-- [web/src/app/api/financial/hierarchical-metrics/route.ts](../web/src/app/api/financial/hierarchical-metrics/route.ts)
-- [web/src/app/api/health/route.ts](../web/src/app/api/health/route.ts)
-- [web/src/app/api/reports/route.ts](../web/src/app/api/reports/route.ts)
-- [web/src/app/api/reversals/route.ts](../web/src/app/api/reversals/route.ts)
-- [web/src/app/api/transfers/approve/route.ts](../web/src/app/api/transfers/approve/route.ts)
-- [web/src/app/api/transfers/confirm/route.ts](../web/src/app/api/transfers/confirm/route.ts)
-- [web/src/app/api/transfers/route.ts](../web/src/app/api/transfers/route.ts)
-
-### Migrations
-
-- [web/supabase/migrations/0001_finance_core.sql](../web/supabase/migrations/0001_finance_core.sql)
-- [web/supabase/migrations/0002_integrity_and_documents.sql](../web/supabase/migrations/0002_integrity_and_documents.sql)
-- [web/supabase/migrations/0003_financial_cycle_commands.sql](../web/supabase/migrations/0003_financial_cycle_commands.sql)
-- [web/supabase/migrations/0004_domain_completion.sql](../web/supabase/migrations/0004_domain_completion.sql)
-- [web/supabase/migrations/0005_domain_completion_fix.sql](../web/supabase/migrations/0005_domain_completion_fix.sql)
-- [web/supabase/migrations/0006_cash_movement_idempotency_fix.sql](../web/supabase/migrations/0006_cash_movement_idempotency_fix.sql)
-- [web/supabase/migrations/0007_performance_indexes.sql](../web/supabase/migrations/0007_performance_indexes.sql)
-- [web/supabase/migrations/0008_organization_admin_permissions.sql](../web/supabase/migrations/0008_organization_admin_permissions.sql)
-- [web/supabase/migrations/0009_hierarchical_scope_permissions.sql](../web/supabase/migrations/0009_hierarchical_scope_permissions.sql)
-- [web/supabase/migrations/0010_congregation_leader_name.sql](../web/supabase/migrations/0010_congregation_leader_name.sql)
-- [web/supabase/migrations/0011_admin_create_congregation_parent.sql](../web/supabase/migrations/0011_admin_create_congregation_parent.sql)
-- [web/supabase/migrations/0012_hierarchical_financial_architecture.sql](../web/supabase/migrations/0012_hierarchical_financial_architecture.sql)
-- [web/supabase/migrations/0013_khatam_licenses.sql](../web/supabase/migrations/0013_khatam_licenses.sql)
-
-### Código dos módulos
-
-- [web/src/modules/core/canaa/README.md](../web/src/modules/core/canaa/README.md)
-- [web/src/modules/core/canaa/actions/canaa.actions.ts](../web/src/modules/core/canaa/actions/canaa.actions.ts)
-- [web/src/modules/core/canaa/components/CongregationFlowMap.tsx](../web/src/modules/core/canaa/components/CongregationFlowMap.tsx)
-- [web/src/modules/core/canaa/components/CongregationNode.tsx](../web/src/modules/core/canaa/components/CongregationNode.tsx)
-- [web/src/modules/core/canaa/components/InviteOperatorModal.tsx](../web/src/modules/core/canaa/components/InviteOperatorModal.tsx)
-- [web/src/modules/core/canaa/components/LocalTeamManager.tsx](../web/src/modules/core/canaa/components/LocalTeamManager.tsx)
-- [web/src/modules/core/canaa/components/ModuleArchitectureMap.tsx](../web/src/modules/core/canaa/components/ModuleArchitectureMap.tsx)
-- [web/src/modules/core/canaa/components/NoahTelemetryGrid.tsx](../web/src/modules/core/canaa/components/NoahTelemetryGrid.tsx)
-- [web/src/modules/core/canaa/types.ts](../web/src/modules/core/canaa/types.ts)
-- [web/src/modules/core/elias/README.md](../web/src/modules/core/elias/README.md)
-- [web/src/modules/core/enoch/README.md](../web/src/modules/core/enoch/README.md)
-- [web/src/modules/core/hiram/README.md](../web/src/modules/core/hiram/README.md)
-- [web/src/modules/core/khatam/README.md](../web/src/modules/core/khatam/README.md)
-- [web/src/modules/core/khatam/components/KhatamQuotaBar.tsx](../web/src/modules/core/khatam/components/KhatamQuotaBar.tsx)
-- [web/src/modules/core/khatam/services/license.service.ts](../web/src/modules/core/khatam/services/license.service.ts)
-- [web/src/modules/core/khatam/services/license.shared.ts](../web/src/modules/core/khatam/services/license.shared.ts)
-- [web/src/modules/core/sefer/README.md](../web/src/modules/core/sefer/README.md)
-- [web/src/modules/plugins/gideon/README.md](../web/src/modules/plugins/gideon/README.md)
-- [web/src/modules/plugins/shofeet/README.md](../web/src/modules/plugins/shofeet/README.md)
-
-### Editor do grafo e console Noah
-
-- [web/src/modules/core/canaa/components/CongregationFlowMap.tsx](../web/src/modules/core/canaa/components/CongregationFlowMap.tsx) — conexão React Flow habilitada; layout Dagre.
-- [web/src/app/(authenticated)/noah-ops/page.tsx](../web/src/app/(authenticated)/noah-ops/page.tsx) — inclui mapa de arquitetura ECC.
-- [02 - Telemetria & Contas Ao Vivo.md](02 - Telemetria & Contas Ao Vivo.md) — snapshot Supabase; atualização periódica disponível com `npm run docs:watch`.
-
-<!-- AUTO-SYNC:END -->
+- [Gideon Security](modulos/Gideon%20Security.md)
+- [Shofeet Note](modulos/Shofeet%20Note.md)

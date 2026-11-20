@@ -12,7 +12,7 @@ Responsabilidade: operar o domínio hierárquico e multi-tenant com `parent_id`,
 
 ## Status
 
-Implementado no código. Consulte [[Hiram Architecture]].
+Implementado no código. Consulte [Hiram Architecture](../../../../../docs/modulos/Hiram%20Architecture.md).
 
 ## Evidências
 
@@ -20,4 +20,4 @@ Implementado no código. Consulte [[Hiram Architecture]].
 - tabela `congregations`;
 - RPC `get_hierarchical_financial_metrics`;
 - permissões `hierarchy.view` e `hierarchy.financial.read`;
-- componente [[Canaa Local]] com React Flow.
+- componente [Canaa Local](../../../../../docs/modulos/Canaa%20Local.md) com React Flow.

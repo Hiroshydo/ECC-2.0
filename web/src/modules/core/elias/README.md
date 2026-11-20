@@ -12,7 +12,7 @@ Responsabilidade: controlar fechamento mensal e travas temporais retroativas do 
 
 ## Status
 
-Implementado no código. Consulte [[Elias Temp]].
+Implementado no código. Consulte [Elias Temp](../../../../../docs/modulos/Elias%20Temp.md).
 
 ## Evidências
 
