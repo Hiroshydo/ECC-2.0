@@ -17,8 +17,8 @@
                 "mode": "source",
                 "source": false
               },
-              "icon": "lucide-file-text",
-              "title": "Visão Geral ECC"
+              "icon": "lucide-file",
+              "title": "00 - Visao Geral ECC"
             }
           }
         ]
@@ -189,9 +189,9 @@
   },
   "active": "c6e8bcd65bcc91dc",
   "lastOpenFiles": [
+    "00 - Visao Geral ECC.md",
     "Sem título 2.canvas",
     "02 - Telemetria & Contas Ao Vivo.md",
-    "00 - Visao Geral ECC.md",
     "Sem título 1.canvas",
     "2026-11-20.md",
     "Sem título.canvas",

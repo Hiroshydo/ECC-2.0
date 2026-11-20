@@ -8,7 +8,7 @@ tags: [ecc, core, telemetry, supabase]
 
 # Telemetria & Contas Ao Vivo
 
-<span class="ecc-status ecc-status-planned">🔵 OFFLINE</span>  Atualizado: 20/11/2026, 01:04:39
+<span class="ecc-status ecc-status-planned">🔵 OFFLINE</span>  Atualizado: 20/11/2026, 01:10:54
 
 > Supabase indisponível: URL ou chave de leitura não configurada.
 
