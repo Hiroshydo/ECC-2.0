@@ -2,7 +2,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { can } from "@/domain/access";
+import { can, isMasterAdmin } from "@/domain/access";
 import { createClient } from "@/lib/supabase/server";
 import { toMemberships } from "@/lib/auth/session";
 import { presentStatus } from "@/lib/presentation";
@@ -76,6 +76,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
   });
 
   let dashboardError: string | null = null;
+  let isDeveloper = false;
   let memberships: ReturnType<typeof toMemberships> = [];
   let activeMembership: ReturnType<typeof toMemberships>[number] | null = null;
 
@@ -86,6 +87,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
   } else if (!user) {
     redirect("/login");
   } else {
+    isDeveloper = isMasterAdmin(user);
     try {
       const { data: membershipRows, error: membershipError } = await supabase
         .from("memberships")
@@ -213,7 +215,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
       {selectedPeriod.invalid && <div className="notice warning" role="status">O período informado é inválido. Exibindo o mês atual.</div>}
       <div className="dashboard-topbar">
         <div className="heading"><div><p className="eyebrow">{periodLabel(start)}</p><h1>Dashboard</h1><p>{activeMembership.congregation.name} · acompanhe a prestação de contas da {terms.unitSingular.toLocaleLowerCase("pt-BR")} ativa.</p></div><form className="dashboard-period-filter" method="get"><label htmlFor="dashboard-period">Período</label><div><input id="dashboard-period" name="period" type="month" value={selectedPeriod.current} max={new Date().toISOString().slice(0, 7)} /><button type="submit">Aplicar</button></div></form></div>
-        <HierarchicalDashboard unitId={activeMembership.congregationId} unitName={activeMembership.congregation.name} startDate={start} endDate={end} localBalance={summary.closing_balance} localIncome={summary.entries} localExpenses={summary.expenses} localTransfers={summary.transfers} canWrite={canWrite} canReadConsolidated={canReadConsolidated} incomeLabel={terms.dashboardEntries}/>
+        <HierarchicalDashboard unitId={activeMembership.congregationId} unitName={activeMembership.congregation.name} startDate={start} endDate={end} localBalance={summary.closing_balance} localIncome={summary.entries} localExpenses={summary.expenses} localTransfers={summary.transfers} canWrite={canWrite} canReadConsolidated={canReadConsolidated} canManageHierarchy={isDeveloper || can(activeMembership, "hierarchy.view")} incomeLabel={terms.dashboardEntries}/>
       </div>
       <div className="analytics-grid"><section className="panel analytics-panel"><div className="panel-title"><div><h2>Fluxo de caixa</h2><p>Entradas e despesas · últimos 6 meses</p></div><div className="chart-legend"><span><i className="legend-entry"/>Entradas</span><span><i className="legend-expense"/>Despesas</span></div></div><CashFlowChart data={chartData}/></section><section className="panel analytics-panel"><div className="panel-title"><div><h2>Composição das entradas</h2><p>{periodLabel(start)} · distribuição por categoria</p></div></div><EntryCompositionChart data={categoryComposition.length ? categoryComposition : [{ label: terms.freeIncome, value: 0, color: "#059669" }, { label: "Outros", value: 0, color: "#94a3b8" }]}/></section></div>
       <div className="dashboard-grid">

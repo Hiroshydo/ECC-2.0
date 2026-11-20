@@ -2,11 +2,9 @@
 
 import Link from "next/link";
 import {
-  Activity,
   ArrowDownToLine,
   ArrowLeftRight,
   ArrowUpFromLine,
-  Building2,
   ClipboardCheck,
   FileText,
   LayoutDashboard,
@@ -34,7 +32,6 @@ type NavigationItem = { label: string; href: string; icon: LucideIcon; permissio
 
 const navigation: NavigationItem[] = [
   { label: "Dashboard", href: "/", icon: LayoutDashboard, permission: "financial.read" },
-  { label: "Canaã", href: "/canaa", icon: Building2, permission: "financial.read" },
   { label: "Entradas", href: "/entradas", icon: ArrowDownToLine, permission: "financial.read" },
   { label: "Despesas", href: "/despesas", icon: ArrowUpFromLine, permission: "financial.read" },
   { label: "Repasses", href: "/repasses", icon: ArrowLeftRight, permission: "financial.read" },
@@ -46,7 +43,6 @@ const navigation: NavigationItem[] = [
   { label: "Relatórios", href: "/relatorios", icon: FileText, permission: "financial.read" },
   { label: "Configurações", href: "/configuracoes", icon: Settings },
   { label: "Painel Dev / Gestão", href: "/admin", icon: Terminal, devOnly: true },
-  { label: "Noah Ops", href: "/noah-ops", icon: Activity, devOnly: true },
 ];
 
 export function Sidebar({ userName, membership, memberships, isPlatformAdmin, userEmail }: { userName: string; membership: AuthenticatedMembership | null; memberships: AuthenticatedMembership[]; isPlatformAdmin: boolean; userEmail?: string | null }) {
@@ -60,7 +56,6 @@ export function Sidebar({ userName, membership, memberships, isPlatformAdmin, us
   const terms = getVocabulary(membership?.congregation.organizationType);
   const visibleNavigation = navigation.filter((item) => {
     if (item.devOnly) return isMasterUser;
-    if (item.href === "/canaa") return isMasterUser || Boolean(membership && can(membership, "hierarchy.view"));
     return Boolean(membership && (item.permission ? can(membership, item.permission) : true));
   });
   const initials = userName.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase() || "U";

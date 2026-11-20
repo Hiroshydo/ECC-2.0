@@ -1,6 +1,8 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import Link from "next/link";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Activity, Building2, ChevronDown, ChevronRight, Search, X } from "lucide-react";
 
 import { allPermissions, permissionsForRole, type Role } from "@/domain/access";
 import type { OrganizationLevel, OrganizationType } from "@/domain/vocabulary";
@@ -59,6 +61,100 @@ const allowedParentLevels: Record<OrganizationLevel, OrganizationLevel[]> = {
   local_congregation: ["national_hq", "state_hq", "sub_hq"],
 };
 
+type OrganizationTreeNode = { organization: AdminOrganization; children: OrganizationTreeNode[] };
+type OrganizationTypeFilter = OrganizationType | "all";
+
+function buildOrganizationTree(organizations: AdminOrganization[]): OrganizationTreeNode[] {
+  const knownIds = new Set(organizations.map((organization) => organization.id));
+  const childrenByParent = new Map<string, AdminOrganization[]>();
+  for (const organization of organizations) {
+    if (!organization.parent_id || !knownIds.has(organization.parent_id)) continue;
+    const children = childrenByParent.get(organization.parent_id) ?? [];
+    children.push(organization);
+    childrenByParent.set(organization.parent_id, children);
+  }
+
+  const included = new Set<string>();
+  function build(organization: AdminOrganization, ancestors: Set<string>): OrganizationTreeNode {
+    included.add(organization.id);
+    const nextAncestors = new Set(ancestors);
+    nextAncestors.add(organization.id);
+    const children = (childrenByParent.get(organization.id) ?? [])
+      .filter((child) => !nextAncestors.has(child.id))
+      .map((child) => build(child, nextAncestors));
+    return { organization, children };
+  }
+
+  const roots = organizations.filter((organization) =>
+    !organization.parent_id || !knownIds.has(organization.parent_id)
+  );
+  const tree = roots.map((organization) => build(organization, new Set()));
+  for (const organization of organizations) {
+    if (!included.has(organization.id)) tree.push(build(organization, new Set()));
+  }
+  return tree;
+}
+
+function normalizeSearch(value: string): string {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR").trim();
+}
+
+function filterOrganizationTree(
+  nodes: OrganizationTreeNode[],
+  search: string,
+  type: OrganizationTypeFilter,
+): OrganizationTreeNode[] {
+  return nodes.flatMap((node) => {
+    const organization = node.organization;
+    const searchText = normalizeSearch([organization.name, organization.city, organization.state ?? ""].join(" "));
+    const matchesOwn = (type === "all" || organization.organization_type === type)
+      && (!search || searchText.includes(search));
+    const children = filterOrganizationTree(node.children, search, type);
+    return matchesOwn || children.length ? [{ ...node, children }] : [];
+  });
+}
+
+function expandableOrganizationIds(nodes: OrganizationTreeNode[]): string[] {
+  return nodes.flatMap((node) => [
+    ...(node.children.length ? [node.organization.id] : []),
+    ...expandableOrganizationIds(node.children),
+  ]);
+}
+
+function descendantOrganizationIds(organizationId: string, organizations: AdminOrganization[]): Set<string> {
+  const childrenByParent = new Map<string, AdminOrganization[]>();
+  for (const organization of organizations) {
+    if (!organization.parent_id) continue;
+    const children = childrenByParent.get(organization.parent_id) ?? [];
+    children.push(organization);
+    childrenByParent.set(organization.parent_id, children);
+  }
+  const descendants = new Set<string>();
+  const pending = [...(childrenByParent.get(organizationId) ?? [])];
+  while (pending.length) {
+    const child = pending.pop();
+    if (!child || descendants.has(child.id) || child.id === organizationId) continue;
+    descendants.add(child.id);
+    pending.push(...(childrenByParent.get(child.id) ?? []));
+  }
+  return descendants;
+}
+
+function descendantCongregationCounts(nodes: OrganizationTreeNode[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  function count(node: OrganizationTreeNode): number {
+    let descendants = 0;
+    for (const child of node.children) {
+      descendants += count(child);
+      if (child.organization.organization_level === "local_congregation") descendants += 1;
+    }
+    counts.set(node.organization.id, descendants);
+    return descendants + (node.organization.organization_level === "local_congregation" ? 1 : 0);
+  }
+  for (const node of nodes) count(node);
+  return counts;
+}
+
 function permissionsFor(role: Role): AdminPermissionSet {
   const defaults = permissionsForRole(role);
   return Object.fromEntries(allPermissions.map((permission) => [permission, defaults[permission] ?? false])) as AdminPermissionSet;
@@ -73,6 +169,87 @@ async function readApi<T>(response: Response, errorContext = "Falha ao concluir 
   return result.data as T;
 }
 
+function OrganizationTreeRow({
+  node,
+  depth,
+  expandedIds,
+  selectedId,
+  congregationCounts,
+  userCounts,
+  onToggle,
+  onOpenDetails,
+}: {
+  node: OrganizationTreeNode;
+  depth: number;
+  expandedIds: Set<string>;
+  selectedId: string | null;
+  congregationCounts: Map<string, number>;
+  userCounts: Map<string, number>;
+  onToggle: (organizationId: string) => void;
+  onOpenDetails: (organization: AdminOrganization, trigger: HTMLButtonElement) => void;
+}) {
+  const { organization, children } = node;
+  const expanded = expandedIds.has(organization.id);
+  const childrenId = `organization-children-${organization.id}`;
+  const isCongregation = organization.organization_level === "local_congregation";
+  const count = isCongregation
+    ? `${userCounts.get(organization.id) ?? 0} usuários`
+    : `${congregationCounts.get(organization.id) ?? 0} congregações`;
+
+  return (
+    <>
+      <div className={`organization-tree-row${selectedId === organization.id ? " is-selected" : ""}`}>
+        <div className="organization-tree-indent" style={{ paddingLeft: `${depth * 24}px` }}>
+          {children.length ? (
+            <button
+              type="button"
+              className="organization-tree-chevron"
+              aria-label={`${expanded ? "Recolher" : "Expandir"} ${organization.name}`}
+              aria-expanded={expanded}
+              aria-controls={childrenId}
+              onClick={() => onToggle(organization.id)}
+            >
+              {expanded ? <ChevronDown size={17} aria-hidden="true" /> : <ChevronRight size={17} aria-hidden="true" />}
+            </button>
+          ) : <span className="organization-tree-spacer" aria-hidden="true" />}
+          <button
+            type="button"
+            className="organization-tree-details"
+            aria-label={`${organization.name}, ${organization.city}${organization.state ? `, ${organization.state}` : ""}. Abrir detalhes`}
+            onClick={(event) => onOpenDetails(organization, event.currentTarget)}
+          >
+            <span className="organization-tree-name">
+              <strong>{organization.name}</strong>
+              <small>{organization.city}{organization.state ? ` · ${organization.state}` : ""}</small>
+            </span>
+            <span className="organization-tree-count">{count}</span>
+            <span className={`organization-status ${organization.active ? "active" : "inactive"}`}>
+              {organization.active ? "Ativa" : "Inativa"}
+            </span>
+          </button>
+        </div>
+      </div>
+      {children.length > 0 && (
+        <div id={childrenId} hidden={!expanded}>
+          {children.map((child) => (
+            <OrganizationTreeRow
+              key={child.organization.id}
+              node={child}
+              depth={depth + 1}
+              expandedIds={expandedIds}
+              selectedId={selectedId}
+              congregationCounts={congregationCounts}
+              userCounts={userCounts}
+              onToggle={onToggle}
+              onOpenDetails={onOpenDetails}
+            />
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
 export function AdminManager() {
   const [activeTab, setActiveTab] = useState<"organizations" | "users">("organizations");
   const [overview, setOverview] = useState<AdminOverview>({ organizations: [], users: [] });
@@ -82,19 +259,103 @@ export function AdminManager() {
   const [notice, setNotice] = useState<string | null>(null);
   const [showOrganizationForm, setShowOrganizationForm] = useState(false);
   const [showUserForm, setShowUserForm] = useState(false);
+  const [organizationSearch, setOrganizationSearch] = useState("");
+  const [organizationTypeFilter, setOrganizationTypeFilter] = useState<OrganizationTypeFilter>("all");
+  const [expandedOrganizationIds, setExpandedOrganizationIds] = useState<Set<string>>(() => new Set());
   const [organization, setOrganization] = useState({ name: "", city: "", state: "", organizationType: "church" as OrganizationType, organizationLevel: "local_congregation" as OrganizationLevel, parent_id: null as string | null });
   const [newUser, setNewUser] = useState({ name: "", email: "", congregationId: "", role: "viewer" as Role });
   const [editingOrganization, setEditingOrganization] = useState<AdminOrganization | null>(null);
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
+  const [selectedOrganization, setSelectedOrganization] = useState<AdminOrganization | null>(null);
   const [draftAssignments, setDraftAssignments] = useState<AdminAssignment[]>([]);
   const [organizationDraft, setOrganizationDraft] = useState({ name: "", city: "", state: "", leaderName: "", organizationType: "church" as OrganizationType, organizationLevel: "local_congregation" as OrganizationLevel, parent_id: null as string | null, active: true });
+  const drawerOpenerRef = useRef<HTMLButtonElement | null>(null);
+  const drawerCloseButtonRef = useRef<HTMLButtonElement | null>(null);
 
+  const organizationTree = useMemo(() => buildOrganizationTree(overview.organizations), [overview.organizations]);
+  const normalizedSearch = normalizeSearch(organizationSearch);
+  const filteredOrganizationTree = useMemo(
+    () => filterOrganizationTree(organizationTree, normalizedSearch, organizationTypeFilter),
+    [organizationTree, normalizedSearch, organizationTypeFilter],
+  );
+  const hasOrganizationFilters = Boolean(normalizedSearch) || organizationTypeFilter !== "all";
+  const visibleExpandableIds = useMemo(
+    () => expandableOrganizationIds(filteredOrganizationTree),
+    [filteredOrganizationTree],
+  );
+  const congregationCounts = useMemo(
+    () => descendantCongregationCounts(organizationTree),
+    [organizationTree],
+  );
+  const userCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const user of overview.users) {
+      for (const assignment of user.assignments) {
+        counts.set(assignment.congregationId, (counts.get(assignment.congregationId) ?? 0) + 1);
+      }
+    }
+    return counts;
+  }, [overview.users]);
+  const organizationsById = useMemo(
+    () => new Map(overview.organizations.map((unit) => [unit.id, unit])),
+    [overview.organizations],
+  );
+  const childrenByParentId = useMemo(() => {
+    const children = new Map<string, AdminOrganization[]>();
+    for (const unit of overview.organizations) {
+      if (!unit.parent_id) continue;
+      const current = children.get(unit.parent_id) ?? [];
+      current.push(unit);
+      children.set(unit.parent_id, current);
+    }
+    return children;
+  }, [overview.organizations]);
+  const excludedEditParentIds = useMemo(
+    () => editingOrganization
+      ? descendantOrganizationIds(editingOrganization.id, overview.organizations)
+      : new Set<string>(),
+    [editingOrganization, overview.organizations],
+  );
   const availableCreateHeadquarters = overview.organizations.filter((unit) =>
     allowedParentLevels[organization.organizationLevel].includes(unit.organization_level) && unit.organization_type === organization.organizationType
   );
   const availableEditHeadquarters = overview.organizations.filter((unit) =>
-    allowedParentLevels[organizationDraft.organizationLevel].includes(unit.organization_level) && unit.id !== editingOrganization?.id && unit.organization_type === organizationDraft.organizationType
+    allowedParentLevels[organizationDraft.organizationLevel].includes(unit.organization_level)
+      && unit.id !== editingOrganization?.id
+      && !excludedEditParentIds.has(unit.id)
+      && unit.organization_type === organizationDraft.organizationType
   );
+
+  useEffect(() => {
+    setExpandedOrganizationIds(hasOrganizationFilters ? new Set(visibleExpandableIds) : new Set());
+  }, [hasOrganizationFilters, visibleExpandableIds]);
+
+  const closeOrganizationDrawer = useCallback(() => {
+    const opener = drawerOpenerRef.current;
+    setSelectedOrganization(null);
+    if (opener) {
+      requestAnimationFrame(() => {
+        opener.focus();
+        if (drawerOpenerRef.current === opener) drawerOpenerRef.current = null;
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!selectedOrganization) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const frame = requestAnimationFrame(() => drawerCloseButtonRef.current?.focus());
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeOrganizationDrawer();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      cancelAnimationFrame(frame);
+      document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [selectedOrganization, closeOrganizationDrawer]);
 
   async function refreshOverview() {
     const data = await readApi<AdminOverview>(await fetch("/api/admin/overview", { cache: "no-store" }));
@@ -212,6 +473,27 @@ export function AdminManager() {
     setError(null);
   }
 
+  function openOrganizationDetails(unit: AdminOrganization, trigger: HTMLButtonElement) {
+    if (!selectedOrganization) drawerOpenerRef.current = trigger;
+    setSelectedOrganization(unit);
+  }
+
+  function toggleOrganizationExpanded(organizationId: string) {
+    setExpandedOrganizationIds((current) => {
+      const next = new Set(current);
+      if (next.has(organizationId)) next.delete(organizationId);
+      else next.add(organizationId);
+      return next;
+    });
+  }
+
+  function editSelectedOrganization() {
+    if (!selectedOrganization) return;
+    openOrganizationEditor(selectedOrganization);
+    setSelectedOrganization(null);
+    drawerOpenerRef.current = null;
+  }
+
   function openAccessEditor(user: AdminUser) {
     setEditingUser(user);
     setDraftAssignments(user.assignments.map((assignment) => ({ ...assignment, permissions: { ...assignment.permissions } })));
@@ -260,7 +542,7 @@ export function AdminManager() {
   }
 
   return <section className="admin-page">
-    <div className="admin-heading"><div><p className="eyebrow">CONTROLE DA PLATAFORMA</p><h1>Administração</h1><p>Gerencie unidades, usuários e permissões de acesso.</p></div></div>
+    <div className="admin-heading admin-heading-tools"><div><p className="eyebrow">CONTROLE DA PLATAFORMA</p><h1>Administração</h1><p>Gerencie unidades, usuários e permissões de acesso.</p></div><div className="admin-dev-shortcuts"><Link href="/noah-ops" className="admin-secondary-button"><Activity size={16} aria-hidden="true"/> Noah Ops</Link><Link href="/canaa" className="admin-secondary-button"><Building2 size={16} aria-hidden="true"/> Gestão da organização</Link></div></div>
     <div className="admin-tabs" role="tablist" aria-label="Áreas de administração">
       <button type="button" role="tab" aria-selected={activeTab === "organizations"} className={activeTab === "organizations" ? "is-active" : ""} onClick={() => setActiveTab("organizations")}>Unidades <span>{overview.organizations.length}</span></button>
       <button type="button" role="tab" aria-selected={activeTab === "users"} className={activeTab === "users" ? "is-active" : ""} onClick={() => setActiveTab("users")}>Usuários <span>{overview.users.length}</span></button>
@@ -286,7 +568,44 @@ export function AdminManager() {
         </div>
         <button type="submit" className="admin-primary-button" disabled={pending}>{pending ? "Salvando…" : "Cadastrar unidade"}</button>
       </form>}
-      {loading ? <AdminLoading /> : overview.organizations.length ? <div className="organization-grid">{overview.organizations.map((unit) => <article className="organization-card" key={unit.id}><div className="organization-card-top"><span className={`organization-type ${unit.organization_type}`}>{organizationTypeLabels[unit.organization_type]}</span><div className="admin-card-actions"><span className={`organization-status ${unit.active ? "active" : "inactive"}`}>{unit.active ? "Ativa" : "Inativa"}</span><button type="button" className="admin-link-button" onClick={() => openOrganizationEditor(unit)}>Editar</button></div></div><h3>{unit.name}</h3><p>{unit.city}{unit.state ? ` · ${unit.state}` : ""}</p><span className="headquarters-badge">{organizationLevelLabels[unit.organization_level]}</span></article>)}</div> : <div className="admin-empty">Nenhuma unidade cadastrada.</div>}
+      {loading ? <AdminLoading /> : overview.organizations.length ? <>
+        <div className="organization-list-controls">
+          <label className="organization-search">
+            <span className="admin-field-label">Buscar unidade</span>
+            <span className="organization-search-input"><Search size={16} aria-hidden="true"/><input type="search" value={organizationSearch} onChange={(event) => setOrganizationSearch(event.target.value)} placeholder="Nome, cidade ou UF" /></span>
+          </label>
+          <label className="organization-type-filter">
+            <span className="admin-field-label">Tipo</span>
+            <select value={organizationTypeFilter} onChange={(event) => setOrganizationTypeFilter(event.target.value as OrganizationTypeFilter)}>
+              <option value="all">Todas</option>
+              <option value="church">Igrejas</option>
+              <option value="ong">ONGs</option>
+            </select>
+          </label>
+          <div className="organization-tree-actions" aria-label="Ações da hierarquia">
+            <button type="button" className="admin-secondary-button" disabled={!visibleExpandableIds.length} onClick={() => setExpandedOrganizationIds(new Set(visibleExpandableIds))}>Expandir tudo</button>
+            <button type="button" className="admin-secondary-button" disabled={!expandedOrganizationIds.size} onClick={() => setExpandedOrganizationIds(new Set())}>Recolher tudo</button>
+          </div>
+        </div>
+        <div className="organization-tree" role="tree" aria-label="Lista hierárquica de unidades">
+          <div className="organization-tree-header" aria-hidden="true">
+            <span>Unidade</span><span className="organization-tree-count">Contagem</span><span>Status</span>
+          </div>
+          {filteredOrganizationTree.length ? filteredOrganizationTree.map((node) => (
+            <OrganizationTreeRow
+              key={node.organization.id}
+              node={node}
+              depth={0}
+              expandedIds={expandedOrganizationIds}
+              selectedId={selectedOrganization?.id ?? null}
+              congregationCounts={congregationCounts}
+              userCounts={userCounts}
+              onToggle={toggleOrganizationExpanded}
+              onOpenDetails={openOrganizationDetails}
+            />
+          )) : <div className="admin-empty" role="status">Nenhuma unidade corresponde aos filtros.</div>}
+        </div>
+      </> : <div className="admin-empty">Nenhuma unidade cadastrada.</div>}
     </section>}
 
     {activeTab === "users" && <section className="admin-section" role="tabpanel">

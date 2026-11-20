@@ -4174,6 +4174,12 @@ html, body { overflow-x: hidden; }
 }
 
 .hierarchy-permission-hint { color: var(--rf-muted); font-size: 11px; }
+.hierarchy-manage-link { display: inline-flex; align-items: center; gap: 7px; min-height: 36px; padding: 8px 12px; border: 1px solid var(--rf-line); border-radius: 9px; background: var(--rf-card); color: var(--rf-brand-deep); font-size: 12px; font-weight: 600; text-decoration: none; }
+.hierarchy-manage-link:hover { border-color: var(--rf-brand); background: #f0fdf9; }
+.hierarchy-manage-link:focus-visible { outline: 2px solid var(--rf-brand); outline-offset: 3px; }
+.admin-heading-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; }
+.admin-dev-shortcuts { display: flex; flex-wrap: wrap; gap: 8px; }
+.admin-dev-shortcuts a { gap: 8px; text-decoration: none; }
 
 @media (max-width: 1200px) {
   .dashboard-page .metrics {

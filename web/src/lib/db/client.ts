@@ -107,11 +107,12 @@ function jsonValue(value: unknown): unknown {
 }
 
 function normalizeRow(row: Record<string, unknown>): DbRow {
-  for (const [key, value] of Object.entries(row)) {
-    if (booleanColumns.has(key) && (value === 0 || value === 1)) row[key] = value === 1;
-    if (["before_data", "after_data", "user_metadata", "app_metadata", "identity_data"].includes(key)) row[key] = jsonValue(value);
+  const normalized = { ...row };
+  for (const [key, value] of Object.entries(normalized)) {
+    if (booleanColumns.has(key) && (value === 0 || value === 1)) normalized[key] = value === 1;
+    if (["before_data", "after_data", "user_metadata", "app_metadata", "identity_data"].includes(key)) normalized[key] = jsonValue(value);
   }
-  return row as DbRow;
+  return normalized as DbRow;
 }
 
 function splitSelection(selection: string): string[] {
