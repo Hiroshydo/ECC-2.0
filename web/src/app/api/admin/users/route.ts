@@ -56,6 +56,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: accessError.message }, { status: 400 });
   }
 
-  return NextResponse.json({ data: { id: data.user.id, email, name } }, { status: 201, headers: { "Cache-Control": "no-store" } });
+  return NextResponse.json({ data: { id: data.user.id, email, name, initialPassword: data.initialPassword } }, { status: 201, headers: { "Cache-Control": "no-store" } });
 }
 

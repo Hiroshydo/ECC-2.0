@@ -49,7 +49,6 @@ export async function linkParentAction(childId: string, parentId: string | null)
   }
 
   const adminClient = createServiceClient();
-  if (!adminClient) return { ok: false, message: "Não disponível: SUPABASE_SERVICE_ROLE_KEY ausente." };
 
   const { data: congregationRows, error: graphError } = await adminClient
     .from("congregations")
@@ -130,7 +129,6 @@ export async function inviteOperatorAction(email: string, requestedRole: string,
   }
 
   const adminClient = createServiceClient();
-  if (!adminClient) return { ok: false, message: "Não disponível: SUPABASE_SERVICE_ROLE_KEY ausente." };
 
   const role: InviteRole = requestedRole;
   const { data: inviteData, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(normalizedEmail);
@@ -170,5 +168,5 @@ export async function inviteOperatorAction(email: string, requestedRole: string,
     return { ok: false, message: `Não foi possível registrar a auditoria do convite: ${auditError.message}` };
   }
 
-  return { ok: true, message: "Operador convidado e acesso auditado." };
+  return { ok: true, message: `Operador criado e acesso auditado. Senha inicial: ${inviteData.initialPassword}` };
 }

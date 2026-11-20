@@ -1,16 +1,16 @@
-import type { User } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 
 import { AuthenticatedShell } from "@/components/AuthenticatedShell";
 import { isMasterAdmin } from "@/domain/access";
+import type { LocalUser } from "@/lib/db/client";
 import { toMemberships } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) redirect("/login");
+export const dynamic = "force-dynamic";
 
-  let user: User | null = null;
+export default async function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
+  let user: LocalUser | null = null;
   let memberships: ReturnType<typeof toMemberships> = [];
   let activeMembership: ReturnType<typeof toMemberships>[number] | null = null;
 

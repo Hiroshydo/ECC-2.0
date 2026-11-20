@@ -1,4 +1,4 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { LocalSupabaseClient } from "@/lib/db/client";
 
 export type ReportData = {
   organization: string;
@@ -24,7 +24,7 @@ export function periodBounds(period: string) {
   return { start, end };
 }
 
-export async function loadReportData(supabase: SupabaseClient, congregationId: string, period: string, responsible: string | null): Promise<ReportData> {
+export async function loadReportData(supabase: LocalSupabaseClient, congregationId: string, period: string, responsible: string | null): Promise<ReportData> {
   const { start, end } = periodBounds(period);
   const [congregationResult, summaryResult, entriesResult, expensesResult, transfersResult, adjustmentsResult, reversalsResult, closingsResult, auditsResult, cashPeriodsResult] = await Promise.all([
     supabase.from("congregations").select("name, city").eq("id", congregationId).maybeSingle(),

@@ -1,28 +1,17 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { updateSession } from "@/lib/supabase/middleware";
-
-const isPublicPath = (pathname: string) => pathname === "/login" || pathname.startsWith("/api/health") || pathname.startsWith("/_next") || pathname === "/favicon.ico";
+const isPublicPath = (pathname: string) =>
+  pathname === "/login" ||
+  pathname === "/api/health" ||
+  pathname.startsWith("/api/auth/") ||
+  pathname.startsWith("/_next") ||
+  pathname === "/favicon.ico";
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
-
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) {
-    return isPublicPath(pathname)
-      ? NextResponse.next({ request })
-      : NextResponse.redirect(new URL("/login", request.url));
-  }
-
-  const { response, user } = await updateSession(request);
-  if (isPublicPath(pathname)) return response;
-
-  if (!user) {
-    const redirectResponse = NextResponse.redirect(new URL("/login", request.url));
-    response.cookies.getAll().forEach((cookie) => redirectResponse.cookies.set(cookie));
-    return redirectResponse;
-  }
-
-  return response;
+  if (isPublicPath(pathname)) return NextResponse.next({ request });
+  if (!request.cookies.has("ecc_session")) return NextResponse.redirect(new URL("/login", request.url));
+  return NextResponse.next({ request });
 }
 
 export const config = {

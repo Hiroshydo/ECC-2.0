@@ -11,7 +11,7 @@ export default async function AdminPage() {
   if (!context.ok && context.status === 401) redirect("/login");
   if (!context.ok && context.status === 403) redirect("/");
   if (!context.ok) {
-    return <section className="admin-page"><div className="admin-alert warning" role="status"><strong>Gestão global indisponível.</strong><span>Configure SUPABASE_SERVICE_ROLE_KEY somente como variável server-side da Vercel para habilitar operações administrativas.</span></div></section>;
+    return <section className="admin-page"><div className="admin-alert warning" role="status"><strong>Gestão local indisponível.</strong><span>{context.error}</span></div></section>;
   }
   if (!isMasterAdmin(context.user)) redirect("/");
 
