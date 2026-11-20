@@ -94,8 +94,23 @@ export function Sidebar({ userName, membership, memberships, isPlatformAdmin, us
             const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(`${item.href}/`));
             const label = item.href === "/entradas" ? terms.dashboardEntries : item.href === "/repasses" ? terms.campaigns : item.label;
             const showDevBadge = item.devOnly;
+            const toolActive = showDevBadge && (pathname === "/noah-ops" || pathname.startsWith("/noah-ops/") || pathname === "/canaa" || pathname.startsWith("/canaa/"));
             const Icon = item.icon;
-            return <Link key={item.href} href={item.href} className={active ? "active group" : "group"} aria-current={active ? "page" : undefined} onClick={() => setMenuOpen(false)}><span className="nav-icon" aria-hidden="true"><Icon size={18} strokeWidth={1.8} /></span><span>{label}</span>{showDevBadge && <span className="dev-badge">DEV</span>}</Link>;
+            return (
+              <div key={item.href} className={`sidebar-nav-group${active || toolActive ? " is-active" : ""}`}>
+                <Link href={item.href} className={`${active || toolActive ? "active " : ""}group`} aria-current={active ? "page" : undefined} onClick={() => setMenuOpen(false)}>
+                  <span className="nav-icon" aria-hidden="true"><Icon size={18} strokeWidth={1.8} /></span>
+                  <span>{label}</span>
+                  {showDevBadge && <span className="dev-badge">DEV</span>}
+                </Link>
+                {showDevBadge && (
+                  <div className="sidebar-dev-tools" aria-label="Ferramentas de desenvolvimento">
+                    <Link href="/noah-ops" aria-current={pathname === "/noah-ops" ? "page" : undefined} className={pathname.startsWith("/noah-ops") ? "is-current" : ""} onClick={() => setMenuOpen(false)}>Noah Ops</Link>
+                    <Link href="/canaa" aria-current={pathname === "/canaa" ? "page" : undefined} className={pathname.startsWith("/canaa") ? "is-current" : ""} onClick={() => setMenuOpen(false)}>Hierarquia de unidades</Link>
+                  </div>
+                )}
+              </div>
+            );
           })}
         </nav>
         <div className="sidebar-footer">

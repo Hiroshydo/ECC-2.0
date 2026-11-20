@@ -15,5 +15,5 @@ export default async function AdminPage() {
   }
   if (!isMasterAdmin(context.user)) redirect("/");
 
-  return <AdminManager />;
+  return <AdminManager currentUserId={context.user.id} />;
 }

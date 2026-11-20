@@ -136,7 +136,7 @@ export function HierarchicalDashboard({
         <button type="button" aria-pressed={mode === "consolidated"} className={mode === "consolidated" ? "is-active" : ""} disabled={!canReadConsolidated || pending} title={!canReadConsolidated ? "Permissão consolidada não concedida para esta unidade" : undefined} onClick={() => void showConsolidated()}>{pending ? "Carregando…" : "Visão Consolidada"}</button>
       </div>
       {!canReadConsolidated && <span className="hierarchy-permission-hint"><LockKeyhole size={14} aria-hidden="true"/> Visão consolidada não liberada para esta unidade.</span>}
-      {canManageHierarchy && <Link href="/canaa" className="hierarchy-manage-link"><Building2 size={15} aria-hidden="true"/> Gestão da organização</Link>}
+      {canManageHierarchy && <Link href="/canaa" className="hierarchy-manage-link"><Building2 size={15} aria-hidden="true"/> Gerenciar hierarquia de unidades</Link>}
       {mode === "consolidated" && currentUnit && <nav className="hierarchy-breadcrumb" aria-label="Navegação da hierarquia">
         {breadcrumbs.map((unit, index) => <span key={unit.unit_id}>
           {index > 0 && <span aria-hidden="true">›</span>}
