@@ -15,6 +15,21 @@ export type EntryCategory =
   | "other";
 
 export type PaymentMethod = "cash" | "pix" | "transfer" | "card" | "check" | "other";
+export type TransferMethod = "pix" | "transfer" | "deposit" | "cash";
+
+export type TransferSend = {
+  occurred_on: string;
+  amount_sent_cents: number;
+  method: TransferMethod;
+  reference: string | null;
+  note: string | null;
+  sent_by: string;
+  created_at: string;
+};
+
+export function isTransferMethod(value: string): value is TransferMethod {
+  return value === "pix" || value === "transfer" || value === "deposit" || value === "cash";
+}
 
 export type FinancialEntry = {
   id: string;

@@ -5,7 +5,7 @@ A suíte valida o contrato de domínio em PostgreSQL/Supabase usando fixtures e 
 ## Pré-requisitos
 
 - Supabase local iniciado com Docker;
-- migrations `0001` a `0013` aplicadas;
+- migrations `0001` a `0014` aplicadas;
 - acesso ao container local do PostgreSQL (o `psql` do container pode ser usado diretamente);
 - acesso de banco que possa criar fixtures em `auth.users` (no Supabase local, use o usuário `postgres`).
 

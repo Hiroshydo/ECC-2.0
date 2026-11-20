@@ -22,7 +22,7 @@ supabase migration list
 supabase db push
 ```
 
-O CLI usa o stack local quando executado em `web/`; confirme que o destino exibido é `local stack` antes de aplicar. O repositório contém migrations de `0001_finance_core.sql` até `0013_khatam_licenses.sql`.
+O CLI usa o stack local quando executado em `web/`; confirme que o destino exibido é `local stack` antes de aplicar. O repositório contém migrations de `0001_finance_core.sql` até `0014_transfer_send.sql`.
 
 Para recriar o banco local, aplicar todas as migrations e carregar o seed:
 

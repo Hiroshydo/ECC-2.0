@@ -42,6 +42,9 @@ DECLARE
   v_month date := date_trunc('month', (now() at time zone 'America/Sao_Paulo'))::date;
   v_idempotency_key uuid := 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee';
   v_send_count integer;
+  v_had_closing boolean;
+  v_previous_closing_status text;
+  v_previous_closed_at timestamptz;
   v_total_entries bigint;
   v_total_expenses bigint;
   v_status text;
@@ -96,6 +99,15 @@ BEGIN
   PERFORM public.assert_equal(v_status, 'approved', 'Expense approval did not persist.');
 
   -- Transfer requests require two direct treasury assignments.
+  SELECT status, closed_at INTO v_previous_closing_status, v_previous_closed_at
+  FROM public.monthly_closings
+  WHERE congregation_id = v_congregation_a AND reference_period = v_month;
+  v_had_closing := FOUND;
+  INSERT INTO public.monthly_closings(id, congregation_id, reference_period, status, submitted_by, approved_by, closed_at)
+  VALUES (gen_random_uuid(), v_congregation_a, v_month, 'open', NULL, NULL, NULL)
+  ON CONFLICT (congregation_id, reference_period)
+  DO UPDATE SET status = 'open', closed_at = NULL;
+
   PERFORM set_config('request.jwt.claim.sub', v_treasurer::text, true);
   DELETE FROM public.memberships
   WHERE user_id = v_transfer_sender AND congregation_id = v_congregation_a;
@@ -246,6 +258,14 @@ BEGIN
     EXISTS (SELECT 1 FROM public.audit_events WHERE entity = 'headquarters_transfers' AND entity_id = v_transfer_id AND action = 'sent'),
     'Transfer send audit event is missing.'
   );
+  IF v_had_closing THEN
+    UPDATE public.monthly_closings
+    SET status = v_previous_closing_status, closed_at = v_previous_closed_at
+    WHERE congregation_id = v_congregation_a AND reference_period = v_month;
+  ELSE
+    DELETE FROM public.monthly_closings
+    WHERE congregation_id = v_congregation_a AND reference_period = v_month;
+  END IF;
 
   -- Deterministic balance check.
   SELECT sum(amount_cents) INTO v_total_entries FROM public.entries WHERE congregation_id = v_congregation_a;
