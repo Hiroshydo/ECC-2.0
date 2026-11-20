@@ -1,123 +1,119 @@
-<p align="center">
-  <img src="web/public/branding/ecclesia-finance-logo.png" alt="Ecclesia Finance" width="360">
-</p>
+---
+title: Ecclesia Finance ECC 2.0
+module: ecclesia
+layer: core
+status: parcialmente implementado
+tags:
+  - ecc
+  - erp
+  - nextjs
+  - supabase
+---
 
-<h1 align="center">Ecclesia Finance</h1>
+# Ecclesia Finance ECC 2.0
 
-<p align="center">Organização, transparência e confiança para a gestão financeira de igrejas e organizações.</p>
+Ecclesia Finance ECC 2.0 é um monólito modular para gestão financeira de igrejas e organizações não governamentais. O software combina Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS e Supabase/PostgreSQL.
 
-## 🏛️ Sobre o Ecclesia Finance
+O sistema foi modelado como um **ERP financeiro hierárquico e multi-tenant**:
 
-O Ecclesia Finance foi desenvolvido para ajudar igrejas e organizações a controlar suas finanças, acompanhar movimentações e apresentar uma prestação de contas clara, organizada e compreensível.
+- `church`: vocabulário de congregação, dízimos, ofertas, sede e pastor.
+- `ong`: vocabulário de unidade/projeto, doações recorrentes/livres, matriz e diretor.
+- Cada unidade possui `parent_id`, nível organizacional e memberships próprias.
+- O isolamento principal é aplicado pelas políticas RLS e pelas funções RPC do PostgreSQL.
 
-## 📌 Status atual
+> “Implementado” neste repositório significa que existe código e migrations versionados. Não significa que o recurso foi publicado ou validado em um ambiente cloud externo.
 
-O núcleo financeiro e as telas principais estão implementados. As migrations locais foram aplicadas até `0013_khatam_licenses.sql` e a suíte de domínio passou no Supabase local. Esse resultado não valida nem altera o banco remoto.
+## Índice Obsidian
 
-Para iniciar o ambiente local e repetir a validação, siga [database-tests/supabase-setup.md](database-tests/supabase-setup.md). Recursos como dashboard agregado da sede, contas financeiras, Pix operacional, maquininha e governança configurável permanecem fora do núcleo implementado.
+- [[00 - Visao Geral ECC]]
+- [[RELATORIO_TECNICO_PROJETO|Relatório técnico mestre]]
+- [[Ecclesia Core]]
+- [[Hiram Architecture]]
+- [[Elias Temp]]
+- [[Enoch Audit]]
+- [[Sefer Reports]]
+- [[Khatam Authenticate]]
+- [[Canaa Local]]
+- [[Canaa Access]]
+- [[Noah Developer]]
+- [[Gideon Security]]
+- [[Shofeet Note]]
 
-O ambiente separado de homologação está publicado em `https://ecclesia-finance-a8cp.vercel.app`. O seed demonstrativo e os passos para conectar um Supabase exclusivo de homologação estão em [docs/homologacao.md](docs/homologacao.md).
+## Arquitetura em resumo
 
-## Publicação na Vercel
+```mermaid
+flowchart TD
+    Browser["Navegador / React 19"] --> Proxy["Proxy Next.js\nAtualização SSR da sessão"]
+    Proxy --> App["Next.js App Router"]
+    App --> Layout["Layout autenticado\nMembership, unidade ativa e RBAC"]
+    Layout --> Pages["Páginas financeiras"]
+    Pages --> RPC["Rotas API + Supabase RPC"]
+    RPC --> RLS["RLS + funções SECURITY DEFINER"]
+    RLS --> PG["PostgreSQL"]
 
-No projeto da Vercel, use `web` como **Root Directory**. A configuração versionada em `web/vercel.json` define Next.js, `npm ci` e `npm run build`.
+    subgraph Core["Core ECC"]
+        Hiram["Hiram Architecture"]
+        Ecclesia["Ecclesia Core"]
+        Elias["Elias Temp"]
+        Enoch["Enoch Audit"]
+        Sefer["Sefer Reports"]
+        Khatam["Khatam Authenticate"]
+        Canaa["Canaã Access / Local"]
+    end
 
-Configure `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` nos ambientes `Preview` e `Production` da Vercel. Salve as variaveis, crie um novo deploy e valide `https://SEU-DOMINIO/api/health`: `status: ok` confirma a presenca das variaveis, mas nao substitui os testes de login e banco.
+    App --> Core
+    Core --> PG
 
-O mapa de pastas e rotas está documentado em [docs/estrutura-web.md](docs/estrutura-web.md).
+    Gideon["Gideon Security — planejado"] -. futuro .-> RPC
+    Shofeet["Shofeet Note — planejado"] -. futuro .-> PG
+```
 
-## 🎯 Objetivo
+## Fluxo ponta a ponta
 
-Reunir em um só lugar as informações financeiras da organização, fortalecendo a organização, a transparência, o controle e a responsabilidade na prestação de contas.
+1. O usuário acessa uma página protegida.
+2. `proxy.ts` atualiza a sessão Supabase SSR e bloqueia usuários não autenticados.
+3. O layout consulta memberships e a unidade ativa salva no cookie.
+4. O domínio converte memberships, papéis e overrides em permissões.
+5. Páginas carregam dados por RLS e componentes Managers enviam operações às APIs.
+6. APIs chamam funções RPC PostgreSQL.
+7. RPCs verificam papéis/permissões, período fechado e registram auditoria.
+8. Ajustes e estornos criam correções formais em vez de editar o histórico original.
+9. O fechamento consolida o saldo da competência e bloqueia alterações retroativas.
+10. Relatórios agregam dados e geram PDF/Excel no navegador.
 
-## 📊 Dashboard
+## Módulos implementados no código
 
-Uma visão geral do período financeiro, com:
+| Módulo | Estado |
+|---|---|
+| [[Ecclesia Core]] | Implementado parcialmente |
+| [[Hiram Architecture]] | Implementado no código |
+| [[Elias Temp]] | Implementado no código |
+| [[Enoch Audit]] | Implementado no código |
+| [[Sefer Reports]] | Implementado no código |
+| [[Khatam Authenticate]] | Licença básica implementada; UI/middleware comerciais incompletos |
+| [[Canaa Local]] | Parcialmente implementado |
+| [[Canaa Access]] | Parcialmente implementado |
+| [[Noah Developer]] | Interface e autorização básicas |
 
-- entradas;
-- despesas;
-- repasses;
-- ajustes;
-- saldo;
-- situações que precisam de atenção.
+## Roadmap explícito
 
-## 💰 Entradas
+| Módulo | Estado |
+|---|---|
+| [[Gideon Security]] | Planejado |
+| [[Shofeet Note]] | Planejado/adialo no roadmap atual |
 
-Registre os valores recebidos pela congregação e acompanhe data, categoria, origem, forma de recebimento e finalidade.
+## Estrutura principal
 
-## 💳 Despesas
+- `web/src/app/(authenticated)`: páginas protegidas.
+- `web/src/app/api`: endpoints HTTP.
+- `web/src/app/actions`: server actions financeiras.
+- `web/src/components`: Managers e componentes de apresentação.
+- `web/src/domain`: regras de acesso, finanças e vocabulário.
+- `web/src/lib`: sessão, Supabase, relatórios e administração.
+- `web/src/modules`: módulos arquiteturais e plug-ins.
+- `web/supabase/migrations`: migrations versionadas.
+- `database-tests`: suíte SQL de domínio e segurança.
 
-Registre e acompanhe os gastos da organização, com categoria, descrição, fornecedor, forma de pagamento, finalidade, centro de custo e situação de aprovação.
+## Execução local
 
-## 🔄 Repasses
-
-Acompanhe o fluxo de repasses entre congregações e a administração, desde a solicitação e aprovação até o envio e a confirmação do recebimento.
-
-## 💵 Caixa
-
-Controle o dinheiro físico da congregação, incluindo abertura do caixa, entradas, saídas, depósitos, movimentações e saldo físico atual.
-
-## 🔒 Fechamento
-
-Encerre o período financeiro com clareza e consolide os registros que compõem a prestação de contas.
-
-## 🛠️ Ajustes
-
-Registre correções financeiras de forma controlada, justificada e transparente, preservando a compreensão do histórico.
-
-## ↩️ Estornos
-
-Registre reversões de lançamentos quando necessário, mantendo a integridade e a rastreabilidade das informações.
-
-## 🔎 Auditoria
-
-Consulte o histórico das principais ações realizadas no sistema. A auditoria ajuda a acompanhar mudanças, responsabilidades e decisões com transparência.
-
-## 📑 Relatórios
-
-Gere uma prestação de contas clara e organizada para visualização, apresentação e arquivamento.
-
-Os relatórios reúnem:
-
-- resumo financeiro;
-- entradas;
-- despesas;
-- repasses;
-- ajustes;
-- estornos;
-- movimentações de caixa;
-- fechamento;
-- auditoria.
-
-A prestação pode ser visualizada e baixada em PDF ou Excel, com informações organizadas para reuniões, acompanhamento e arquivamento.
-
-## ⚙️ Configurações
-
-Concentra as opções administrativas disponíveis para a organização.
-
-## 🧭 Como funciona
-
-1. Acesse sua congregação.
-2. Registre entradas e despesas.
-3. Controle o caixa físico.
-4. Registre e acompanhe repasses.
-5. Faça ajustes ou estornos quando necessário.
-6. Acompanhe a auditoria.
-7. Feche o período.
-8. Gere a prestação de contas.
-
-## 📋 Prestação de contas
-
-O Ecclesia Finance transforma os registros financeiros do período em uma visão clara, organizada e compreensível para apresentação, acompanhamento e arquivamento.
-
-## 💻 Tecnologia
-
-- Next.js
-- TypeScript
-- Supabase
-
-## 🌱 Projeto
-
-O Ecclesia Finance nasce com um propósito simples: apoiar igrejas e organizações na construção de uma gestão financeira mais organizada, transparente e responsável.
-
-Mais do que registrar números, o sistema ajuda a contar a história financeira de cada período com clareza e confiança.
+Consulte [[documentacao-interna/web-README|web/README.md]] e [a configuração local do Supabase](database-tests/supabase-setup.md).
