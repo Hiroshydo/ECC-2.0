@@ -34,4 +34,13 @@ export type AdminUser = {
 export type AdminOverview = {
   organizations: AdminOrganization[];
   users: AdminUser[];
+  organizationTotal: number;
+  userTotal: number;
+};
+
+export type AdminPage<T> = {
+  data: T[];
+  total: number;
+  page: number;
+  pageSize: number;
 };

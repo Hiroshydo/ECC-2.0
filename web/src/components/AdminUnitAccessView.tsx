@@ -106,6 +106,7 @@ function getDescendantCounts(nodes: OrganizationTreeNode[]): Map<string, number>
 
 type Props = {
   organizations: AdminOrganization[];
+  organizationTotal: number;
   users: AdminUser[];
   loading: boolean;
   initialUnitId: string | null;
@@ -117,6 +118,7 @@ type Props = {
 
 export function AdminUnitAccessView({
   organizations,
+  organizationTotal,
   users,
   loading,
   initialUnitId,
@@ -249,7 +251,7 @@ export function AdminUnitAccessView({
         <div className="unit-access-sidebar-title">
           <div>
             <h2>Unidades</h2>
-            <p>{filteredUnitIds.length} de {organizations.length} unidades</p>
+            <p>{filteredUnitIds.length} de {organizationTotal} unidades</p>
           </div>
         </div>
         <label className="unit-search">

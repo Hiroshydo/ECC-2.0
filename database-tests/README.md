@@ -21,6 +21,8 @@ SUPABASE_LOCAL_CONTAINER=supabase_db_web bash database-tests/run_suite.sh
 
 O nome padrão corresponde a `project_id = "web"` em `web/supabase/config.toml`. Para outro ambiente, informe o nome do container ativo. Também é possível usar `psql` instalado no host configurando `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD` e `PGDATABASE`.
 
+O workflow do GitHub Actions também executa as migrations de `web/supabase/migrations/` e esta suíte em um PostgreSQL 16 descartável. `postgres_bootstrap.sql` cria somente a infraestrutura mínima de `auth` usada pelos testes; não use esse bootstrap em produção.
+
 Também é possível fornecer `DATABASE_URL` no ambiente. Não salve credenciais em arquivos versionados.
 
 ## Scripts executados

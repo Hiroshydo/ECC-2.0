@@ -1,0 +1,51 @@
+name: Database tests
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  postgres-suite:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgresql://postgres@localhost:5432/postgres?sslmode=disable
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-client
+      - name: Create Supabase auth test schema
+        run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -X -f database-tests/postgres_bootstrap.sql
+      - name: Apply project migrations
+        shell: bash
+        run: |
+          set -euo pipefail
+          for migration in web/supabase/migrations/*.sql; do
+            echo "Applying ${migration}"
+            psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -X -f "$migration"
+          done
+      - name: Run database and RLS assertions
+        run: |
+          set -euo pipefail
+          bash database-tests/run_suite.sh | tee /tmp/database-test-suite.log
+          grep -Fq "DOMAIN STATUS: PASS" /tmp/database-test-suite.log

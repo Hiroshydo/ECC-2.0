@@ -10,10 +10,12 @@ import type {
   AdminAssignment,
   AdminOverview,
   AdminOrganization,
+  AdminPage,
   AdminPermission,
   AdminPermissionSet,
   AdminUser,
 } from "@/lib/admin/types";
+import { collectServerPages } from "@/lib/admin/pagination";
 import {
   findDuplicateUnits,
   organizationDisplayLabel,
@@ -32,6 +34,7 @@ const permissionLabels: Record<AdminPermission, string> = {
 };
 
 const organizationTypeLabels: Record<OrganizationType, string> = { church: "Igreja", ong: "ONG" };
+const ADMIN_PAGE_SIZE = 25;
 const allowedParentLevels: Record<OrganizationLevel, OrganizationLevel[]> = {
   national_hq: [],
   state_hq: ["national_hq"],
@@ -55,6 +58,33 @@ async function readApi<T>(response: Response, errorContext = "Falha ao concluir 
   return result.data as T;
 }
 
+async function readAdminPage<T>(resource: "organizations" | "users", page: number, pageSize: number): Promise<AdminPage<T>> {
+  const search = new URLSearchParams({ resource, page: String(page), pageSize: String(pageSize) });
+  const response = await fetch(`/api/admin/overview?${search}`, { cache: "no-store" });
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Falha ao carregar ${resource} (${response.status}): ${errorText}`);
+  }
+  const result = await response.json() as Partial<AdminPage<T>>;
+  if (!Array.isArray(result.data) || typeof result.total !== "number" || typeof result.page !== "number" || typeof result.pageSize !== "number") {
+    throw new Error(`Resposta de paginação inválida para ${resource}.`);
+  }
+  return result as AdminPage<T>;
+}
+
+async function loadAdminOverview(): Promise<AdminOverview> {
+  const [organizations, users] = await Promise.all([
+    collectServerPages((page, pageSize) => readAdminPage<AdminOrganization>("organizations", page, pageSize), ADMIN_PAGE_SIZE),
+    collectServerPages((page, pageSize) => readAdminPage<AdminUser>("users", page, pageSize), ADMIN_PAGE_SIZE),
+  ]);
+  return {
+    organizations: organizations.items,
+    users: users.items,
+    organizationTotal: organizations.total,
+    userTotal: users.total,
+  };
+}
+
 function descendantOrganizationIds(organizationId: string, organizations: AdminOrganization[]): Set<string> {
   const childrenByParent = new Map<string, AdminOrganization[]>();
   for (const organization of organizations) {
@@ -76,7 +106,7 @@ function descendantOrganizationIds(organizationId: string, organizations: AdminO
 
 export function AdminManager({ currentUserId }: { currentUserId: string }) {
   const [activeTab, setActiveTab] = useState<"organizations" | "users">("organizations");
-  const [overview, setOverview] = useState<AdminOverview>({ organizations: [], users: [] });
+  const [overview, setOverview] = useState<AdminOverview>({ organizations: [], users: [], organizationTotal: 0, userTotal: 0 });
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -137,15 +167,14 @@ export function AdminManager({ currentUserId }: { currentUserId: string }) {
     editingOrganization?.id,
   );
   const refreshOverview = async () => {
-    const data = await readApi<AdminOverview>(await fetch("/api/admin/overview", { cache: "no-store" }));
+    const data = await loadAdminOverview();
     setOverview(data);
     setNewUser((current) => ({ ...current, congregationId: current.congregationId || data.organizations[0]?.id || "" }));
   };
 
   useEffect(() => {
     let active = true;
-    void fetch("/api/admin/overview", { cache: "no-store" })
-      .then((response) => readApi<AdminOverview>(response))
+    void loadAdminOverview()
       .then((data) => {
         if (!active) return;
         setOverview(data);
@@ -447,6 +476,7 @@ export function AdminManager({ currentUserId }: { currentUserId: string }) {
               <AdminUnitAccessView
                 key={organizationFocusId ?? "units"}
                 organizations={overview.organizations}
+                organizationTotal={overview.organizationTotal}
                 users={overview.users}
                 loading={loading}
                 initialUnitId={organizationFocusId}
@@ -466,6 +496,7 @@ export function AdminManager({ currentUserId }: { currentUserId: string }) {
               key={`${personFocusId ?? "people"}:${peopleUnitFocusId ?? "all"}`}
               organizations={overview.organizations}
               users={overview.users}
+              userTotal={overview.userTotal}
               loading={loading}
               currentUserId={currentUserId}
               initialPersonId={personFocusId}

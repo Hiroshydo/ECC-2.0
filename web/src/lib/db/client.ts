@@ -442,7 +442,7 @@ export class LocalSupabaseClient {
   readonly auth: {
     getUser: () => Promise<{ data: { user: LocalUser | null }; error: DbError | null }>;
     admin: {
-      listUsers: (options?: { page?: number; perPage?: number }) => Promise<{ data: { users: LocalUser[] }; error: DbError | null }>;
+      listUsers: (options?: { page?: number; perPage?: number }) => Promise<{ data: { users: LocalUser[]; total: number }; error: DbError | null }>;
       getUserById: (userId: string) => Promise<{ data: { user: LocalUser | null }; error: DbError | null }>;
       inviteUserByEmail: (email: string, options?: { data?: Record<string, unknown> }) => Promise<{ data: { user: LocalUser | null; initialPassword?: string }; error: DbError | null }>;
       resetUserPassword: (userId: string, actorId: string) => Promise<{ data: { temporaryPassword: string | null }; error: DbError | null }>;
@@ -456,14 +456,24 @@ export class LocalSupabaseClient {
       getUser: async (): Promise<{ data: { user: LocalUser | null }; error: DbError | null }> => ({ data: { user: await getCurrentUser() }, error: null }),
       admin: {
         listUsers: async (options?: { page?: number; perPage?: number }) => {
-          if (!this.serviceRole) return { data: { users: [] }, error: { message: "service_role_required" } };
+          if (!this.serviceRole) return { data: { users: [], total: 0 }, error: { message: "service_role_required" } };
           const page = Math.max(options?.page ?? 1, 1);
           const perPage = Math.min(Math.max(options?.perPage ?? 100, 1), 1000);
+          const total = Number(getDatabase().prepare(`
+            SELECT count(*) AS total FROM app_users WHERE deleted_at IS NULL
+          `).get()?.total ?? 0);
           const rows = getDatabase().prepare(`
             SELECT id, email, user_metadata, app_metadata, created_at
-            FROM app_users WHERE deleted_at IS NULL ORDER BY email LIMIT ? OFFSET ?
+            FROM app_users
+            WHERE deleted_at IS NULL
+            ORDER BY coalesce(
+              nullif(json_extract(user_metadata, '$.full_name'), ''),
+              nullif(json_extract(user_metadata, '$.name'), ''),
+              'Usuário'
+            ) COLLATE NOCASE, email COLLATE NOCASE, id
+            LIMIT ? OFFSET ?
           `).all(perPage, (page - 1) * perPage) as Record<string, unknown>[];
-          return { data: { users: rows.map(mapUser) }, error: null };
+          return { data: { users: rows.map(mapUser), total }, error: null };
         },
         getUserById: async (userId: string) => {
           if (!this.serviceRole) return { data: { user: null }, error: { message: "service_role_required" } };

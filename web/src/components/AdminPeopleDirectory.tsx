@@ -15,6 +15,7 @@ const permissionList = allPermissions as AdminPermission[];
 type Props = {
   organizations: AdminOrganization[];
   users: AdminUser[];
+  userTotal: number;
   loading: boolean;
   currentUserId: string;
   initialPersonId: string | null;
@@ -52,6 +53,7 @@ async function assertApiSuccess(response: Response, context: string): Promise<vo
 export function AdminPeopleDirectory({
   organizations,
   users,
+  userTotal,
   loading,
   currentUserId,
   initialPersonId,
@@ -295,7 +297,7 @@ export function AdminPeopleDirectory({
           <div className="admin-section-heading admin-people-heading">
             <div>
               <h2 id="admin-people-heading">Pessoas</h2>
-              <p>{filteredUsers.length} pessoa(s)</p>
+              <p>{filteredUsers.length} de {userTotal} pessoa(s)</p>
             </div>
             <label className="admin-search-field">
               <Search size={16} aria-hidden="true" />
