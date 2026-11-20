@@ -7,7 +7,6 @@ export type Permission =
   | "financial.write"
   | "financial.approve"
   | "closing.submit"
-  | "closing.approve"
   | "audit.read"
   | "hierarchy.view"
   | "hierarchy.financial.read";
@@ -18,14 +17,14 @@ export type MembershipPermissions = Partial<Record<Permission, boolean>>;
 export type Membership = { userId: UserId; congregationId: CongregationId; role: Role; permissions?: MembershipPermissions };
 
 export const rolePermissions: Record<Role, Permission[]> = {
-  central_admin: ["financial.read", "financial.write", "financial.approve", "closing.submit", "closing.approve", "audit.read"],
+  central_admin: ["financial.read", "financial.write", "financial.approve", "closing.submit", "audit.read"],
   congregation_admin: ["financial.read", "financial.write", "financial.approve", "closing.submit", "audit.read"],
   treasurer: ["financial.read", "financial.write", "closing.submit"],
   auditor: ["financial.read", "audit.read"],
   viewer: ["financial.read"],
 };
 
-export type AdminPermission = Exclude<Permission, "closing.approve">;
+export type AdminPermission = Permission;
 
 export const allPermissions: AdminPermission[] = [
   "financial.read",

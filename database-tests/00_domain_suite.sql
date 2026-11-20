@@ -34,6 +34,8 @@ DECLARE
   v_treasurer uuid := '66666666-6666-4666-8666-666666666666';
   v_central_admin uuid := '44444444-4444-4444-8444-444444444444';
   v_headquarters uuid := '11111111-1111-4111-8111-111111111111';
+  v_headquarters_b uuid := 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+  v_b_treasurer uuid := '99999999-9999-4999-8999-999999999999';
   v_visible_count integer;
 BEGIN
   IF current_user <> 'authenticated' OR current_role <> 'authenticated' THEN
@@ -54,6 +56,13 @@ BEGIN
   FROM public.congregations
   WHERE id IN (v_headquarters, v_congregation_a);
   PERFORM public.assert_equal(v_visible_count, 1, 'Central admin must see its headquarters but not an unrelated congregation.');
+
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', v_b_treasurer::text, 'role', 'authenticated', 'aud', 'authenticated')::text, true);
+  PERFORM set_config('request.jwt.claim.sub', v_b_treasurer::text, true);
+  SELECT count(*) INTO v_visible_count
+  FROM public.congregations
+  WHERE id IN (v_headquarters, v_headquarters_b);
+  PERFORM public.assert_equal(v_visible_count, 1, 'Headquarters B user must see B and not headquarters A.');
 
   PERFORM set_config('request.jwt.claims', '{}', true);
   PERFORM set_config('request.jwt.claim.sub', '', true);

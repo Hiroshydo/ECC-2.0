@@ -8,6 +8,7 @@ BEGIN;
 DO $$
 DECLARE
   v_headquarters uuid := '11111111-1111-4111-8111-111111111111';
+  v_headquarters_b uuid := 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
   v_congregation_a uuid := '22222222-2222-4222-8222-222222222222';
   v_congregation_b uuid := '33333333-3333-4333-8333-333333333333';
   v_central_admin uuid := '44444444-4444-4444-8444-444444444444';
@@ -60,11 +61,14 @@ BEGIN
     RAISE EXCEPTION 'BLOCKED: auth.users fixtures cannot be created from this execution context. Use a service-role or authenticated admin context.';
   END;
 
-  INSERT INTO public.congregations (id, name, city, active)
+  INSERT INTO public.congregations (
+    id, name, city, active, parent_id, is_headquarters, organization_level, organization_type
+  )
   VALUES
-    (v_headquarters, 'Sede', 'São Paulo', true),
-    (v_congregation_a, 'Congregação A', 'Campinas', true),
-    (v_congregation_b, 'Congregação B', 'Rio de Janeiro', true)
+    (v_headquarters, 'Sede A', 'São Paulo', true, NULL, true, 'national_hq', 'church'),
+    (v_headquarters_b, 'Sede B', 'Curitiba', true, NULL, true, 'national_hq', 'church'),
+    (v_congregation_a, 'Congregação A', 'Campinas', true, v_headquarters, false, 'local_congregation', 'church'),
+    (v_congregation_b, 'Congregação B', 'Rio de Janeiro', true, v_headquarters_b, false, 'local_congregation', 'church')
   ON CONFLICT (id) DO NOTHING;
 
   INSERT INTO public.memberships (user_id, congregation_id, role)
@@ -75,18 +79,19 @@ BEGIN
     (v_treasurer, v_congregation_a, 'treasurer'),
     (v_auditor, v_congregation_a, 'auditor'),
     (v_viewer, v_congregation_a, 'viewer'),
+    (v_b_treasurer, v_headquarters_b, 'congregation_admin'),
     (v_b_treasurer, v_congregation_b, 'treasurer')
   ON CONFLICT DO NOTHING;
 
   SELECT count(*) INTO v_fixture_count
   FROM public.memberships
-  WHERE congregation_id IN (v_headquarters, v_congregation_a, v_congregation_b);
+  WHERE congregation_id IN (v_headquarters, v_headquarters_b, v_congregation_a, v_congregation_b);
 
-  IF v_fixture_count < 7 THEN
+  IF v_fixture_count < 8 THEN
     RAISE EXCEPTION 'BLOCKED: fixture memberships not created as expected.';
   END IF;
 
-  RAISE NOTICE 'Fixture seed created for headquarters, congregation A and congregation B.';
+  RAISE NOTICE 'Fixture seed created for two isolated headquarters and their congregations.';
 END $$;
 
 COMMIT;

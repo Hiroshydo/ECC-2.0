@@ -387,7 +387,6 @@ A auditoria deve ser append-only e imutável por regra de negócio.
 - `financial.write`
 - `financial.approve`
 - `closing.submit`
-- `closing.approve`
 - `audit.read`
 
 ### Regras

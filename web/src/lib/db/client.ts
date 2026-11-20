@@ -77,7 +77,7 @@ const booleanColumns = new Set([
 ]);
 
 const defaultPermissions: Record<string, string[]> = {
-  central_admin: ["financial.read", "financial.write", "financial.approve", "closing.submit", "closing.approve", "audit.read"],
+  central_admin: ["financial.read", "financial.write", "financial.approve", "closing.submit", "audit.read"],
   congregation_admin: ["financial.read", "financial.write", "financial.approve", "closing.submit", "audit.read"],
   treasurer: ["financial.read", "financial.write", "closing.submit"],
   auditor: ["financial.read", "audit.read"],

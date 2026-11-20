@@ -43,6 +43,7 @@ SET LOCAL ROLE authenticated;
 DO $$
 DECLARE
   v_headquarters uuid := '11111111-1111-4111-8111-111111111111';
+  v_headquarters_b uuid := 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
   v_congregation_a uuid := '22222222-2222-4222-8222-222222222222';
   v_congregation_b uuid := '33333333-3333-4333-8333-333333333333';
   v_central_admin uuid := '44444444-4444-4444-8444-444444444444';
@@ -98,10 +99,30 @@ BEGIN
   FROM public.congregations
   WHERE id = v_headquarters;
   PERFORM public.assert_equal(v_visible_headquarters, 1, 'Central admin cannot access its headquarters congregation.');
+  SELECT count(*) INTO v_visible_headquarters
+  FROM public.congregations
+  WHERE id = v_headquarters_b;
+  PERFORM public.assert_equal(v_visible_headquarters, 0, 'RLS failed: headquarters A admin accessed headquarters B.');
   SELECT count(*) INTO v_visible_in_a
   FROM public.congregations
   WHERE id = v_congregation_a;
   PERFORM public.assert_equal(v_visible_in_a, 0, 'Central admin received access outside its current membership.');
+
+  -- Headquarters B can access its own scope, but not headquarters A.
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', v_b_treasurer::text, 'role', 'authenticated', 'aud', 'authenticated')::text, true);
+  PERFORM set_config('request.jwt.claim.sub', v_b_treasurer::text, true);
+  SELECT count(*) INTO v_visible_headquarters
+  FROM public.congregations
+  WHERE id = v_headquarters_b;
+  PERFORM public.assert_equal(v_visible_headquarters, 1, 'Headquarters B user cannot access its own headquarters.');
+  SELECT count(*) INTO v_visible_headquarters
+  FROM public.congregations
+  WHERE id = v_headquarters;
+  PERFORM public.assert_equal(v_visible_headquarters, 0, 'RLS failed: headquarters B user accessed headquarters A.');
+  SELECT count(*) INTO v_visible_in_a
+  FROM public.congregations
+  WHERE id = v_congregation_a;
+  PERFORM public.assert_equal(v_visible_in_a, 0, 'Headquarters B user accessed a congregation under headquarters A.');
 
   -- Auditor can read records.
   PERFORM set_config('request.jwt.claims', json_build_object('sub', v_auditor::text, 'role', 'authenticated', 'aud', 'authenticated')::text, true);

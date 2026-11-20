@@ -1,6 +1,6 @@
 # Suíte de testes de banco
 
-A suíte valida o contrato de domínio em PostgreSQL/Supabase usando fixtures e assertions SQL. Execute-a somente em um banco local descartável: os scripts criam usuários, memberships e movimentações de teste.
+A suíte valida o contrato de domínio em PostgreSQL/Supabase usando fixtures e assertions SQL. Execute-a somente em um banco local descartável: os scripts criam usuários, memberships e movimentações de teste. Os testes de isolamento criam duas sedes e verificam que cada escopo não enxerga a outra sede nem a congregação da outra rede.
 
 ## Pré-requisitos
 
