@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { ModuleIcon } from "@/components/brand/ModuleIcon";
-import { isMasterAdmin } from "@/domain/access";
+import { isPlatformOperator } from "@/domain/access";
 import { createClient } from "@/lib/supabase/server";
 import { ModuleArchitectureMap } from "@/modules/core/canaa/components/ModuleArchitectureMap";
 import { NoahTelemetryGrid } from "@/modules/core/canaa/components/NoahTelemetryGrid";
@@ -18,7 +18,7 @@ const telemetry: ModuleTelemetry[] = [
 export default async function NoahOpsPage() {
   const { data: { user } } = await (await createClient()).auth.getUser();
   if (!user) redirect("/login");
-  if (!isMasterAdmin(user)) redirect("/");
+  if (!isPlatformOperator(user)) redirect("/");
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24, paddingTop: 20, width: "100%" }}>

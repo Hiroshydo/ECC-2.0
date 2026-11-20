@@ -45,12 +45,12 @@ const navigation: NavigationItem[] = [
   { label: "Painel Dev / Gestão", href: "/admin", icon: Terminal, devOnly: true },
 ];
 
-export function Sidebar({ userName, membership, memberships, isPlatformAdmin, userEmail }: { userName: string; membership: AuthenticatedMembership | null; memberships: AuthenticatedMembership[]; isPlatformAdmin: boolean; userEmail?: string | null }) {
+export function Sidebar({ userName, membership, memberships, isPlatformOperator, userEmail }: { userName: string; membership: AuthenticatedMembership | null; memberships: AuthenticatedMembership[]; isPlatformOperator: boolean; userEmail?: string | null }) {
   const pathname = usePathname();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const isMasterUser = isPlatformAdmin;
+  const isMasterUser = isPlatformOperator;
   const currentRole = membership?.role ?? "member";
   const roleText = isMasterUser ? "Dev Master" : (currentRole === "viewer" || userEmail?.toLowerCase() === "demo@ecclesia.com" ? "Visualizador" : "Membro");
   const terms = getVocabulary(membership?.congregation.organizationType);

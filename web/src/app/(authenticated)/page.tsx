@@ -2,7 +2,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { can, isMasterAdmin } from "@/domain/access";
+import { can, isPlatformOperator } from "@/domain/access";
 import { createClient } from "@/lib/supabase/server";
 import { toMemberships } from "@/lib/auth/session";
 import { presentStatus } from "@/lib/presentation";
@@ -87,7 +87,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
   } else if (!user) {
     redirect("/login");
   } else {
-    isDeveloper = isMasterAdmin(user);
+    isDeveloper = isPlatformOperator(user);
     try {
       const { data: membershipRows, error: membershipError } = await supabase
         .from("memberships")

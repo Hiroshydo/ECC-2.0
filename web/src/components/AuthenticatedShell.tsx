@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { CongregationSwitcher } from "@/components/CongregationSwitcher";
 import { Sidebar } from "@/components/Sidebar";
-import { isMasterAdmin } from "@/domain/access";
+import { isPlatformOperator } from "@/domain/access";
 import type { AuthenticatedMembership } from "@/lib/auth/session";
 import type { LocalUser } from "@/lib/db/client";
 import { createClient } from "@/lib/supabase/client";
@@ -39,15 +39,15 @@ function LogoutButton({ compact = false }: { compact?: boolean }) {
   );
 }
 
-export function AuthenticatedShell({ user, memberships, activeMembership, isPlatformAdmin, children }: { user: LocalUser; memberships: AuthenticatedMembership[]; activeMembership: AuthenticatedMembership | null; isPlatformAdmin: boolean; children: React.ReactNode }) {
+export function AuthenticatedShell({ user, memberships, activeMembership, isPlatformOperator: platformOperator, children }: { user: LocalUser; memberships: AuthenticatedMembership[]; activeMembership: AuthenticatedMembership | null; isPlatformOperator: boolean; children: React.ReactNode }) {
   const userName: string = String(user.user_metadata?.full_name || user.user_metadata?.name || user.user_metadata?.display_name || user.email?.split("@")?.[0] || "Usuário");
   const initials = userName.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase() || "U";
   const currentRole = activeMembership?.role ?? "member";
-  const badgeRole = isMasterAdmin(user) ? "Dev Master" : currentRole === "viewer" ? "Visualizador" : "Membro";
+  const badgeRole = isPlatformOperator(user) ? "Dev Master" : currentRole === "viewer" ? "Visualizador" : "Membro";
 
   return (
     <main className="shell">
-      <Sidebar userName={userName} membership={activeMembership} memberships={memberships} isPlatformAdmin={isPlatformAdmin} userEmail={user.email ?? null} />
+      <Sidebar userName={userName} membership={activeMembership} memberships={memberships} isPlatformOperator={platformOperator} userEmail={user.email ?? null} />
       <section className="content" aria-label="Área financeira">
         <header className="workspace-header">
           <div className="workspace-header-left"><span className="workspace-breadcrumb"><span>Ecclesia Finance</span><span className="breadcrumb-divider" aria-hidden="true">/</span><b>{activeMembership?.congregation.name ?? "Acesso"}</b></span></div>

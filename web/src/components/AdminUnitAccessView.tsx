@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronRight, Search, Users, X } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Search, Users, X } from "lucide-react";
 
 import type { AdminOrganization, AdminUser } from "@/lib/admin/types";
 import {
@@ -22,6 +22,7 @@ type OrganizationTreeNode = { organization: AdminOrganization; children: Organiz
 type OrganizationTypeFilter = OrganizationType | "all";
 
 const ORGANIZATION_TYPE_LABELS: Record<OrganizationType, string> = { church: "Igreja", ong: "ONG" };
+const ORGANIZATION_PAGE_SIZE = 25;
 
 function normalize(value: string): string {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLocaleLowerCase("pt-BR");
@@ -78,6 +79,19 @@ function getExpandableIds(nodes: OrganizationTreeNode[]): string[] {
   ]);
 }
 
+function flattenTree(nodes: OrganizationTreeNode[]): AdminOrganization[] {
+  return nodes.flatMap((node) => [node.organization, ...flattenTree(node.children)]);
+}
+
+function filterTreeByIds(nodes: OrganizationTreeNode[], includedIds: Set<string>): OrganizationTreeNode[] {
+  return nodes.flatMap((node) => {
+    const children = filterTreeByIds(node.children, includedIds);
+    return includedIds.has(node.organization.id) || children.length
+      ? [{ ...node, children }]
+      : [];
+  });
+}
+
 function getDescendantCounts(nodes: OrganizationTreeNode[]): Map<string, number> {
   const result = new Map<string, number>();
   function count(node: OrganizationTreeNode): number {
@@ -94,7 +108,6 @@ type Props = {
   organizations: AdminOrganization[];
   users: AdminUser[];
   loading: boolean;
-  limitReached: boolean;
   initialUnitId: string | null;
   onEditUnit: (unit: AdminOrganization) => void;
   onOpenPerson: (userId: string) => void;
@@ -106,7 +119,6 @@ export function AdminUnitAccessView({
   organizations,
   users,
   loading,
-  limitReached,
   initialUnitId,
   onEditUnit,
   onOpenPerson,
@@ -115,6 +127,7 @@ export function AdminUnitAccessView({
 }: Props) {
   const [unitSearch, setUnitSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<OrganizationTypeFilter>("all");
+  const [unitPage, setUnitPage] = useState(1);
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(initialUnitId);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [roleFilter, setRoleFilter] = useState<string | null>(null);
@@ -128,6 +141,14 @@ export function AdminUnitAccessView({
     () => filterOrganizationTree(tree, normalize(unitSearch), typeFilter),
     [tree, unitSearch, typeFilter],
   );
+  const filteredUnits = useMemo(() => flattenTree(filteredTree), [filteredTree]);
+  const unitPageCount = Math.max(1, Math.ceil(filteredUnits.length / ORGANIZATION_PAGE_SIZE));
+  const currentUnitPage = Math.min(unitPage, unitPageCount);
+  const pagedUnitIds = useMemo(
+    () => new Set(filteredUnits.slice((currentUnitPage - 1) * ORGANIZATION_PAGE_SIZE, currentUnitPage * ORGANIZATION_PAGE_SIZE).map((unit) => unit.id)),
+    [filteredUnits, currentUnitPage],
+  );
+  const pagedTree = useMemo(() => filterTreeByIds(filteredTree, pagedUnitIds), [filteredTree, pagedUnitIds]);
   const searchExpands = unitSearch.trim().length > 0;
   const visibleExpandedIds = useMemo(
     () => searchExpands ? new Set(getExpandableIds(filteredTree)) : expandedIds,
@@ -234,12 +255,18 @@ export function AdminUnitAccessView({
         <label className="unit-search">
           <Search size={16} aria-hidden="true" />
           <span className="sr-only">Buscar unidade por nome, cidade ou UF</span>
-          <input type="search" value={unitSearch} placeholder="Buscar unidade..." onChange={(event) => setUnitSearch(event.target.value)} />
+          <input type="search" value={unitSearch} placeholder="Buscar unidade..." onChange={(event) => {
+            setUnitSearch(event.target.value);
+            setUnitPage(1);
+          }} />
           {unitSearch && <button type="button" aria-label="Limpar busca" onClick={() => setUnitSearch("")}><X size={15} aria-hidden="true" /></button>}
         </label>
         <div className="unit-filter-row" aria-label="Filtrar por tipo">
           {(["all", "church", "ong"] as const).map((filter) => (
-            <button key={filter} type="button" className={typeFilter === filter ? "is-active" : ""} aria-pressed={typeFilter === filter} onClick={() => setTypeFilter(filter)}>
+            <button key={filter} type="button" className={typeFilter === filter ? "is-active" : ""} aria-pressed={typeFilter === filter} onClick={() => {
+              setTypeFilter(filter);
+              setUnitPage(1);
+            }}>
               {filter === "all" ? "Todas" : ORGANIZATION_TYPE_LABELS[filter]}
             </button>
           ))}
@@ -250,7 +277,7 @@ export function AdminUnitAccessView({
         </div>
       </div>
       <div className="organization-tree-list" role="tree" aria-label="Hierarquia de unidades">
-        {filteredTree.length ? filteredTree.map((node) => (
+        {pagedTree.length ? pagedTree.map((node) => (
           <OrganizationTreeItem
             key={node.organization.id}
             node={node}
@@ -274,12 +301,22 @@ export function AdminUnitAccessView({
           </div>
         )}
       </div>
+      {filteredUnits.length > ORGANIZATION_PAGE_SIZE && (
+        <nav className="admin-people-pagination" aria-label="Paginação de unidades">
+          <span>Página {currentUnitPage} de {unitPageCount}</span>
+          <button type="button" className="admin-icon-button" aria-label="Página anterior de unidades" onClick={() => setUnitPage(Math.max(1, currentUnitPage - 1))} disabled={currentUnitPage === 1}>
+            <ChevronLeft size={17} aria-hidden="true" />
+          </button>
+          <button type="button" className="admin-icon-button" aria-label="Próxima página de unidades" onClick={() => setUnitPage(Math.min(unitPageCount, currentUnitPage + 1))} disabled={currentUnitPage === unitPageCount}>
+            <ChevronRight size={17} aria-hidden="true" />
+          </button>
+        </nav>
+      )}
     </div>
   );
 
   return (
     <section className="unit-access-view" aria-label="Unidades e acessos">
-      {limitReached && <div className="admin-alert warning" role="status">O diretório de pessoas atingiu o limite retornado pela API; contagens e pendências podem estar incompletas.</div>}
       <div className="unit-access-layout">
         {unitList}
         <section

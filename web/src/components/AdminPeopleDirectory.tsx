@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, MoreHorizontal, Search, Users, X } from "luc
 
 import { allPermissions, permissionsForRole, type Role } from "@/domain/access";
 import type { AdminAssignment, AdminOrganization, AdminPermission, AdminPermissionSet, AdminUser } from "@/lib/admin/types";
-import { MAX_OVERVIEW_USERS, organizationDisplayLabel, ROLE_ORDER, roleLabelFor } from "@/lib/admin/unit-access";
+import { organizationDisplayLabel, ROLE_ORDER, roleLabelFor } from "@/lib/admin/unit-access";
 
 const PAGE_SIZE = 25;
 
@@ -17,7 +17,6 @@ type Props = {
   users: AdminUser[];
   loading: boolean;
   currentUserId: string;
-  overviewIsCapped: boolean;
   initialPersonId: string | null;
   initialUnitId: string | null;
   inviteOpen: boolean;
@@ -55,7 +54,6 @@ export function AdminPeopleDirectory({
   users,
   loading,
   currentUserId,
-  overviewIsCapped,
   initialPersonId,
   initialUnitId,
   inviteOpen,
@@ -292,11 +290,6 @@ export function AdminPeopleDirectory({
 
   return (
     <section className="admin-people-view" aria-label="Diretório de pessoas">
-      {overviewIsCapped && (
-        <div className="admin-alert warning" role="status">
-          A API retornou o limite de {MAX_OVERVIEW_USERS.toLocaleString("pt-BR")} pessoas. Este diretório pode estar incompleto.
-        </div>
-      )}
       <div className="admin-people-layout">
         <section className="admin-people-directory" aria-labelledby="admin-people-heading">
           <div className="admin-section-heading admin-people-heading">

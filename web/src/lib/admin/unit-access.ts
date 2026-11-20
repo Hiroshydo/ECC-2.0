@@ -2,8 +2,6 @@ import type { Role } from "../../domain/access";
 import type { OrganizationType } from "../../domain/vocabulary";
 import type { AdminAssignment, AdminOrganization, AdminUser } from "./types";
 
-export const MAX_OVERVIEW_USERS = 20_000;
-
 export type UnitMember = {
   user: AdminUser;
   assignment: AdminAssignment;

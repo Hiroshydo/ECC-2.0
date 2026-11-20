@@ -180,7 +180,7 @@ No modo consolidado, `get_hierarchical_financial_metrics` percorre recursivament
 - `src/lib/supabase/middleware.ts` cria o cliente SSR e recupera o usuário.
 - `src/app/(authenticated)/layout.tsx` obtém memberships e define a unidade ativa pelo cookie `active_congregation_id`.
 - `CongregationSwitcher` permite trocar a unidade ativa.
-- O Dev Master é identificado por metadata ou pelo e-mail temporariamente definido como fallback em `isMasterAdmin`.
+- O operador de plataforma é identificado exclusivamente por `app_metadata.role === "platform_operator"`, armazenado no banco; metadados editáveis pelo usuário e endereço de e-mail não concedem esse acesso.
 
 ## Estados reais da implementação
 

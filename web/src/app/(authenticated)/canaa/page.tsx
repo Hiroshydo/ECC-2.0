@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import type { Edge, Node } from "@xyflow/react";
 
 import { ModuleIcon } from "@/components/brand/ModuleIcon";
-import { can, isMasterAdmin } from "@/domain/access";
+import { can, isPlatformOperator } from "@/domain/access";
 import { toMemberships } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { InviteOperatorModal } from "@/modules/core/canaa/components/InviteOperatorModal";
@@ -29,11 +29,11 @@ export default async function CanaaPage() {
   const memberships = toMemberships(user, membershipRows ?? []);
   const selectedId = (await cookies()).get("active_congregation_id")?.value;
   const activeMembership = memberships.find((membership) => membership.congregationId === selectedId) ?? memberships[0] ?? null;
-  const masterAdmin = isMasterAdmin(user);
+  const platformOperator = isPlatformOperator(user);
 
-  if (!masterAdmin && (!activeMembership || !can(activeMembership, "hierarchy.view"))) redirect("/");
+  if (!platformOperator && (!activeMembership || !can(activeMembership, "hierarchy.view"))) redirect("/");
 
-  const visibleMemberships = masterAdmin
+  const visibleMemberships = platformOperator
     ? memberships
     : memberships.filter((membership) => can(membership, "hierarchy.view"));
   const visibleIds = new Set(visibleMemberships.map((membership) => membership.congregationId));
@@ -57,7 +57,7 @@ export default async function CanaaPage() {
       licenseActive: Boolean(licenses.get(membership.congregationId)?.expiresAt && new Date(licenses.get(membership.congregationId)!.expiresAt).getTime() > new Date().getTime()),
       seatsUsed: licenses.get(membership.congregationId)?.seatsUsed ?? 0,
       seatsTotal: licenses.get(membership.congregationId)?.seatsTotal ?? 0,
-      editable: masterAdmin,
+      editable: platformOperator,
     },
   }));
   const edges: Edge[] = visibleMemberships.flatMap((membership) => {
@@ -75,7 +75,7 @@ export default async function CanaaPage() {
         <h1 style={{ margin: 0, fontSize: 32 }}>Canaã Local</h1>
       </div>
       <KhatamQuotaBar license={license} />
-      <CongregationFlowMap nodes={nodes} edges={edges} editable={masterAdmin} />
+      <CongregationFlowMap nodes={nodes} edges={edges} editable={platformOperator} />
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>

@@ -47,16 +47,17 @@ export function can(membership: Membership, permission: Permission): boolean {
   return rolePermissions[membership.role].includes(permission);
 }
 
-export const DEV_MASTER_EMAIL = "renanmarianosd@hotmail.com";
+export function isPlatformOperator(
+  user: { app_metadata?: Record<string, unknown> } | null | undefined,
+): boolean {
+  return user?.app_metadata?.role === "platform_operator";
+}
 
-// TODO: Remove the email fallback after the Supabase app_metadata.role migration is confirmed.
-export function isMasterAdmin(user: { email?: string | null; app_metadata?: Record<string, unknown> } | null | undefined): boolean {
-  const email = user?.email?.toLowerCase().trim();
-  const appMetadata = user?.app_metadata ?? {};
-  const role = typeof appMetadata.role === "string" ? appMetadata.role.toLowerCase() : undefined;
-  const isDev = Boolean(appMetadata.is_dev);
-  const isSuperAdmin = Boolean(appMetadata.is_super_admin);
-  return email === DEV_MASTER_EMAIL.toLowerCase() || isDev || isSuperAdmin || role === "central_admin";
+export function platformOperatorAccessStatus(
+  user: { app_metadata?: Record<string, unknown> } | null | undefined,
+): 401 | 403 | null {
+  if (!user) return 401;
+  return isPlatformOperator(user) ? null : 403;
 }
 
 export function allowedCongregationIds(userId: UserId, memberships: Membership[]): CongregationId[] {

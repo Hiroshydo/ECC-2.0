@@ -224,6 +224,7 @@ export class LocalQuery<Row extends DbRow, Output = Row[]> implements PromiseLik
   private filters: Filter[] = [];
   private orders: Array<{ column: string; ascending: boolean }> = [];
   private maxRows: number | null = null;
+  private rowOffset = 0;
   private resultMode: "many" | "single" | "maybeSingle" = "many";
   private countRequested = false;
   private headOnly = false;
@@ -253,6 +254,14 @@ export class LocalQuery<Row extends DbRow, Output = Row[]> implements PromiseLik
   limit(value: number): this {
     if (!Number.isInteger(value) || value < 0) throw new Error("invalid_query_limit");
     this.maxRows = value;
+    return this;
+  }
+  range(from: number, to: number): this {
+    if (!Number.isInteger(from) || !Number.isInteger(to) || from < 0 || to < from) {
+      throw new Error("invalid_query_range");
+    }
+    this.rowOffset = from;
+    this.maxRows = to - from + 1;
     return this;
   }
   single(): LocalQuery<Row, Row> { this.resultMode = "single"; return this as unknown as LocalQuery<Row, Row>; }
@@ -316,7 +325,7 @@ export class LocalQuery<Row extends DbRow, Output = Row[]> implements PromiseLik
         }).join(", ")
         : "*";
       const orderSql = this.orders.map((order) => `${quoteIdentifier(order.column)} ${order.ascending ? "ASC" : "DESC"}`).join(", ");
-      const limitSql = this.maxRows === null ? "" : ` LIMIT ${this.maxRows}`;
+      const limitSql = this.maxRows === null ? "" : ` LIMIT ${this.maxRows} OFFSET ${this.rowOffset}`;
       const statement = db.prepare(`SELECT ${sqlColumns} FROM ${quoteIdentifier(this.table)}${where.sql ? ` WHERE ${where.sql}` : ""}${orderSql ? ` ORDER BY ${orderSql}` : ""}${limitSql}`);
       const baseRows = statement.all(...where.values.map(toSqlValue)).map((item) => normalizeRow(item as Record<string, unknown>));
       const count = this.countRequested

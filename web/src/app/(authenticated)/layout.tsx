@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 
 import { AuthenticatedShell } from "@/components/AuthenticatedShell";
-import { isMasterAdmin } from "@/domain/access";
+import { isPlatformOperator } from "@/domain/access";
 import type { LocalUser } from "@/lib/db/client";
 import { toMemberships } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
@@ -29,7 +29,7 @@ export default async function AuthenticatedLayout({ children }: { children: Reac
       console.error("Authenticated layout membership load failed:", error);
     } else {
       const allMemberships = toMemberships(user, membershipRows ?? []);
-      const isDeveloper = isMasterAdmin(user);
+      const isDeveloper = isPlatformOperator(user);
       let visibleMemberships = allMemberships;
 
       if (!isDeveloper) {
@@ -59,5 +59,5 @@ export default async function AuthenticatedLayout({ children }: { children: Reac
 
   if (!user) redirect("/login");
 
-  return <AuthenticatedShell user={user} memberships={memberships} activeMembership={activeMembership} isPlatformAdmin={isMasterAdmin(user)}>{children}</AuthenticatedShell>;
+  return <AuthenticatedShell user={user} memberships={memberships} activeMembership={activeMembership} isPlatformOperator={isPlatformOperator(user)}>{children}</AuthenticatedShell>;
 }

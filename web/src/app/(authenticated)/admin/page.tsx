@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 
 import { AdminManager } from "@/components/AdminManager";
-import { isMasterAdmin } from "@/domain/access";
 import { getPlatformAdminContext } from "@/lib/admin/platform";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +12,5 @@ export default async function AdminPage() {
   if (!context.ok) {
     return <section className="admin-page"><div className="admin-alert warning" role="status"><strong>Gestão local indisponível.</strong><span>{context.error}</span></div></section>;
   }
-  if (!isMasterAdmin(context.user)) redirect("/");
-
   return <AdminManager currentUserId={context.user.id} />;
 }

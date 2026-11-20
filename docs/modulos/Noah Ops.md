@@ -14,7 +14,7 @@ tags: [ecc, core, noah, observabilidade]
 
 ## Implementado
 
-- A rota exige usuário autenticado e `isMasterAdmin`.
+- A rota exige usuário autenticado com `app_metadata.role === "platform_operator"`.
 - Mostra cartões de telemetria com estados predefinidos como `unknown`.
 - Exibe o mapa de dependências dos módulos do ECC.
 - Marca Gideon e Shofeet como futuros.

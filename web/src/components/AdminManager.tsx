@@ -16,7 +16,6 @@ import type {
 } from "@/lib/admin/types";
 import {
   findDuplicateUnits,
-  MAX_OVERVIEW_USERS,
   organizationDisplayLabel,
   ORGANIZATION_LEVEL_LABELS,
   roleOptionsForOrganizationType,
@@ -137,8 +136,6 @@ export function AdminManager({ currentUserId }: { currentUserId: string }) {
     overview.organizations,
     editingOrganization?.id,
   );
-  const overviewIsCapped = overview.users.length >= MAX_OVERVIEW_USERS;
-
   const refreshOverview = async () => {
     const data = await readApi<AdminOverview>(await fetch("/api/admin/overview", { cache: "no-store" }));
     setOverview(data);
@@ -452,7 +449,6 @@ export function AdminManager({ currentUserId }: { currentUserId: string }) {
                 organizations={overview.organizations}
                 users={overview.users}
                 loading={loading}
-                limitReached={overviewIsCapped}
                 initialUnitId={organizationFocusId}
                 onEditUnit={openOrganizationEditor}
                 onOpenPerson={openPersonFromUnit}
@@ -472,7 +468,6 @@ export function AdminManager({ currentUserId }: { currentUserId: string }) {
               users={overview.users}
               loading={loading}
               currentUserId={currentUserId}
-              overviewIsCapped={overviewIsCapped}
               initialPersonId={personFocusId}
               initialUnitId={peopleUnitFocusId}
               inviteOpen={showUserForm}

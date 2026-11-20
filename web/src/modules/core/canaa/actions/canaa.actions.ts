@@ -1,6 +1,6 @@
 "use server";
 
-import { can, isMasterAdmin, type Role } from "@/domain/access";
+import { can, isPlatformOperator, type Role } from "@/domain/access";
 import { toMemberships } from "@/lib/auth/session";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -41,10 +41,10 @@ export async function linkParentAction(childId: string, parentId: string | null)
   }
   if (childId === parentId) return { ok: false, message: "Não é possível apontar uma unidade para si mesma." };
 
-  const masterAdmin = isMasterAdmin(user);
+  const platformOperator = isPlatformOperator(user);
   const childMembership = memberships.find((membership) => membership.congregationId === childId);
   const parentMembership = parentId ? memberships.find((membership) => membership.congregationId === parentId) : null;
-  if (!masterAdmin && (!childMembership || !can(childMembership, "hierarchy.view") || (parentId && (!parentMembership || !can(parentMembership, "hierarchy.view"))))) {
+  if (!platformOperator && (!childMembership || !can(childMembership, "hierarchy.view") || (parentId && (!parentMembership || !can(parentMembership, "hierarchy.view"))))) {
     return { ok: false, message: "Sem permissão para alterar esta hierarquia." };
   }
 
@@ -112,9 +112,9 @@ export async function inviteOperatorAction(email: string, requestedRole: string,
   if (!user) return { ok: false, message: "Sessão expirada." };
   if (memberships === null) return { ok: false, message: `Não disponível: falha ao consultar memberships (${membershipQueryError ?? "erro desconhecido"}).` };
 
-  const masterAdmin = isMasterAdmin(user);
+  const platformOperator = isPlatformOperator(user);
   const activeMembership = memberships.find((membership) => membership.congregationId === congregationId);
-  if (!masterAdmin && (!activeMembership || !can(activeMembership, "financial.write"))) {
+  if (!platformOperator && (!activeMembership || !can(activeMembership, "financial.write"))) {
     return { ok: false, message: "Sem permissão para convidar operadores nesta congregação." };
   }
 
