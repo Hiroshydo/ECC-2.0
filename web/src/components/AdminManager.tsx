@@ -63,6 +63,8 @@ const allowedParentLevels: Record<OrganizationLevel, OrganizationLevel[]> = {
 
 type OrganizationTreeNode = { organization: AdminOrganization; children: OrganizationTreeNode[] };
 type OrganizationTypeFilter = OrganizationType | "all";
+type OrganizationExpansion = { filterKey: string; ids: Set<string> };
+const MAX_OVERVIEW_USERS = 20_000;
 
 function buildOrganizationTree(organizations: AdminOrganization[]): OrganizationTreeNode[] {
   const knownIds = new Set(organizations.map((organization) => organization.id));
@@ -144,10 +146,7 @@ function descendantCongregationCounts(nodes: OrganizationTreeNode[]): Map<string
   const counts = new Map<string, number>();
   function count(node: OrganizationTreeNode): number {
     let descendants = 0;
-    for (const child of node.children) {
-      descendants += count(child);
-      if (child.organization.organization_level === "local_congregation") descendants += 1;
-    }
+    for (const child of node.children) descendants += count(child);
     counts.set(node.organization.id, descendants);
     return descendants + (node.organization.organization_level === "local_congregation" ? 1 : 0);
   }
@@ -197,9 +196,9 @@ function OrganizationTreeRow({
     : `${congregationCounts.get(organization.id) ?? 0} congregações`;
 
   return (
-    <>
+    <div className="organization-tree-item">
       <div className={`organization-tree-row${selectedId === organization.id ? " is-selected" : ""}`}>
-        <div className="organization-tree-indent" style={{ paddingLeft: `${depth * 24}px` }}>
+        <div className="organization-tree-indent" style={{ paddingLeft: `${12 + depth * 24}px` }}>
           {children.length ? (
             <button
               type="button"
@@ -246,7 +245,7 @@ function OrganizationTreeRow({
           ))}
         </div>
       )}
-    </>
+    </div>
   );
 }
 
@@ -261,7 +260,7 @@ export function AdminManager() {
   const [showUserForm, setShowUserForm] = useState(false);
   const [organizationSearch, setOrganizationSearch] = useState("");
   const [organizationTypeFilter, setOrganizationTypeFilter] = useState<OrganizationTypeFilter>("all");
-  const [expandedOrganizationIds, setExpandedOrganizationIds] = useState<Set<string>>(() => new Set());
+  const [organizationExpansion, setOrganizationExpansion] = useState<OrganizationExpansion>(() => ({ filterKey: "", ids: new Set() }));
   const [organization, setOrganization] = useState({ name: "", city: "", state: "", organizationType: "church" as OrganizationType, organizationLevel: "local_congregation" as OrganizationLevel, parent_id: null as string | null });
   const [newUser, setNewUser] = useState({ name: "", email: "", congregationId: "", role: "viewer" as Role });
   const [editingOrganization, setEditingOrganization] = useState<AdminOrganization | null>(null);
@@ -271,6 +270,7 @@ export function AdminManager() {
   const [organizationDraft, setOrganizationDraft] = useState({ name: "", city: "", state: "", leaderName: "", organizationType: "church" as OrganizationType, organizationLevel: "local_congregation" as OrganizationLevel, parent_id: null as string | null, active: true });
   const drawerOpenerRef = useRef<HTMLButtonElement | null>(null);
   const drawerCloseButtonRef = useRef<HTMLButtonElement | null>(null);
+  const drawerRef = useRef<HTMLElement | null>(null);
 
   const organizationTree = useMemo(() => buildOrganizationTree(overview.organizations), [overview.organizations]);
   const normalizedSearch = normalizeSearch(organizationSearch);
@@ -279,9 +279,16 @@ export function AdminManager() {
     [organizationTree, normalizedSearch, organizationTypeFilter],
   );
   const hasOrganizationFilters = Boolean(normalizedSearch) || organizationTypeFilter !== "all";
+  const organizationFilterKey = JSON.stringify([normalizedSearch, organizationTypeFilter]);
   const visibleExpandableIds = useMemo(
     () => expandableOrganizationIds(filteredOrganizationTree),
     [filteredOrganizationTree],
+  );
+  const expandedOrganizationIds = useMemo(
+    () => organizationExpansion.filterKey === organizationFilterKey
+      ? organizationExpansion.ids
+      : hasOrganizationFilters ? new Set(visibleExpandableIds) : new Set<string>(),
+    [organizationExpansion, organizationFilterKey, hasOrganizationFilters, visibleExpandableIds],
   );
   const congregationCounts = useMemo(
     () => descendantCongregationCounts(organizationTree),
@@ -325,10 +332,18 @@ export function AdminManager() {
       && !excludedEditParentIds.has(unit.id)
       && unit.organization_type === organizationDraft.organizationType
   );
-
-  useEffect(() => {
-    setExpandedOrganizationIds(hasOrganizationFilters ? new Set(visibleExpandableIds) : new Set());
-  }, [hasOrganizationFilters, visibleExpandableIds]);
+  const selectedOrganizationChildren = selectedOrganization
+    ? childrenByParentId.get(selectedOrganization.id) ?? []
+    : [];
+  const selectedOrganizationParent = selectedOrganization?.parent_id
+    ? organizationsById.get(selectedOrganization.parent_id) ?? null
+    : null;
+  const selectedOrganizationIsCongregation = selectedOrganization?.organization_level === "local_congregation";
+  const selectedOrganizationCount = selectedOrganization
+    ? selectedOrganizationIsCongregation
+      ? userCounts.get(selectedOrganization.id) ?? 0
+      : congregationCounts.get(selectedOrganization.id) ?? 0
+    : 0;
 
   const closeOrganizationDrawer = useCallback(() => {
     const opener = drawerOpenerRef.current;
@@ -347,7 +362,26 @@ export function AdminManager() {
     document.body.style.overflow = "hidden";
     const frame = requestAnimationFrame(() => drawerCloseButtonRef.current?.focus());
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") closeOrganizationDrawer();
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeOrganizationDrawer();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const focusable = drawerRef.current?.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      if (!focusable?.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (!first || !last) return;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
     document.addEventListener("keydown", onKeyDown);
     return () => {
@@ -476,14 +510,18 @@ export function AdminManager() {
   function openOrganizationDetails(unit: AdminOrganization, trigger: HTMLButtonElement) {
     if (!selectedOrganization) drawerOpenerRef.current = trigger;
     setSelectedOrganization(unit);
+    if (selectedOrganization) requestAnimationFrame(() => drawerCloseButtonRef.current?.focus());
   }
 
   function toggleOrganizationExpanded(organizationId: string) {
-    setExpandedOrganizationIds((current) => {
-      const next = new Set(current);
+    setOrganizationExpansion((current) => {
+      const currentIds = current.filterKey === organizationFilterKey
+        ? current.ids
+        : hasOrganizationFilters ? visibleExpandableIds : [];
+      const next = new Set(currentIds);
       if (next.has(organizationId)) next.delete(organizationId);
       else next.add(organizationId);
-      return next;
+      return { filterKey: organizationFilterKey, ids: next };
     });
   }
 
@@ -558,14 +596,13 @@ export function AdminManager() {
         <label>Estado<input required value={organization.state} onChange={(event) => setOrganization({ ...organization, state: event.target.value })} /></label>
         <label>Tipo<select value={organization.organizationType} onChange={(event) => setOrganization({ ...organization, organizationType: event.target.value as OrganizationType, parent_id: null })}><option value="church">Igreja</option><option value="ong">ONG</option></select></label>
         <label>Nível Organizacional<select value={organization.organizationLevel} onChange={(event) => setOrganization({ ...organization, organizationLevel: event.target.value as OrganizationLevel, parent_id: null })}>{Object.entries(organizationLevelLabels).map(([level, label]) => <option key={level} value={level}>{label}</option>)}</select></label>
-        <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5" htmlFor="new-unit-parent">Sede / Matriz Responsável</label>
-          <select id="new-unit-parent" disabled={organization.organizationLevel === "national_hq"} required={organization.organizationLevel === "state_hq" || organization.organizationLevel === "sub_hq"} value={organization.parent_id ?? ""} onChange={(event) => setOrganization({ ...organization, parent_id: event.target.value || null })} className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-800 shadow-sm transition-all focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20">
+        <label className="admin-form-wide">Responde a
+          <select id="new-unit-parent" disabled={organization.organizationLevel === "national_hq"} required={organization.organizationLevel === "state_hq" || organization.organizationLevel === "sub_hq"} value={organization.parent_id ?? ""} onChange={(event) => setOrganization({ ...organization, parent_id: event.target.value || null })}>
             <option value="">Nenhuma (Unidade Independente)</option>
             {availableCreateHeadquarters.map((headquarters) => <option key={headquarters.id} value={headquarters.id}>{headquarters.name} — {headquarters.city}/{headquarters.state ?? ""}</option>)}
           </select>
-          <p className="mt-1 text-xs text-slate-500">Define a qual matriz esta congregação presta contas e responde administrativamente.</p>
-        </div>
+          <span className="admin-form-help">Define a qual matriz esta unidade presta contas.</span>
+        </label>
         <button type="submit" className="admin-primary-button" disabled={pending}>{pending ? "Salvando…" : "Cadastrar unidade"}</button>
       </form>}
       {loading ? <AdminLoading /> : overview.organizations.length ? <>
@@ -582,12 +619,12 @@ export function AdminManager() {
               <option value="ong">ONGs</option>
             </select>
           </label>
-          <div className="organization-tree-actions" aria-label="Ações da hierarquia">
-            <button type="button" className="admin-secondary-button" disabled={!visibleExpandableIds.length} onClick={() => setExpandedOrganizationIds(new Set(visibleExpandableIds))}>Expandir tudo</button>
-            <button type="button" className="admin-secondary-button" disabled={!expandedOrganizationIds.size} onClick={() => setExpandedOrganizationIds(new Set())}>Recolher tudo</button>
+          <div className="organization-tree-actions" role="group" aria-label="Ações da hierarquia">
+            <button type="button" className="admin-secondary-button" disabled={!visibleExpandableIds.length} onClick={() => setOrganizationExpansion({ filterKey: organizationFilterKey, ids: new Set(visibleExpandableIds) })}>Expandir tudo</button>
+            <button type="button" className="admin-secondary-button" disabled={!expandedOrganizationIds.size} onClick={() => setOrganizationExpansion({ filterKey: organizationFilterKey, ids: new Set() })}>Recolher tudo</button>
           </div>
         </div>
-        <div className="organization-tree" role="tree" aria-label="Lista hierárquica de unidades">
+        <section className="organization-tree" aria-label="Lista hierárquica de unidades">
           <div className="organization-tree-header" aria-hidden="true">
             <span>Unidade</span><span className="organization-tree-count">Contagem</span><span>Status</span>
           </div>
@@ -604,12 +641,13 @@ export function AdminManager() {
               onOpenDetails={openOrganizationDetails}
             />
           )) : <div className="admin-empty" role="status">Nenhuma unidade corresponde aos filtros.</div>}
-        </div>
+        </section>
       </> : <div className="admin-empty">Nenhuma unidade cadastrada.</div>}
     </section>}
 
     {activeTab === "users" && <section className="admin-section" role="tabpanel">
       <div className="admin-section-heading"><div><h2>Usuários &amp; Permissões</h2><p>Convide pessoas e controle seu acesso por unidade.</p></div><button type="button" className="admin-primary-button" onClick={() => setShowUserForm(!showUserForm)}>{showUserForm ? "Cancelar" : "+ Novo usuário"}</button></div>
+      {overview.users.length >= MAX_OVERVIEW_USERS && <div className="admin-alert warning" role="status">A lista atingiu o limite atual de 20.000 usuários da API. Pode haver usuários não exibidos.</div>}
       {showUserForm && <form className="admin-form user-invite-form" onSubmit={inviteUser}>
         <label>Nome<input required value={newUser.name} onChange={(event) => setNewUser({ ...newUser, name: event.target.value })} /></label>
         <label>E-mail<input required type="email" value={newUser.email} onChange={(event) => setNewUser({ ...newUser, email: event.target.value })} /></label>
@@ -621,58 +659,83 @@ export function AdminManager() {
       {loading ? <AdminLoading /> : <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Usuário</th><th>Perfil</th><th>Unidades</th><th>Acesso</th></tr></thead><tbody>{overview.users.map((user) => <tr key={user.id}><td><div className="admin-user-cell"><span className="admin-avatar">{user.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase()}</span><span><strong>{user.name}</strong><small>{user.email || "E-mail não informado"}</small></span></div></td><td>{roleLabels[user.role]}</td><td>{user.assignments.length}</td><td><div className="flex items-center gap-3"><button type="button" className="admin-link-button" onClick={() => openAccessEditor(user)}>Editar acessos</button><button type="button" className="admin-link-button" disabled={pending || user.id === editingUser?.id} onClick={() => void resetUserPassword(user)}>Redefinir senha</button></div></td></tr>)}</tbody></table></div>}
     </section>}
 
+    {selectedOrganization && <div className="admin-drawer-backdrop" role="presentation" onMouseDown={(event) => {
+      if (event.target === event.currentTarget) closeOrganizationDrawer();
+    }}>
+      <section ref={drawerRef} className="admin-drawer" role="dialog" aria-modal="true" aria-labelledby="organization-drawer-title">
+        <header className="admin-drawer-header">
+          <div><p className="eyebrow">DETALHES DA UNIDADE</p><h2 id="organization-drawer-title">{selectedOrganization.name}</h2></div>
+          <button ref={drawerCloseButtonRef} type="button" className="admin-icon-button" aria-label="Fechar detalhes" onClick={closeOrganizationDrawer}><X size={18} aria-hidden="true"/></button>
+        </header>
+        <div className="admin-drawer-body">
+          <div className="admin-drawer-summary">
+            <div className="admin-drawer-badges">
+              <span className={`organization-type ${selectedOrganization.organization_type}`}>{organizationTypeLabels[selectedOrganization.organization_type]}</span>
+              <span className={`organization-status ${selectedOrganization.active ? "active" : "inactive"}`}>{selectedOrganization.active ? "Ativa" : "Inativa"}</span>
+            </div>
+            <p>{selectedOrganization.city}{selectedOrganization.state ? ` · ${selectedOrganization.state}` : ""}</p>
+          </div>
+          <dl className="admin-drawer-details">
+            <div><dt>Nível</dt><dd>{organizationLevelLabels[selectedOrganization.organization_level]}</dd></div>
+            <div><dt>Status</dt><dd>{selectedOrganization.active ? "Ativa" : "Inativa"}</dd></div>
+            <div>
+              <dt>{selectedOrganizationIsCongregation ? "Usuários vinculados" : "Congregações subordinadas"}</dt>
+              <dd>{selectedOrganizationCount}</dd>
+            </div>
+            {selectedOrganization.leader_name && <div><dt>Responsável</dt><dd>{selectedOrganization.leader_name}</dd></div>}
+          </dl>
+          {selectedOrganizationIsCongregation ? (
+            <section className="admin-drawer-relations" aria-labelledby="organization-parent-title">
+              <h3 id="organization-parent-title">Sede responsável</h3>
+              {selectedOrganizationParent ? (
+                <button type="button" className="admin-drawer-unit-link" onClick={(event) => openOrganizationDetails(selectedOrganizationParent, event.currentTarget)}>
+                  <span><strong>{selectedOrganizationParent.name}</strong><small>{organizationLevelLabels[selectedOrganizationParent.organization_level]}</small></span>
+                  <ChevronRight size={17} aria-hidden="true"/>
+                </button>
+              ) : <p className="admin-drawer-empty">Esta unidade não possui sede responsável.</p>}
+            </section>
+          ) : (
+            <section className="admin-drawer-relations" aria-labelledby="organization-children-title">
+              <h3 id="organization-children-title">Unidades subordinadas</h3>
+              {selectedOrganizationChildren.length ? selectedOrganizationChildren.map((child) => (
+                <button key={child.id} type="button" className="admin-drawer-unit-link" onClick={(event) => openOrganizationDetails(child, event.currentTarget)}>
+                  <span><strong>{child.name}</strong><small>{organizationLevelLabels[child.organization_level]} · {child.city}{child.state ? ` · ${child.state}` : ""}</small></span>
+                  <ChevronRight size={17} aria-hidden="true"/>
+                </button>
+              )) : <p className="admin-drawer-empty">Nenhuma unidade subordinada.</p>}
+            </section>
+          )}
+        </div>
+        <footer className="admin-drawer-footer">
+          <button type="button" className="admin-primary-button" onClick={editSelectedOrganization}>Editar unidade</button>
+        </footer>
+      </section>
+    </div>}
+
     {editingOrganization && <div className="admin-modal-backdrop" role="presentation">
       <section className="admin-modal" role="dialog" aria-modal="true" aria-labelledby="organization-modal-title">
         <div className="admin-modal-heading">
           <div><p className="eyebrow">UNIDADE</p><h2 id="organization-modal-title">Editar unidade</h2><p>{editingOrganization.name}</p></div>
           <button type="button" className="admin-icon-button" aria-label="Fechar" onClick={() => setEditingOrganization(null)}>×</button>
         </div>
-        <form onSubmit={saveOrganizationEdits} className="space-y-4 p-6">
-          <div className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">Nome da unidade</label>
-              <input required value={organizationDraft.name} onChange={(event) => setOrganizationDraft({ ...organizationDraft, name: event.target.value })} className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-800 shadow-sm transition-all focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
-            </div>
-            <div className="grid grid-cols-4 gap-3">
-              <div className="col-span-3">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">Cidade</label>
-                <input required value={organizationDraft.city} onChange={(event) => setOrganizationDraft({ ...organizationDraft, city: event.target.value })} className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-800 shadow-sm transition-all focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
-              </div>
-              <div className="col-span-1">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">UF</label>
-                <input required maxLength={2} value={organizationDraft.state} onChange={(event) => setOrganizationDraft({ ...organizationDraft, state: event.target.value.toUpperCase().slice(0, 2) })} className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm text-center uppercase text-slate-800 shadow-sm transition-all focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">Tipo de Organização</label>
-                <select value={organizationDraft.organizationType} onChange={(event) => setOrganizationDraft({ ...organizationDraft, organizationType: event.target.value as OrganizationType, parent_id: null })} className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-800 shadow-sm transition-all focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"><option value="church">Igreja</option><option value="ong">ONG</option></select>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">Status da Conta</label>
-                <select value={organizationDraft.active ? "active" : "inactive"} onChange={(event) => setOrganizationDraft({ ...organizationDraft, active: event.target.value === "active" })} className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-800 shadow-sm transition-all focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"><option value="active">Ativa</option><option value="inactive">Inativa</option></select>
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">{organizationDraft.organizationType === "church" ? "Pastor Titular" : "Diretor / Coordenador"}</label>
-              <input value={organizationDraft.leaderName} onChange={(event) => setOrganizationDraft({ ...organizationDraft, leaderName: event.target.value })} placeholder={organizationDraft.organizationType === "church" ? "Nome do pastor titular" : "Nome do responsável"} className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-800 shadow-sm transition-all focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
-            </div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5" htmlFor="edit-organization-level">Nível Organizacional</label>
-            <select id="edit-organization-level" value={organizationDraft.organizationLevel} onChange={(event) => setOrganizationDraft({ ...organizationDraft, organizationLevel: event.target.value as OrganizationLevel, parent_id: null })} className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-800 shadow-sm transition-all focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20">
-              {Object.entries(organizationLevelLabels).map(([level, label]) => <option key={level} value={level}>{label}</option>)}
+        <form onSubmit={saveOrganizationEdits} className="admin-form admin-modal-form">
+          <label>Nome da unidade<input required value={organizationDraft.name} onChange={(event) => setOrganizationDraft({ ...organizationDraft, name: event.target.value })} /></label>
+          <label>Cidade<input required value={organizationDraft.city} onChange={(event) => setOrganizationDraft({ ...organizationDraft, city: event.target.value })} /></label>
+          <label>UF<input required maxLength={2} value={organizationDraft.state} onChange={(event) => setOrganizationDraft({ ...organizationDraft, state: event.target.value.toUpperCase().slice(0, 2) })} /></label>
+          <label>Tipo de organização<select value={organizationDraft.organizationType} onChange={(event) => setOrganizationDraft({ ...organizationDraft, organizationType: event.target.value as OrganizationType, parent_id: null })}><option value="church">Igreja</option><option value="ong">ONG</option></select></label>
+          <label>Status da conta<select value={organizationDraft.active ? "active" : "inactive"} onChange={(event) => setOrganizationDraft({ ...organizationDraft, active: event.target.value === "active" })}><option value="active">Ativa</option><option value="inactive">Inativa</option></select></label>
+          <label>{organizationDraft.organizationType === "church" ? "Pastor titular" : "Diretor / Coordenador"}<input value={organizationDraft.leaderName} onChange={(event) => setOrganizationDraft({ ...organizationDraft, leaderName: event.target.value })} placeholder={organizationDraft.organizationType === "church" ? "Nome do pastor titular" : "Nome do responsável"} /></label>
+          <label>Nível organizacional<select value={organizationDraft.organizationLevel} onChange={(event) => setOrganizationDraft({ ...organizationDraft, organizationLevel: event.target.value as OrganizationLevel, parent_id: null })}>{Object.entries(organizationLevelLabels).map(([level, label]) => <option key={level} value={level}>{label}</option>)}</select></label>
+          <label className="admin-form-wide">Responde a
+            <select id="edit-unit-parent" disabled={organizationDraft.organizationLevel === "national_hq"} required={organizationDraft.organizationLevel === "state_hq" || organizationDraft.organizationLevel === "sub_hq"} value={organizationDraft.parent_id ?? ""} onChange={(event) => setOrganizationDraft({ ...organizationDraft, parent_id: event.target.value || null })}>
+              <option value="">Nenhuma (Unidade Independente)</option>
+              {availableEditHeadquarters.map((headquarters) => <option key={headquarters.id} value={headquarters.id}>{headquarters.name} — {headquarters.city}/{headquarters.state ?? ""}</option>)}
             </select>
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5" htmlFor="edit-unit-parent">Sede / Matriz Responsável</label>
-              <select id="edit-unit-parent" disabled={organizationDraft.organizationLevel === "national_hq"} required={organizationDraft.organizationLevel === "state_hq" || organizationDraft.organizationLevel === "sub_hq"} value={organizationDraft.parent_id ?? ""} onChange={(event) => setOrganizationDraft({ ...organizationDraft, parent_id: event.target.value || null })} className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-800 shadow-sm transition-all focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20">
-                <option value="">Nenhuma (Unidade Independente)</option>
-                {availableEditHeadquarters.map((headquarters) => <option key={headquarters.id} value={headquarters.id}>{headquarters.name} — {headquarters.city}/{headquarters.state ?? ""}</option>)}
-              </select>
-              <p className="mt-1 text-xs text-slate-500">Define a qual matriz esta congregação presta contas e responde administrativamente.</p>
-            </div>
-          </div>
-          <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
-            <button type="button" className="border border-slate-200 px-4 py-2 rounded-lg text-slate-700 hover:bg-slate-50" onClick={() => setEditingOrganization(null)}>Cancelar</button>
-            <button type="submit" className="bg-emerald-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-emerald-700 shadow-sm" disabled={pending}>{pending ? "Salvando…" : "Salvar unidade"}</button>
+            <span className="admin-form-help">Unidades subordinadas não podem ser selecionadas para evitar ciclos na hierarquia.</span>
+          </label>
+          <div className="admin-modal-actions">
+            <button type="button" className="admin-secondary-button" onClick={() => setEditingOrganization(null)}>Cancelar</button>
+            <button type="submit" className="admin-primary-button" disabled={pending}>{pending ? "Salvando…" : "Salvar unidade"}</button>
           </div>
         </form>
       </section>

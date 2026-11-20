@@ -15,18 +15,5 @@ export default async function AdminPage() {
   }
   if (!isMasterAdmin(context.user)) redirect("/");
 
-  try {
-    const supabase = await (await import("@/lib/supabase/server")).createClient();
-    const { data: congregations, error: congregationsError } = await supabase.from("congregations").select("id, name, city, state, active, organization_type, is_headquarters").limit(20);
-    const { data: users, error: usersError } = await supabase.from("memberships").select("user_id, congregation_id, role").limit(20);
-    if (congregationsError || usersError) {
-      console.error("Admin page initial data load failed:", { congregationsError, usersError });
-    }
-    void congregations;
-    void users;
-  } catch (error) {
-    console.error("Admin page initial data load crashed:", error);
-  }
-
   return <AdminManager />;
 }
