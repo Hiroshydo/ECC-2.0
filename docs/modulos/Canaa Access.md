@@ -1,60 +1,101 @@
 ---
-title: Canaa Access
-module: canaa-access
+title: Canaã Access (alias)
+module: canaa
 layer: core
-status: parcialmente implementado
-tags: [ecc, administracao, acessos, canaa]
+status: alias
+tags: [ecc, core, canaa]
 ---
 
 # Canaã Access
 
-<img src="../assets/branding/Modulos/2_Badges_Com_Nome_Interno/08-canaa-access.svg" alt="Canaã Access" width="220">
+Nota substituída pelo módulo unificado [[Canaã Access & Local]].
 
-| Aspecto | Detalhe |
-|---|---|
-| Status Real | **Parcialmente implementado** |
-| Camada | Core / Administração global |
-| Rotas | `/admin`, APIs administrativas |
-| Tabelas/RPCs | `congregations`, `memberships`, `membership_permission_overrides`, `admin_*` |
-| Arquivos principais | `AdminManager.tsx`, `lib/admin/platform.ts`, `api/admin/*` |
+<!-- AUTO-SYNC:START -->
+## Inventário sincronizado do código
 
-## Propósito
+> Gerado por `npm run docs:sync`. Conteúdo entre estes marcadores não deve ser editado manualmente.
 
-Representar a administração global de unidades, hierarquia e licenças.
+### Rotas autenticadas
 
-No código atual, essa responsabilidade está distribuída entre `/admin`, `AdminManager`, APIs administrativas e a página `/canaa`.
+- `/admin` — [web/src/app/(authenticated)/admin/page.tsx](../../web/src/app/(authenticated)/admin/page.tsx)
+- `/ajustes` — [web/src/app/(authenticated)/ajustes/page.tsx](../../web/src/app/(authenticated)/ajustes/page.tsx)
+- `/auditoria` — [web/src/app/(authenticated)/auditoria/page.tsx](../../web/src/app/(authenticated)/auditoria/page.tsx)
+- `/caixa` — [web/src/app/(authenticated)/caixa/page.tsx](../../web/src/app/(authenticated)/caixa/page.tsx)
+- `/canaa` — [web/src/app/(authenticated)/canaa/page.tsx](../../web/src/app/(authenticated)/canaa/page.tsx)
+- `/configuracoes` — [web/src/app/(authenticated)/configuracoes/page.tsx](../../web/src/app/(authenticated)/configuracoes/page.tsx)
+- `/despesas` — [web/src/app/(authenticated)/despesas/page.tsx](../../web/src/app/(authenticated)/despesas/page.tsx)
+- `/entradas` — [web/src/app/(authenticated)/entradas/page.tsx](../../web/src/app/(authenticated)/entradas/page.tsx)
+- `/estornos` — [web/src/app/(authenticated)/estornos/page.tsx](../../web/src/app/(authenticated)/estornos/page.tsx)
+- `/fechamento` — [web/src/app/(authenticated)/fechamento/page.tsx](../../web/src/app/(authenticated)/fechamento/page.tsx)
+- `/noah-ops` — [web/src/app/(authenticated)/noah-ops/page.tsx](../../web/src/app/(authenticated)/noah-ops/page.tsx)
+- `/` — [web/src/app/(authenticated)/page.tsx](../../web/src/app/(authenticated)/page.tsx)
+- `/relatorios` — [web/src/app/(authenticated)/relatorios/page.tsx](../../web/src/app/(authenticated)/relatorios/page.tsx)
+- `/repasses` — [web/src/app/(authenticated)/repasses/page.tsx](../../web/src/app/(authenticated)/repasses/page.tsx)
 
-## Status real
+### APIs
 
-### Implementado no código
-- `/admin` restrita ao Dev Master.
-- Carregamento de contexto com service role server-side.
-- Criação e edição de unidades.
-- Gestão de usuários e memberships.
-- Overrides de permissões.
-- Seleção de níveis e pais hierárquicos.
-- RPC administrativa `admin_create_congregation`.
-- RPC administrativa `admin_replace_user_access`.
+- [web/src/app/api/adjustments/route.ts](../../web/src/app/api/adjustments/route.ts)
+- [web/src/app/api/admin/congregations/[id]/route.ts](../../web/src/app/api/admin/congregations/[id]/route.ts)
+- [web/src/app/api/admin/congregations/route.ts](../../web/src/app/api/admin/congregations/route.ts)
+- [web/src/app/api/admin/overview/route.ts](../../web/src/app/api/admin/overview/route.ts)
+- [web/src/app/api/admin/users/[userId]/access/route.ts](../../web/src/app/api/admin/users/[userId]/access/route.ts)
+- [web/src/app/api/admin/users/route.ts](../../web/src/app/api/admin/users/route.ts)
+- [web/src/app/api/cash/movements/route.ts](../../web/src/app/api/cash/movements/route.ts)
+- [web/src/app/api/cash/periods/route.ts](../../web/src/app/api/cash/periods/route.ts)
+- [web/src/app/api/cash/registers/route.ts](../../web/src/app/api/cash/registers/route.ts)
+- [web/src/app/api/closing/route.ts](../../web/src/app/api/closing/route.ts)
+- [web/src/app/api/entries/route.ts](../../web/src/app/api/entries/route.ts)
+- [web/src/app/api/expenses/approve/route.ts](../../web/src/app/api/expenses/approve/route.ts)
+- [web/src/app/api/expenses/route.ts](../../web/src/app/api/expenses/route.ts)
+- [web/src/app/api/financial/hierarchical-metrics/route.ts](../../web/src/app/api/financial/hierarchical-metrics/route.ts)
+- [web/src/app/api/health/route.ts](../../web/src/app/api/health/route.ts)
+- [web/src/app/api/reports/route.ts](../../web/src/app/api/reports/route.ts)
+- [web/src/app/api/reversals/route.ts](../../web/src/app/api/reversals/route.ts)
+- [web/src/app/api/transfers/approve/route.ts](../../web/src/app/api/transfers/approve/route.ts)
+- [web/src/app/api/transfers/confirm/route.ts](../../web/src/app/api/transfers/confirm/route.ts)
+- [web/src/app/api/transfers/route.ts](../../web/src/app/api/transfers/route.ts)
 
-### Parcial
-- Dependência de segredo server-side.
-- `/admin` não valida todas as telas com o mesmo formulário nos testes locais.
-- Canaã Access não possui uma nota ou diretório dedicado além da pasta compartilhada `canaa`.
+### Migrations
 
-### Não implementar no frontend
-`SUPABASE_SERVICE_ROLE_KEY` não pode aparecer em componentes client ou variáveis `NEXT_PUBLIC_*`.
+- [web/supabase/migrations/0001_finance_core.sql](../../web/supabase/migrations/0001_finance_core.sql)
+- [web/supabase/migrations/0002_integrity_and_documents.sql](../../web/supabase/migrations/0002_integrity_and_documents.sql)
+- [web/supabase/migrations/0003_financial_cycle_commands.sql](../../web/supabase/migrations/0003_financial_cycle_commands.sql)
+- [web/supabase/migrations/0004_domain_completion.sql](../../web/supabase/migrations/0004_domain_completion.sql)
+- [web/supabase/migrations/0005_domain_completion_fix.sql](../../web/supabase/migrations/0005_domain_completion_fix.sql)
+- [web/supabase/migrations/0006_cash_movement_idempotency_fix.sql](../../web/supabase/migrations/0006_cash_movement_idempotency_fix.sql)
+- [web/supabase/migrations/0007_performance_indexes.sql](../../web/supabase/migrations/0007_performance_indexes.sql)
+- [web/supabase/migrations/0008_organization_admin_permissions.sql](../../web/supabase/migrations/0008_organization_admin_permissions.sql)
+- [web/supabase/migrations/0009_hierarchical_scope_permissions.sql](../../web/supabase/migrations/0009_hierarchical_scope_permissions.sql)
+- [web/supabase/migrations/0010_congregation_leader_name.sql](../../web/supabase/migrations/0010_congregation_leader_name.sql)
+- [web/supabase/migrations/0011_admin_create_congregation_parent.sql](../../web/supabase/migrations/0011_admin_create_congregation_parent.sql)
+- [web/supabase/migrations/0012_hierarchical_financial_architecture.sql](../../web/supabase/migrations/0012_hierarchical_financial_architecture.sql)
+- [web/supabase/migrations/0013_khatam_licenses.sql](../../web/supabase/migrations/0013_khatam_licenses.sql)
 
-## Arquivos
+### Código dos módulos
 
-- `src/app/(authenticated)/admin/page.tsx`
-- `src/components/AdminManager.tsx`
-- `src/lib/admin/platform.ts`
-- `src/lib/admin/types.ts`
-- `src/app/api/admin/*`
-- migrations `0008`, `0011`, `0012`
+- [web/src/modules/core/canaa/README.md](../../web/src/modules/core/canaa/README.md)
+- [web/src/modules/core/canaa/actions/canaa.actions.ts](../../web/src/modules/core/canaa/actions/canaa.actions.ts)
+- [web/src/modules/core/canaa/components/CongregationFlowMap.tsx](../../web/src/modules/core/canaa/components/CongregationFlowMap.tsx)
+- [web/src/modules/core/canaa/components/CongregationNode.tsx](../../web/src/modules/core/canaa/components/CongregationNode.tsx)
+- [web/src/modules/core/canaa/components/InviteOperatorModal.tsx](../../web/src/modules/core/canaa/components/InviteOperatorModal.tsx)
+- [web/src/modules/core/canaa/components/LocalTeamManager.tsx](../../web/src/modules/core/canaa/components/LocalTeamManager.tsx)
+- [web/src/modules/core/canaa/components/ModuleArchitectureMap.tsx](../../web/src/modules/core/canaa/components/ModuleArchitectureMap.tsx)
+- [web/src/modules/core/canaa/components/NoahTelemetryGrid.tsx](../../web/src/modules/core/canaa/components/NoahTelemetryGrid.tsx)
+- [web/src/modules/core/canaa/types.ts](../../web/src/modules/core/canaa/types.ts)
+- [web/src/modules/core/elias/README.md](../../web/src/modules/core/elias/README.md)
+- [web/src/modules/core/enoch/README.md](../../web/src/modules/core/enoch/README.md)
+- [web/src/modules/core/hiram/README.md](../../web/src/modules/core/hiram/README.md)
+- [web/src/modules/core/khatam/README.md](../../web/src/modules/core/khatam/README.md)
+- [web/src/modules/core/khatam/components/KhatamQuotaBar.tsx](../../web/src/modules/core/khatam/components/KhatamQuotaBar.tsx)
+- [web/src/modules/core/khatam/services/license.service.ts](../../web/src/modules/core/khatam/services/license.service.ts)
+- [web/src/modules/core/khatam/services/license.shared.ts](../../web/src/modules/core/khatam/services/license.shared.ts)
+- [web/src/modules/core/sefer/README.md](../../web/src/modules/core/sefer/README.md)
+- [web/src/modules/plugins/gideon/README.md](../../web/src/modules/plugins/gideon/README.md)
+- [web/src/modules/plugins/shofeet/README.md](../../web/src/modules/plugins/shofeet/README.md)
 
-## Acoplamentos
+### Editor do grafo e console Noah
 
-- [[Hiram Architecture]] para hierarquia.
-- [[Khatam Authenticate]] para licenças da unidade.
-- [[Enoch Audit]] para operações administrativas auditadas.
+- [web/src/modules/core/canaa/components/CongregationFlowMap.tsx](../../web/src/modules/core/canaa/components/CongregationFlowMap.tsx) — conexão React Flow habilitada; layout Dagre.
+- [web/src/app/(authenticated)/noah-ops/page.tsx](../../web/src/app/(authenticated)/noah-ops/page.tsx) — inclui mapa de arquitetura ECC.
+
+<!-- AUTO-SYNC:END -->

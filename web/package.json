@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "docs:sync": "node scripts/sync-obsidian-docs.mjs"
+    "docs:sync": "node scripts/sync-obsidian-docs.mjs",
+    "hooks:install": "node scripts/install-git-hooks.mjs"
   },
   "dependencies": {
     "@dagrejs/dagre": "^3.1.3",

@@ -1,57 +1,101 @@
 ---
-title: Canaa Local
-module: canaa-local
+title: Canaã Local (alias)
+module: canaa
 layer: core
-status: parcialmente implementado
-tags: [ecc, unidade, equipe, canaa, react-flow]
+status: alias
+tags: [ecc, core, canaa]
 ---
 
 # Canaã Local
 
-<img src="../assets/branding/Modulos/2_Badges_Com_Nome_Interno/09-canaa-local.svg" alt="Canaã Local" width="220">
+Nota substituída pelo módulo unificado [[Canaã Access & Local]].
 
-| Aspecto | Detalhe |
-|---|---|
-| Status Real | **Parcialmente implementado** |
-| Camada | Core / Unidade |
-| Rotas | `/canaa` |
-| Tabelas/RPCs | `congregations`, `memberships`, `khatam_licenses` |
-| Arquivos principais | `CongregationFlowMap.tsx`, `CongregationNode.tsx`, `canaa.actions.ts` |
+<!-- AUTO-SYNC:START -->
+## Inventário sincronizado do código
 
-## Propósito
+> Gerado por `npm run docs:sync`. Conteúdo entre estes marcadores não deve ser editado manualmente.
 
-Gerenciar a unidade ativa: hierarquia visível, membros da unidade e cotas Khatam.
+### Rotas autenticadas
 
-## Status real
+- `/admin` — [web/src/app/(authenticated)/admin/page.tsx](../../web/src/app/(authenticated)/admin/page.tsx)
+- `/ajustes` — [web/src/app/(authenticated)/ajustes/page.tsx](../../web/src/app/(authenticated)/ajustes/page.tsx)
+- `/auditoria` — [web/src/app/(authenticated)/auditoria/page.tsx](../../web/src/app/(authenticated)/auditoria/page.tsx)
+- `/caixa` — [web/src/app/(authenticated)/caixa/page.tsx](../../web/src/app/(authenticated)/caixa/page.tsx)
+- `/canaa` — [web/src/app/(authenticated)/canaa/page.tsx](../../web/src/app/(authenticated)/canaa/page.tsx)
+- `/configuracoes` — [web/src/app/(authenticated)/configuracoes/page.tsx](../../web/src/app/(authenticated)/configuracoes/page.tsx)
+- `/despesas` — [web/src/app/(authenticated)/despesas/page.tsx](../../web/src/app/(authenticated)/despesas/page.tsx)
+- `/entradas` — [web/src/app/(authenticated)/entradas/page.tsx](../../web/src/app/(authenticated)/entradas/page.tsx)
+- `/estornos` — [web/src/app/(authenticated)/estornos/page.tsx](../../web/src/app/(authenticated)/estornos/page.tsx)
+- `/fechamento` — [web/src/app/(authenticated)/fechamento/page.tsx](../../web/src/app/(authenticated)/fechamento/page.tsx)
+- `/noah-ops` — [web/src/app/(authenticated)/noah-ops/page.tsx](../../web/src/app/(authenticated)/noah-ops/page.tsx)
+- `/` — [web/src/app/(authenticated)/page.tsx](../../web/src/app/(authenticated)/page.tsx)
+- `/relatorios` — [web/src/app/(authenticated)/relatorios/page.tsx](../../web/src/app/(authenticated)/relatorios/page.tsx)
+- `/repasses` — [web/src/app/(authenticated)/repasses/page.tsx](../../web/src/app/(authenticated)/repasses/page.tsx)
 
-### Implementado
-- Página `/canaa`.
-- Grafo React Flow com nós e arestas.
-- Filtro de unidade ativa e unidades subordinadas disponíveis ao usuário.
-- Barra de cotas Khatam.
-- Modal de convite local por e-mail.
-- Atualização de vínculo pai no módulo de ações.
+### APIs
 
-### Parcial
-- `LocalTeamManager` recebe `members=[]` e não carrega membros reais.
-- Não há remoção ou edição completa de todos os operadores na interface.
-- Dependência de service role para convite e atualização.
+- [web/src/app/api/adjustments/route.ts](../../web/src/app/api/adjustments/route.ts)
+- [web/src/app/api/admin/congregations/[id]/route.ts](../../web/src/app/api/admin/congregations/[id]/route.ts)
+- [web/src/app/api/admin/congregations/route.ts](../../web/src/app/api/admin/congregations/route.ts)
+- [web/src/app/api/admin/overview/route.ts](../../web/src/app/api/admin/overview/route.ts)
+- [web/src/app/api/admin/users/[userId]/access/route.ts](../../web/src/app/api/admin/users/[userId]/access/route.ts)
+- [web/src/app/api/admin/users/route.ts](../../web/src/app/api/admin/users/route.ts)
+- [web/src/app/api/cash/movements/route.ts](../../web/src/app/api/cash/movements/route.ts)
+- [web/src/app/api/cash/periods/route.ts](../../web/src/app/api/cash/periods/route.ts)
+- [web/src/app/api/cash/registers/route.ts](../../web/src/app/api/cash/registers/route.ts)
+- [web/src/app/api/closing/route.ts](../../web/src/app/api/closing/route.ts)
+- [web/src/app/api/entries/route.ts](../../web/src/app/api/entries/route.ts)
+- [web/src/app/api/expenses/approve/route.ts](../../web/src/app/api/expenses/approve/route.ts)
+- [web/src/app/api/expenses/route.ts](../../web/src/app/api/expenses/route.ts)
+- [web/src/app/api/financial/hierarchical-metrics/route.ts](../../web/src/app/api/financial/hierarchical-metrics/route.ts)
+- [web/src/app/api/health/route.ts](../../web/src/app/api/health/route.ts)
+- [web/src/app/api/reports/route.ts](../../web/src/app/api/reports/route.ts)
+- [web/src/app/api/reversals/route.ts](../../web/src/app/api/reversals/route.ts)
+- [web/src/app/api/transfers/approve/route.ts](../../web/src/app/api/transfers/approve/route.ts)
+- [web/src/app/api/transfers/confirm/route.ts](../../web/src/app/api/transfers/confirm/route.ts)
+- [web/src/app/api/transfers/route.ts](../../web/src/app/api/transfers/route.ts)
 
-## Arquivos
+### Migrations
 
-- `src/app/(authenticated)/canaa/page.tsx`
-- `src/modules/core/canaa/components/CongregationFlowMap.tsx`
-- `src/modules/core/canaa/components/CongregationNode.tsx`
-- `src/modules/core/canaa/components/InviteOperatorModal.tsx`
-- `src/modules/core/canaa/components/LocalTeamManager.tsx`
-- `src/modules/core/canaa/actions/canaa.actions.ts`
+- [web/supabase/migrations/0001_finance_core.sql](../../web/supabase/migrations/0001_finance_core.sql)
+- [web/supabase/migrations/0002_integrity_and_documents.sql](../../web/supabase/migrations/0002_integrity_and_documents.sql)
+- [web/supabase/migrations/0003_financial_cycle_commands.sql](../../web/supabase/migrations/0003_financial_cycle_commands.sql)
+- [web/supabase/migrations/0004_domain_completion.sql](../../web/supabase/migrations/0004_domain_completion.sql)
+- [web/supabase/migrations/0005_domain_completion_fix.sql](../../web/supabase/migrations/0005_domain_completion_fix.sql)
+- [web/supabase/migrations/0006_cash_movement_idempotency_fix.sql](../../web/supabase/migrations/0006_cash_movement_idempotency_fix.sql)
+- [web/supabase/migrations/0007_performance_indexes.sql](../../web/supabase/migrations/0007_performance_indexes.sql)
+- [web/supabase/migrations/0008_organization_admin_permissions.sql](../../web/supabase/migrations/0008_organization_admin_permissions.sql)
+- [web/supabase/migrations/0009_hierarchical_scope_permissions.sql](../../web/supabase/migrations/0009_hierarchical_scope_permissions.sql)
+- [web/supabase/migrations/0010_congregation_leader_name.sql](../../web/supabase/migrations/0010_congregation_leader_name.sql)
+- [web/supabase/migrations/0011_admin_create_congregation_parent.sql](../../web/supabase/migrations/0011_admin_create_congregation_parent.sql)
+- [web/supabase/migrations/0012_hierarchical_financial_architecture.sql](../../web/supabase/migrations/0012_hierarchical_financial_architecture.sql)
+- [web/supabase/migrations/0013_khatam_licenses.sql](../../web/supabase/migrations/0013_khatam_licenses.sql)
 
-## Fluxo interno
+### Código dos módulos
 
-1. O usuário precisa estar autenticado.
-2. O usuário precisa ser Dev Master ou possuir `hierarchy.view`.
-3. A página consulta memberships da unidade.
-4. Nós são criados por cada unidade visível.
-5. Arestas são criadas quando `parent_id` aponta para uma unidade visível.
-6. A licença é carregada para a unidade ativa.
-7. Convite usa `inviteOperatorAction`.
+- [web/src/modules/core/canaa/README.md](../../web/src/modules/core/canaa/README.md)
+- [web/src/modules/core/canaa/actions/canaa.actions.ts](../../web/src/modules/core/canaa/actions/canaa.actions.ts)
+- [web/src/modules/core/canaa/components/CongregationFlowMap.tsx](../../web/src/modules/core/canaa/components/CongregationFlowMap.tsx)
+- [web/src/modules/core/canaa/components/CongregationNode.tsx](../../web/src/modules/core/canaa/components/CongregationNode.tsx)
+- [web/src/modules/core/canaa/components/InviteOperatorModal.tsx](../../web/src/modules/core/canaa/components/InviteOperatorModal.tsx)
+- [web/src/modules/core/canaa/components/LocalTeamManager.tsx](../../web/src/modules/core/canaa/components/LocalTeamManager.tsx)
+- [web/src/modules/core/canaa/components/ModuleArchitectureMap.tsx](../../web/src/modules/core/canaa/components/ModuleArchitectureMap.tsx)
+- [web/src/modules/core/canaa/components/NoahTelemetryGrid.tsx](../../web/src/modules/core/canaa/components/NoahTelemetryGrid.tsx)
+- [web/src/modules/core/canaa/types.ts](../../web/src/modules/core/canaa/types.ts)
+- [web/src/modules/core/elias/README.md](../../web/src/modules/core/elias/README.md)
+- [web/src/modules/core/enoch/README.md](../../web/src/modules/core/enoch/README.md)
+- [web/src/modules/core/hiram/README.md](../../web/src/modules/core/hiram/README.md)
+- [web/src/modules/core/khatam/README.md](../../web/src/modules/core/khatam/README.md)
+- [web/src/modules/core/khatam/components/KhatamQuotaBar.tsx](../../web/src/modules/core/khatam/components/KhatamQuotaBar.tsx)
+- [web/src/modules/core/khatam/services/license.service.ts](../../web/src/modules/core/khatam/services/license.service.ts)
+- [web/src/modules/core/khatam/services/license.shared.ts](../../web/src/modules/core/khatam/services/license.shared.ts)
+- [web/src/modules/core/sefer/README.md](../../web/src/modules/core/sefer/README.md)
+- [web/src/modules/plugins/gideon/README.md](../../web/src/modules/plugins/gideon/README.md)
+- [web/src/modules/plugins/shofeet/README.md](../../web/src/modules/plugins/shofeet/README.md)
+
+### Editor do grafo e console Noah
+
+- [web/src/modules/core/canaa/components/CongregationFlowMap.tsx](../../web/src/modules/core/canaa/components/CongregationFlowMap.tsx) — conexão React Flow habilitada; layout Dagre.
+- [web/src/app/(authenticated)/noah-ops/page.tsx](../../web/src/app/(authenticated)/noah-ops/page.tsx) — inclui mapa de arquitetura ECC.
+
+<!-- AUTO-SYNC:END -->
