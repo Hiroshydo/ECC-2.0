@@ -258,6 +258,7 @@ CREATE INDEX IF NOT EXISTS audit_events_congregation_date_idx ON audit_events(co
 CREATE INDEX IF NOT EXISTS physical_cash_periods_register_period_idx ON physical_cash_periods(cash_register_id, reference_period);
 CREATE INDEX IF NOT EXISTS physical_cash_movements_period_date_idx ON physical_cash_movements(cash_period_id, created_at);
 CREATE INDEX IF NOT EXISTS sessions_user_expiry_idx ON local_sessions(user_id, expires_at);
+CREATE UNIQUE INDEX IF NOT EXISTS financial_reversals_entity_idx ON financial_reversals(entity_type, entity_id);
 
 CREATE VIEW IF NOT EXISTS congregation_monthly_entry_categories AS
 SELECT congregation_id, strftime('%Y-%m-01', occurred_on) AS reference_period, category,

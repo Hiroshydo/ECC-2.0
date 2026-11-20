@@ -428,6 +428,7 @@ export class LocalSupabaseClient {
       listUsers: (options?: { page?: number; perPage?: number }) => Promise<{ data: { users: LocalUser[] }; error: DbError | null }>;
       getUserById: (userId: string) => Promise<{ data: { user: LocalUser | null }; error: DbError | null }>;
       inviteUserByEmail: (email: string, options?: { data?: Record<string, unknown> }) => Promise<{ data: { user: LocalUser | null; initialPassword?: string }; error: DbError | null }>;
+      resetUserPassword: (userId: string, actorId: string) => Promise<{ data: { temporaryPassword: string | null }; error: DbError | null }>;
       deleteUser: (userId: string) => Promise<{ error: DbError | null }>;
     };
     signOut: () => Promise<{ error: DbError | null }>;
@@ -472,6 +473,25 @@ export class LocalSupabaseClient {
             return { data: { user, initialPassword: temporaryPassword }, error: null };
           } catch (error) {
             return { data: { user: null }, error: { message: error instanceof Error ? error.message : "user_invite_failed" } };
+          }
+        },
+        resetUserPassword: async (userId: string, actorId: string) => {
+          if (!this.serviceRole) return { data: { temporaryPassword: null }, error: { message: "service_role_required" } };
+          const database = getDatabase();
+          const user = database.prepare("SELECT 1 FROM app_users WHERE id = ? AND deleted_at IS NULL").get(userId);
+          if (!user) return { data: { temporaryPassword: null }, error: { message: "user_not_found" } };
+          const temporaryPassword = randomBytes(18).toString("base64url");
+          try {
+            const passwordHash = await hash(temporaryPassword, 12);
+            withTransaction(() => {
+              database.prepare("UPDATE app_users SET password_hash = ?, updated_at = ? WHERE id = ?")
+                .run(passwordHash, new Date().toISOString(), userId);
+              database.prepare("DELETE FROM local_sessions WHERE user_id = ?").run(userId);
+              logAudit(actorId, null, "password_reset", "app_users", userId, "platform_admin_password_reset");
+            });
+            return { data: { temporaryPassword }, error: null };
+          } catch (error) {
+            return { data: { temporaryPassword: null }, error: { message: error instanceof Error ? error.message : "user_password_reset_failed" } };
           }
         },
         deleteUser: async (userId: string) => {
@@ -561,6 +581,14 @@ function getRecord(table: string, id: string): DbRow | null {
   return result ? normalizeRow(result as Record<string, unknown>) : null;
 }
 
+function getSql(sql: string, values: unknown[]): Record<string, unknown> | undefined {
+  return getDatabase().prepare(sql).get(...values.map(toSqlValue)) as Record<string, unknown> | undefined;
+}
+
+function runSql(sql: string, values: unknown[]) {
+  return getDatabase().prepare(sql).run(...values.map(toSqlValue));
+}
+
 function runHierarchicalMetrics(params: Record<string, unknown>, userId: string | null): DbRow {
   if (!userId || userId !== params.p_user_id) throw new Error("financial_metrics_user_mismatch");
   const unitId = String(params.p_unit_id ?? "");
@@ -614,7 +642,10 @@ function runHierarchicalMetrics(params: Record<string, unknown>, userId: string 
       SELECT coalesce(sum(amount_cents), 0) AS total FROM expenses
       WHERE congregation_id = ? AND occurred_on BETWEEN ? AND ?${internalTransferFilter}
     `).get(id, startDate, endDate)?.total ?? 0);
-    const recent = [...entries.map((item) => ({ ...item, kind: "income" })), ...expenses.map((item) => ({ ...item, kind: "expense" }))]
+    const recent: Array<{ id: string; occurred_on: string; amount_cents: number; label: string; kind: "income" | "expense" }> = [
+      ...entries.map((item) => ({ id: String(item.id), occurred_on: String(item.occurred_on), amount_cents: Number(item.amount_cents), label: String(item.label), kind: "income" as const })),
+      ...expenses.map((item) => ({ id: String(item.id), occurred_on: String(item.occurred_on), amount_cents: Number(item.amount_cents), label: String(item.label), kind: "expense" as const })),
+    ]
       .sort((left, right) => String(right.occurred_on).localeCompare(String(left.occurred_on)) || String(left.id).localeCompare(String(right.id)))
       .slice(0, 10);
     return {
@@ -821,37 +852,38 @@ function runLocalRpc(name: string, params: Record<string, unknown>, userId: stri
     requireOpenPeriod(congregationId, String(source.occurred_on));
     if (typeof params.p_reason !== "string" || !params.p_reason.trim()) throw new Error("correction_reason_required");
     if (typeof params.p_idempotency_key !== "string" || !params.p_idempotency_key) throw new Error("correction_idempotency_key_required");
+    const correctionReason = params.p_reason.trim();
+    const idempotencyKey = params.p_idempotency_key;
     return withTransaction(() => {
       if (name === "create_financial_adjustment") {
         if (typeof params.p_amount_cents !== "number" || !Number.isSafeInteger(params.p_amount_cents) || params.p_amount_cents === 0) {
           throw new Error("adjustment_amount_invalid");
         }
-        const old = db.prepare("SELECT * FROM financial_adjustments WHERE created_by = ? AND idempotency_key = ?")
-          .get(userId, params.p_idempotency_key) as DbRow | undefined;
+        const adjustmentAmount = params.p_amount_cents;
+        const old = getSql("SELECT * FROM financial_adjustments WHERE created_by = ? AND idempotency_key = ?", [userId, idempotencyKey]) as DbRow | undefined;
         if (old) return normalizeRow(old as Record<string, unknown>);
         const id = randomUUID();
         const period = monthStart(source.occurred_on);
-        db.prepare(`
+        runSql(`
           INSERT INTO financial_adjustments(id, congregation_id, reference_period, entity_type, entity_id, amount_cents, reason, created_by, idempotency_key)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).run(id, congregationId, period, entityType, entityId, params.p_amount_cents, params.p_reason, userId, params.p_idempotency_key);
+        `, [id, congregationId, period, entityType, entityId, adjustmentAmount, correctionReason, userId, idempotencyKey]);
         const adjustment = getRecord("financial_adjustments", id);
-        logAudit(userId, congregationId, "posted", "financial_adjustments", id, params.p_reason, undefined, adjustment);
+        logAudit(userId, congregationId, "posted", "financial_adjustments", id, correctionReason, undefined, adjustment);
         return adjustment;
       }
-      const existing = db.prepare("SELECT * FROM financial_reversals WHERE entity_type = ? AND entity_id = ?")
-        .get(entityType, entityId) as DbRow | undefined;
+      const existing = getSql("SELECT * FROM financial_reversals WHERE entity_type = ? AND entity_id = ?", [entityType, entityId]) as DbRow | undefined;
       if (existing) {
-        if (existing.created_by === userId && existing.idempotency_key === params.p_idempotency_key) return normalizeRow(existing as Record<string, unknown>);
+        if (existing.created_by === userId && existing.idempotency_key === idempotencyKey) return normalizeRow(existing as Record<string, unknown>);
         throw new Error("reversal_already_exists");
       }
       const id = randomUUID();
-      db.prepare(`
+      runSql(`
         INSERT INTO financial_reversals(id, congregation_id, reference_period, entity_type, entity_id, amount_cents, reason, created_by, idempotency_key)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(id, congregationId, monthStart(source.occurred_on), entityType, entityId, source.amount_cents, params.p_reason, userId, params.p_idempotency_key);
+      `, [id, congregationId, monthStart(source.occurred_on), entityType, entityId, source.amount_cents, correctionReason, userId, idempotencyKey]);
       const reversal = getRecord("financial_reversals", id);
-      logAudit(userId, congregationId, "posted", "financial_reversals", id, params.p_reason, undefined, reversal);
+      logAudit(userId, congregationId, "posted", "financial_reversals", id, correctionReason, undefined, reversal);
       return reversal;
     });
   }
@@ -860,10 +892,11 @@ function runLocalRpc(name: string, params: Record<string, unknown>, userId: stri
     const congregationId = String(params.p_congregation_id ?? "");
     requirePermission(userId, congregationId, "financial.write");
     if (typeof params.p_name !== "string" || !params.p_name.trim()) throw new Error("cash_register_name_required");
+    const registerName = params.p_name.trim();
     return withTransaction(() => {
       const id = randomUUID();
       db.prepare("INSERT INTO physical_cash_registers(id, congregation_id, name, created_by) VALUES (?, ?, ?, ?)")
-        .run(id, congregationId, params.p_name.trim(), userId);
+        .run(id, congregationId, registerName, userId);
       const row = getRecord("physical_cash_registers", id);
       logAudit(userId, congregationId, "created", "physical_cash_registers", id, "cash_register_created", undefined, row);
       return row;
@@ -879,6 +912,7 @@ function runLocalRpc(name: string, params: Record<string, unknown>, userId: stri
     if (typeof params.p_opening_balance_cents !== "number" || !Number.isSafeInteger(params.p_opening_balance_cents) || params.p_opening_balance_cents < 0) {
       throw new Error("cash_opening_amount_invalid");
     }
+    const openingBalance = params.p_opening_balance_cents;
     assertDate(params.p_reference_period);
     requireOpenPeriod(congregationId, params.p_reference_period);
     return withTransaction(() => {
@@ -887,7 +921,7 @@ function runLocalRpc(name: string, params: Record<string, unknown>, userId: stri
       db.prepare(`
         INSERT INTO physical_cash_periods(id, cash_register_id, reference_period, opening_balance_cents, created_by)
         VALUES (?, ?, ?, ?, ?)
-      `).run(id, registerId, period, params.p_opening_balance_cents, userId);
+      `).run(id, registerId, period, openingBalance, userId);
       const row = getRecord("physical_cash_periods", id);
       logAudit(userId, congregationId, "opened", "physical_cash_periods", id, "cash_period_opened", undefined, row);
       return row;
@@ -905,25 +939,28 @@ function runLocalRpc(name: string, params: Record<string, unknown>, userId: stri
     requirePermission(userId, congregationId, "financial.write");
     assertPositiveAmount(params.p_amount_cents);
     if (typeof params.p_reason !== "string" || !params.p_reason.trim()) throw new Error("cash_reason_required");
-    if (!["cash_in", "cash_expense", "deposit"].includes(String(params.p_movement_type))) throw new Error("cash_movement_type_invalid");
+    if (typeof params.p_movement_type !== "string" || !["cash_in", "cash_expense", "deposit"].includes(params.p_movement_type)) throw new Error("cash_movement_type_invalid");
     if (typeof params.p_idempotency_key !== "string" || !params.p_idempotency_key) throw new Error("cash_idempotency_key_required");
+    const movementType = params.p_movement_type;
+    const amount = params.p_amount_cents;
+    const reason = params.p_reason.trim();
+    const idempotencyKey = params.p_idempotency_key;
     requireOpenPeriod(congregationId, String(period.reference_period));
     return withTransaction(() => {
-      const previous = db.prepare("SELECT * FROM physical_cash_movements WHERE created_by = ? AND idempotency_key = ?")
-        .get(userId, params.p_idempotency_key) as DbRow | undefined;
+      const previous = getSql("SELECT * FROM physical_cash_movements WHERE created_by = ? AND idempotency_key = ?", [userId, idempotencyKey]) as DbRow | undefined;
       if (previous) return normalizeRow(previous as Record<string, unknown>);
       const balance = Number(db.prepare(`
         SELECT ? + coalesce(sum(CASE WHEN movement_type = 'cash_in' THEN amount_cents ELSE -amount_cents END), 0) AS balance
         FROM physical_cash_movements WHERE cash_period_id = ?
-      `).get(period.opening_balance_cents, periodId)?.balance ?? 0);
-      if (params.p_movement_type !== "cash_in" && balance < Number(params.p_amount_cents)) throw new Error("cash_insufficient_balance");
+      `).get(...[period.opening_balance_cents, periodId].map(toSqlValue))?.balance ?? 0);
+      if (movementType !== "cash_in" && balance < amount) throw new Error("cash_insufficient_balance");
       const id = randomUUID();
       db.prepare(`
         INSERT INTO physical_cash_movements(id, cash_period_id, movement_type, amount_cents, reason, created_by, idempotency_key)
         VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).run(id, periodId, params.p_movement_type, params.p_amount_cents, params.p_reason, userId, params.p_idempotency_key);
+      `).run(id, periodId, movementType, amount, reason, userId, idempotencyKey);
       const movement = getRecord("physical_cash_movements", id);
-      logAudit(userId, congregationId, "created", "physical_cash_movements", id, params.p_reason, undefined, movement);
+      logAudit(userId, congregationId, "created", "physical_cash_movements", id, reason, undefined, movement);
       return movement;
     });
   }
@@ -932,15 +969,104 @@ function runLocalRpc(name: string, params: Record<string, unknown>, userId: stri
     const congregationId = String(params.p_congregation_id ?? "");
     requirePermission(userId, congregationId, "closing.submit");
     if (typeof params.p_reason !== "string" || !params.p_reason.trim()) throw new Error("reopening_reason_required");
+    const reason = params.p_reason.trim();
     const period = monthStart(params.p_reference_period);
     if (!isPeriodClosed(congregationId, period)) throw new Error("period_not_closed");
     return withTransaction(() => {
       const id = randomUUID();
       db.prepare("INSERT INTO period_reopening_requests(id, congregation_id, reference_period, reason, requested_by) VALUES (?, ?, ?, ?, ?)")
-        .run(id, congregationId, period, params.p_reason, userId);
+        .run(id, congregationId, period, reason, userId);
       const row = getRecord("period_reopening_requests", id);
-      logAudit(userId, congregationId, "requested", "period_reopening_requests", id, params.p_reason, undefined, row);
+      logAudit(userId, congregationId, "requested", "period_reopening_requests", id, reason, undefined, row);
       return row;
+    });
+  }
+  if (name === "approve_period_reopening") {
+    if (!userId) throw new Error("authentication_required");
+    const requestId = String(params.p_request_id ?? "");
+    return withTransaction(() => {
+      const request = getRecord("period_reopening_requests", requestId);
+      if (!request) throw new Error("reopening_request_not_found");
+      if (request.status !== "pending") throw new Error("reopening_request_not_pending");
+      if (request.requested_by === userId) throw new Error("reopening_self_approval_forbidden");
+      const congregationId = String(request.congregation_id);
+      const referencePeriod = String(request.reference_period);
+      const membership = getDatabase().prepare("SELECT role FROM memberships WHERE user_id = ? AND congregation_id = ?")
+        .get(userId, congregationId) as { role?: string } | undefined;
+      if (membership?.role !== "central_admin") throw new Error("reopening_approval_not_allowed");
+      const closing = getSql(
+        "SELECT * FROM monthly_closings WHERE congregation_id = ? AND reference_period = ?",
+        [congregationId, referencePeriod],
+      );
+      if (!closing || closing.status !== "closed") throw new Error("period_not_closed");
+      db.prepare("UPDATE monthly_closings SET status = 'open', closed_at = NULL, approved_by = ? WHERE congregation_id = ? AND reference_period = ?")
+        .run(userId, congregationId, referencePeriod);
+      const reopenedClosing = getSql(
+        "SELECT * FROM monthly_closings WHERE congregation_id = ? AND reference_period = ?",
+        [congregationId, referencePeriod],
+      );
+      db.prepare("UPDATE period_reopening_requests SET status = 'approved', approved_by = ?, approved_at = ? WHERE id = ?")
+        .run(userId, new Date().toISOString(), requestId);
+      const approvedRequest = getRecord("period_reopening_requests", requestId);
+      logAudit(
+        userId, congregationId, "approved", "period_reopening_requests", requestId, String(request.reason),
+        { request, closing }, { request: approvedRequest, closing: reopenedClosing },
+      );
+      return approvedRequest;
+    });
+  }
+  if (name === "count_cash") {
+    if (!userId) throw new Error("authentication_required");
+    const periodId = String(params.p_cash_period_id ?? "");
+    const period = getRecord("physical_cash_periods", periodId);
+    if (!period) throw new Error("cash_period_not_found");
+    if (period.status !== "open") throw new Error("cash_period_not_open");
+    const register = getRecord("physical_cash_registers", String(period.cash_register_id));
+    if (!register) throw new Error("cash_register_not_found");
+    const congregationId = String(register.congregation_id);
+    requirePermission(userId, congregationId, "financial.write");
+    const countedBalance = params.p_counted_balance_cents;
+    if (typeof countedBalance !== "number" || !Number.isSafeInteger(countedBalance) || countedBalance < 0) {
+      throw new Error("cash_count_invalid");
+    }
+    const rawDivergenceReason = params.p_divergence_reason;
+    if (rawDivergenceReason !== undefined && rawDivergenceReason !== null && typeof rawDivergenceReason !== "string") {
+      throw new Error("cash_divergence_reason_invalid");
+    }
+    const divergenceReason = typeof rawDivergenceReason === "string" ? rawDivergenceReason.trim() : "";
+    return withTransaction(() => {
+      const expectedBalance = Number(db.prepare(`
+        SELECT ? + coalesce(sum(CASE WHEN movement_type = 'cash_in' THEN amount_cents ELSE -amount_cents END), 0) AS balance
+        FROM physical_cash_movements WHERE cash_period_id = ?
+      `).get(Number(period.opening_balance_cents), periodId)?.balance ?? 0);
+      if (countedBalance !== expectedBalance && !divergenceReason) throw new Error("cash_divergence_reason_required");
+      db.prepare(`
+        UPDATE physical_cash_periods
+        SET counted_balance_cents = ?, counted_by = ?, counted_at = ?, divergence_reason = ?
+        WHERE id = ?
+      `).run(countedBalance, userId, new Date().toISOString(), divergenceReason || null, periodId);
+      const updated = getRecord("physical_cash_periods", periodId);
+      logAudit(userId, congregationId, "counted", "physical_cash_periods", periodId, divergenceReason || "cash_counted", period, updated);
+      return updated;
+    });
+  }
+  if (name === "close_cash_period") {
+    if (!userId) throw new Error("authentication_required");
+    const periodId = String(params.p_cash_period_id ?? "");
+    const period = getRecord("physical_cash_periods", periodId);
+    if (!period) throw new Error("cash_period_not_found");
+    const register = getRecord("physical_cash_registers", String(period.cash_register_id));
+    if (!register) throw new Error("cash_register_not_found");
+    const congregationId = String(register.congregation_id);
+    requirePermission(userId, congregationId, "closing.submit");
+    if (period.status !== "open") throw new Error("cash_period_not_open");
+    if (period.counted_balance_cents === null) throw new Error("cash_count_required");
+    return withTransaction(() => {
+      db.prepare("UPDATE physical_cash_periods SET status = 'closed', closed_by = ?, closed_at = ? WHERE id = ?")
+        .run(userId, new Date().toISOString(), periodId);
+      const closedPeriod = getRecord("physical_cash_periods", periodId);
+      logAudit(userId, congregationId, "closed", "physical_cash_periods", periodId, "cash_period_closed", period, closedPeriod);
+      return closedPeriod;
     });
   }
   if (name === "admin_create_congregation") {
@@ -952,6 +1078,9 @@ function runLocalRpc(name: string, params: Record<string, unknown>, userId: stri
     if (typeof params.p_name !== "string" || !params.p_name.trim()) throw new Error("organization_name_required");
     if (typeof params.p_city !== "string" || !params.p_city.trim()) throw new Error("organization_city_required");
     if (typeof params.p_state !== "string" || !params.p_state.trim()) throw new Error("organization_state_required");
+    const name = params.p_name.trim();
+    const city = params.p_city.trim();
+    const state = params.p_state.trim();
     if (params.p_is_headquarters !== (level !== "local_congregation")) throw new Error("headquarters_level_mismatch");
     const parentId = params.p_parent_id == null ? null : String(params.p_parent_id);
     const validParentLevels: Record<string, string[]> = {
@@ -973,7 +1102,7 @@ function runLocalRpc(name: string, params: Record<string, unknown>, userId: stri
       db.prepare(`
         INSERT INTO congregations(id, name, city, state, organization_type, is_headquarters, parent_id, organization_level)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(id, params.p_name, params.p_city, params.p_state, type, params.p_is_headquarters === true ? 1 : 0, parentId, level);
+      `).run(id, name, city, state, type, params.p_is_headquarters === true ? 1 : 0, parentId, level);
       const congregation = getRecord("congregations", id);
       logAudit(String(params.p_actor_id), id, "created", "congregations", id, "platform_admin_organization_create", undefined, congregation);
       return congregation;

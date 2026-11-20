@@ -158,6 +158,18 @@ export function AdminManager() {
     finally { setPending(false); }
   }
 
+  async function resetUserPassword(user: AdminUser) {
+    if (!window.confirm(`Redefinir a senha de ${user.email}? As sessões ativas serão encerradas.`)) return;
+    setPending(true); setError(null); setNotice(null);
+    try {
+      const result = await readApi<{ temporaryPassword: string }>(await fetch(`/api/admin/users/${encodeURIComponent(user.id)}/password`, {
+        method: "POST",
+      }), "Falha ao redefinir senha");
+      setNotice(`Senha temporária de ${user.email}: ${result.temporaryPassword}. Entregue por um canal seguro.`);
+    } catch (resetError) { setError(resetError instanceof Error ? resetError.message : "Não foi possível redefinir a senha."); }
+    finally { setPending(false); }
+  }
+
   async function saveOrganizationEdits(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!editingOrganization) return;
@@ -285,9 +297,9 @@ export function AdminManager() {
         <label>Unidade inicial<select value={newUser.congregationId} onChange={(event) => setNewUser({ ...newUser, congregationId: event.target.value })}><option value="">Sem unidade</option>{overview.organizations.map((unit) => <option key={unit.id} value={unit.id}>{unit.name}</option>)}</select></label>
         <label>Perfil inicial<select value={newUser.role} onChange={(event) => setNewUser({ ...newUser, role: event.target.value as Role })}>{(newUser.congregationId ? roleOptionsForOrganizationType(overview.organizations.find((unit) => unit.id === newUser.congregationId)?.organization_type ?? "church") : roleOptionsForOrganizationType("church")).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
         <button type="submit" className="admin-primary-button" disabled={pending}>{pending ? "Enviando convite…" : "Enviar convite"}</button>
-        <p className="admin-form-note">A pessoa receberá um link para definir a própria senha.</p>
+        <p className="admin-form-note">A senha inicial será mostrada após o cadastro. Compartilhe-a por um canal seguro.</p>
       </form>}
-      {loading ? <AdminLoading /> : <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Usuário</th><th>Perfil</th><th>Unidades</th><th>Acesso</th></tr></thead><tbody>{overview.users.map((user) => <tr key={user.id}><td><div className="admin-user-cell"><span className="admin-avatar">{user.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase()}</span><span><strong>{user.name}</strong><small>{user.email || "E-mail não informado"}</small></span></div></td><td>{roleLabels[user.role]}</td><td>{user.assignments.length}</td><td><button type="button" className="admin-link-button" onClick={() => openAccessEditor(user)}>Editar acessos</button></td></tr>)}</tbody></table></div>}
+      {loading ? <AdminLoading /> : <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Usuário</th><th>Perfil</th><th>Unidades</th><th>Acesso</th></tr></thead><tbody>{overview.users.map((user) => <tr key={user.id}><td><div className="admin-user-cell"><span className="admin-avatar">{user.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase()}</span><span><strong>{user.name}</strong><small>{user.email || "E-mail não informado"}</small></span></div></td><td>{roleLabels[user.role]}</td><td>{user.assignments.length}</td><td><div className="flex items-center gap-3"><button type="button" className="admin-link-button" onClick={() => openAccessEditor(user)}>Editar acessos</button><button type="button" className="admin-link-button" disabled={pending || user.id === editingUser?.id} onClick={() => void resetUserPassword(user)}>Redefinir senha</button></div></td></tr>)}</tbody></table></div>}
     </section>}
 
     {editingOrganization && <div className="admin-modal-backdrop" role="presentation">
