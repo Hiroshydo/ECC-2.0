@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { can } from "@/domain/access";
+import { isTransferMethod, type TransferSend } from "@/domain/finance";
 import { TransferManager } from "@/components/TransferManager";
 import { toMemberships } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
@@ -21,10 +22,32 @@ export default async function TransfersPage() {
 
 	const currentPeriod = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1)).toISOString().slice(0, 10);
 	const [transfersResult, closingResult] = await Promise.all([
-		supabase.from("headquarters_transfers").select("id, destination_name, reference_period, amount_sent_cents, amount_received_cents, occurred_on, status, reason").eq("origin_congregation_id", activeMembership.congregationId).order("reference_period", { ascending: false }).order("created_at", { ascending: false }).limit(100),
+		supabase.from("headquarters_transfers").select("id, destination_name, reference_period, amount_requested_cents, amount_approved_cents, amount_sent_cents, amount_received_cents, occurred_on, status, reason, requested_by, approved_by").eq("origin_congregation_id", activeMembership.congregationId).order("reference_period", { ascending: false }).order("created_at", { ascending: false }).limit(100),
 		supabase.from("monthly_closings").select("status").eq("congregation_id", activeMembership.congregationId).eq("reference_period", currentPeriod).maybeSingle(),
 	]);
 	if (transfersResult.error) throw new Error(transfersResult.error.message);
 	if (closingResult.error) throw new Error(closingResult.error.message);
-	return <TransferManager transfers={transfersResult.data ?? []} congregationId={activeMembership.congregationId} closed={closingResult.data?.status === "closed"} canWrite={can(activeMembership, "financial.write")} canApprove={can(activeMembership, "financial.approve")} canConfirm={activeMembership.role === "central_admin"} organizationType={activeMembership.congregation.organizationType} />;
+	const transferIds = (transfersResult.data ?? []).map((transfer) => transfer.id);
+	const sendsResult = transferIds.length
+		? await supabase.from("headquarters_transfer_sends").select("id, transfer_id, occurred_on, amount_sent_cents, method, reference, note, sent_by, created_at").in("transfer_id", transferIds)
+		: { data: [], error: null };
+	if (sendsResult.error) throw new Error(sendsResult.error.message);
+	const sendsByTransferId = new Map<string, TransferSend>();
+	for (const send of sendsResult.data ?? []) {
+		if (!isTransferMethod(send.method)) throw new Error(`Unsupported transfer method: ${send.method}`);
+		sendsByTransferId.set(send.transfer_id, {
+			occurred_on: send.occurred_on,
+			amount_sent_cents: send.amount_sent_cents,
+			method: send.method,
+			reference: send.reference,
+			note: send.note,
+			sent_by: send.sent_by,
+			created_at: send.created_at,
+		});
+	}
+	const transfers = (transfersResult.data ?? []).map((transfer) => ({
+		...transfer,
+		send: sendsByTransferId.get(transfer.id) ?? null,
+	}));
+	return <TransferManager transfers={transfers} congregationId={activeMembership.congregationId} currentUserId={user.id} closed={closingResult.data?.status === "closed"} canWrite={can(activeMembership, "financial.write")} canApprove={can(activeMembership, "financial.approve")} canSend={can(activeMembership, "transfer.send")} canConfirm={activeMembership.role === "central_admin"} organizationType={activeMembership.congregation.organizationType} />;
 }

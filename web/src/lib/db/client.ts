@@ -51,7 +51,8 @@ type TableRows = {
   expenses: FinancialRow & { description: string; vendor: string | null; payment_method: string; purpose: string | null; cost_center: string | null; recorded_by: string; approved_at: string | null };
   financial_adjustments: DbRow & { id: string; congregation_id: string; reference_period: string; entity_type: string; entity_id: string; amount_cents: number; reason: string; status: string; created_by: string; created_at: string };
   financial_reversals: DbRow & { id: string; congregation_id: string; reference_period: string; entity_type: string; entity_id: string; amount_cents: number; reason: string; status: string; created_by: string; created_at: string };
-  headquarters_transfers: DbRow & { id: string; origin_congregation_id: string; destination_name: string; reference_period: string; amount_sent_cents: number | null; amount_received_cents: number | null; occurred_on: string | null; status: string; reason: string; created_at: string; receipt_id: string | null };
+  headquarters_transfers: DbRow & { id: string; origin_congregation_id: string; destination_name: string; reference_period: string; amount_requested_cents: number | null; amount_approved_cents: number | null; amount_sent_cents: number | null; amount_received_cents: number | null; occurred_on: string | null; status: string; reason: string; requested_by: string; approved_by: string | null; approved_at: string | null; created_at: string; receipt_id: string | null };
+  headquarters_transfer_sends: DbRow & { id: string; transfer_id: string; occurred_on: string; amount_sent_cents: number; method: string; reference: string | null; note: string | null; sent_by: string; idempotency_key: string; created_at: string };
   khatam_licenses: DbRow & { congregation_id: string; seats_total: number; expires_at: string };
   memberships: MembershipRow;
   membership_permission_overrides: PermissionOverrideRow & { user_id: string; congregation_id: string };
@@ -66,7 +67,7 @@ type TableName = keyof TableRows;
 const allowedTables = new Set([
   "audit_events", "congregation_monthly_entry_categories", "congregation_monthly_summary",
   "congregations", "documents", "entries", "expenses", "financial_adjustments",
-  "financial_reversals", "headquarters_transfers", "khatam_licenses", "memberships",
+  "financial_reversals", "headquarters_transfer_sends", "headquarters_transfers", "khatam_licenses", "memberships",
   "membership_permission_overrides", "monthly_closings", "period_reopening_requests",
   "physical_cash_movements", "physical_cash_periods", "physical_cash_registers",
 ]);
@@ -79,7 +80,7 @@ const booleanColumns = new Set([
 const defaultPermissions: Record<string, string[]> = {
   central_admin: ["financial.read", "financial.write", "financial.approve", "closing.submit", "audit.read"],
   congregation_admin: ["financial.read", "financial.write", "financial.approve", "closing.submit", "audit.read"],
-  treasurer: ["financial.read", "financial.write", "closing.submit"],
+  treasurer: ["financial.read", "financial.write", "closing.submit", "transfer.send"],
   auditor: ["financial.read", "audit.read"],
   viewer: ["financial.read"],
 };
@@ -194,6 +195,12 @@ function visibilityClause(table: string, userId: string | null, serviceRole: boo
   if (table === "audit_events") {
     return {
       sql: `EXISTS (SELECT 1 FROM memberships m LEFT JOIN membership_permission_overrides o ON o.user_id=m.user_id AND o.congregation_id=m.congregation_id WHERE m.user_id=? AND m.congregation_id=audit_events.congregation_id AND coalesce(o.audit_read, CASE WHEN m.role IN ('central_admin','congregation_admin','auditor') THEN 1 ELSE 0 END)=1)`,
+      values: [userId],
+    };
+  }
+  if (table === "headquarters_transfer_sends") {
+    return {
+      sql: "EXISTS (SELECT 1 FROM headquarters_transfers t JOIN memberships m ON m.congregation_id=t.origin_congregation_id LEFT JOIN membership_permission_overrides o ON o.user_id=m.user_id AND o.congregation_id=m.congregation_id WHERE m.user_id=? AND t.id=headquarters_transfer_sends.transfer_id AND coalesce(o.financial_read, 1)=1)",
       values: [userId],
     };
   }
@@ -570,6 +577,16 @@ function assertDate(value: unknown): asserts value is string {
   }
 }
 
+function dateInTimeZone(value: Date, timeZone: string): string {
+  const parts = new Map(new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(value).map((part) => [part.type, part.value]));
+  return `${parts.get("year")}-${parts.get("month")}-${parts.get("day")}`;
+}
+
 function assertPositiveAmount(value: unknown): asserts value is number {
   if (typeof value !== "number" || !Number.isSafeInteger(value) || value <= 0) throw new Error("amount_must_be_positive_cents");
 }
@@ -780,18 +797,93 @@ function runLocalRpc(name: string, params: Record<string, unknown>, userId: stri
     assertPositiveAmount(params.p_amount_sent_cents);
     assertDate(params.p_reference_period);
     if (typeof params.p_reason !== "string" || !params.p_reason.trim()) throw new Error("transfer_reason_required");
-    requireOpenPeriod(congregationId, String(params.p_occurred_on ?? params.p_reference_period));
+    requireOpenPeriod(congregationId, String(params.p_reference_period));
+    const senderCount = Number(db.prepare(`
+      SELECT count(DISTINCT m.user_id) AS count
+      FROM memberships m
+      JOIN app_users u ON u.id = m.user_id
+      WHERE m.congregation_id = ? AND m.role = 'treasurer' AND u.deleted_at IS NULL
+    `).get(congregationId)?.count ?? 0);
+    if (senderCount < 2) throw new Error("transfer_send_staffing_required");
     return withTransaction(() => {
       db.prepare(`
-      INSERT INTO headquarters_transfers(id, origin_congregation_id, destination_name, reference_period, amount_sent_cents, occurred_on, status, reason, requested_by)
-      VALUES (?, ?, ?, ?, ?, ?, 'requested', ?, ?)
+      INSERT INTO headquarters_transfers(id, origin_congregation_id, destination_name, reference_period, amount_requested_cents, amount_sent_cents, occurred_on, status, reason, requested_by)
+      VALUES (?, ?, ?, ?, ?, NULL, NULL, 'requested', ?, ?)
       `).run(...[
         id, congregationId, params.p_destination_name, monthStart(params.p_reference_period), params.p_amount_sent_cents,
-        params.p_occurred_on ?? null, params.p_reason, userId,
+        params.p_reason, userId,
       ].map(toSqlValue));
       const transfer = getRecord("headquarters_transfers", id);
       logAudit(userId, congregationId, "requested", "headquarters_transfers", id, String(params.p_reason), undefined, transfer);
       return transfer;
+    });
+  }
+  if (name === "mark_transfer_sent") {
+    if (!userId) throw new Error("authentication_required");
+    const transferId = String(params.p_transfer_id ?? "");
+    const idempotencyKey = String(params.p_idempotency_key ?? "");
+    const occurredOn = params.p_occurred_on;
+    const amountSent = params.p_amount_sent_cents;
+    const method = String(params.p_method ?? "");
+    const reference = typeof params.p_reference === "string" ? params.p_reference.trim() : "";
+    const note = typeof params.p_note === "string" ? params.p_note.trim() : "";
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(idempotencyKey)) {
+      throw new Error("transfer_send_idempotency_key_invalid");
+    }
+    assertDate(occurredOn);
+    assertPositiveAmount(amountSent);
+    if (!["pix", "transfer", "deposit", "cash"].includes(method)) throw new Error("transfer_send_method_invalid");
+    if (method === "cash" && !reference) throw new Error("transfer_send_reference_required");
+    if (reference.length > 200 || note.length > 1000) throw new Error("transfer_send_details_too_long");
+    return withTransaction(() => {
+      const target = getRecord("headquarters_transfers", transferId);
+      if (!target) throw new Error("transfer_not_found");
+      if (target.requested_by === userId) throw new Error("transfer_sender_requester_conflict");
+      if (target.approved_by === userId) throw new Error("transfer_sender_approver_conflict");
+      if (!filterPermission(userId, String(target.origin_congregation_id), "transfer.send")) throw new Error("transfer_send_not_allowed");
+      const previous = getDatabase().prepare(`
+        SELECT * FROM headquarters_transfer_sends WHERE transfer_id = ?
+      `).get(transferId) as DbRow | undefined;
+      if (previous) {
+        if (
+          previous.idempotency_key === idempotencyKey
+          && previous.sent_by === userId
+          && previous.occurred_on === occurredOn
+          && previous.amount_sent_cents === amountSent
+          && previous.method === method
+          && previous.reference === (reference || null)
+          && previous.note === (note || null)
+        ) return target;
+        throw new Error("transfer_already_sent");
+      }
+      if (target.status !== "approved") throw new Error("transfer_not_approved");
+      if (typeof target.amount_approved_cents !== "number" || target.amount_approved_cents !== amountSent) {
+        throw new Error("transfer_sent_amount_must_match_approved");
+      }
+      const todayInSaoPaulo = dateInTimeZone(new Date(), "America/Sao_Paulo");
+      if (typeof target.approved_at !== "string") throw new Error("transfer_approval_timestamp_missing");
+      const approvedDate = dateInTimeZone(new Date(target.approved_at), "America/Sao_Paulo");
+      if (occurredOn > todayInSaoPaulo) throw new Error("transfer_send_date_in_future");
+      if (occurredOn < approvedDate) throw new Error("transfer_send_date_before_approval");
+      requireOpenPeriod(String(target.origin_congregation_id), occurredOn);
+      const id = randomUUID();
+      const createdAt = new Date().toISOString();
+      getDatabase().prepare(`
+        INSERT INTO headquarters_transfer_sends
+        (id, transfer_id, occurred_on, amount_sent_cents, method, reference, note, sent_by, idempotency_key, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(id, transferId, occurredOn, amountSent, method, reference || null, note || null, userId, idempotencyKey, createdAt);
+      getDatabase().prepare(`
+        UPDATE headquarters_transfers
+        SET amount_sent_cents = ?, occurred_on = ?, status = 'sent'
+        WHERE id = ?
+      `).run(amountSent, occurredOn, transferId);
+      const updated = getRecord("headquarters_transfers", transferId);
+      logAudit(userId, String(target.origin_congregation_id), "sent", "headquarters_transfers", transferId, "transfer_sent", target, {
+        transfer: updated,
+        send: { id, occurred_on: occurredOn, amount_sent_cents: amountSent, method, reference: reference || null, note: note || null, sent_by: userId, created_at: createdAt },
+      });
+      return updated;
     });
   }
   if (name === "approve_expense" || name === "approve_transfer" || name === "confirm_transfer") {
@@ -814,7 +906,9 @@ function runLocalRpc(name: string, params: Record<string, unknown>, userId: stri
       }
       if (name === "approve_transfer") {
         if (target.status !== "requested") throw new Error("transfer_not_requested");
-        db.prepare("UPDATE headquarters_transfers SET status = 'approved', approved_by = ? WHERE id = ?").run(userId, id);
+        if (target.requested_by === userId) throw new Error("transfer_self_approval_forbidden");
+        db.prepare("UPDATE headquarters_transfers SET status = 'approved', amount_approved_cents = amount_requested_cents, approved_by = ?, approved_at = ? WHERE id = ?")
+          .run(userId, new Date().toISOString(), id);
         const updated = getRecord("headquarters_transfers", id);
         logAudit(userId, congregationId, "approved", table, id, "transfer_approval", target, updated);
         return updated;

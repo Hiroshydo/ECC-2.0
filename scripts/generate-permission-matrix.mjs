@@ -60,6 +60,10 @@ function parseDatabasePermissionMatrix(migrations, permissions, roles) {
 
   if (!latestPermissionFunction) throw new Error("Database permission helper not found");
   const defaults = new Map(permissions.map((permission) => [permission, new Set()]));
+  const transferSendGuard = latestPermissionFunction.match(
+    /if\s+target_permission\s*=\s*'transfer\.send'\s+then\s+return\s+actor_role\s*=\s*'([^']+)'/i,
+  );
+  if (transferSendGuard) defaults.get("transfer.send")?.add(transferSendGuard[1]);
   const permissionCaseBlocks = [...latestPermissionFunction.matchAll(
     /return\s+case\s+target_permission([\s\S]*?)\bend\s*;/gi,
   )];

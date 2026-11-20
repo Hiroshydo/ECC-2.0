@@ -387,6 +387,7 @@ A auditoria deve ser append-only e imutável por regra de negócio.
 - `financial.write`
 - `financial.approve`
 - `closing.submit`
+- `transfer.send`
 - `audit.read`
 
 ### Regras
@@ -395,6 +396,7 @@ A auditoria deve ser append-only e imutável por regra de negócio.
 - aprovação requer papel específico e vínculo ativo;
 - auditor só lê, não altera dados financeiros;
 - visualização não implica autorização de escrita ou aprovação.
+- registrar envio exige `transfer.send` diretamente na unidade de origem.
 
 ---
 

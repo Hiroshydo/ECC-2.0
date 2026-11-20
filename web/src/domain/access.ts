@@ -7,6 +7,7 @@ export type Permission =
   | "financial.write"
   | "financial.approve"
   | "closing.submit"
+  | "transfer.send"
   | "audit.read"
   | "hierarchy.view"
   | "hierarchy.financial.read";
@@ -19,12 +20,12 @@ export type Membership = { userId: UserId; congregationId: CongregationId; role:
 export const rolePermissions: Record<Role, Permission[]> = {
   central_admin: ["financial.read", "financial.write", "financial.approve", "closing.submit", "audit.read"],
   congregation_admin: ["financial.read", "financial.write", "financial.approve", "closing.submit", "audit.read"],
-  treasurer: ["financial.read", "financial.write", "closing.submit"],
+  treasurer: ["financial.read", "financial.write", "closing.submit", "transfer.send"],
   auditor: ["financial.read", "audit.read"],
   viewer: ["financial.read"],
 };
 
-export type AdminPermission = Permission;
+export type AdminPermission = Exclude<Permission, "transfer.send">;
 
 export const allPermissions: AdminPermission[] = [
   "financial.read",

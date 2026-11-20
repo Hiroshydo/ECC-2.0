@@ -111,6 +111,8 @@ CREATE TABLE IF NOT EXISTS headquarters_transfers (
   origin_congregation_id TEXT NOT NULL REFERENCES congregations(id),
   destination_name TEXT NOT NULL,
   reference_period TEXT NOT NULL,
+  amount_requested_cents INTEGER CHECK (amount_requested_cents > 0),
+  amount_approved_cents INTEGER CHECK (amount_approved_cents > 0),
   amount_sent_cents INTEGER CHECK (amount_sent_cents > 0),
   amount_received_cents INTEGER CHECK (amount_received_cents >= 0),
   occurred_on TEXT,
@@ -119,8 +121,24 @@ CREATE TABLE IF NOT EXISTS headquarters_transfers (
   reason TEXT NOT NULL,
   requested_by TEXT NOT NULL REFERENCES app_users(id),
   approved_by TEXT REFERENCES app_users(id),
+  approved_at TEXT,
   receipt_id TEXT,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS headquarters_transfer_sends (
+  id TEXT PRIMARY KEY,
+  transfer_id TEXT NOT NULL UNIQUE REFERENCES headquarters_transfers(id) ON DELETE RESTRICT,
+  occurred_on TEXT NOT NULL,
+  amount_sent_cents INTEGER NOT NULL CHECK (amount_sent_cents > 0),
+  method TEXT NOT NULL CHECK (method IN ('pix', 'transfer', 'deposit', 'cash')),
+  reference TEXT,
+  note TEXT,
+  sent_by TEXT NOT NULL REFERENCES app_users(id),
+  idempotency_key TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (transfer_id, idempotency_key),
+  CHECK (method <> 'cash' OR length(trim(coalesce(reference, ''))) > 0)
 );
 
 CREATE TABLE IF NOT EXISTS monthly_closings (

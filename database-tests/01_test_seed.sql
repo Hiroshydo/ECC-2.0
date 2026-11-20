@@ -18,6 +18,7 @@ DECLARE
   v_auditor uuid := '77777777-7777-4777-8777-777777777777';
   v_viewer uuid := '88888888-8888-4888-8888-888888888888';
   v_b_treasurer uuid := '99999999-9999-4999-8999-999999999999';
+  v_transfer_sender uuid := 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
   v_fixture_count integer;
 BEGIN
   IF NOT EXISTS (
@@ -55,7 +56,8 @@ BEGIN
       (v_treasurer, 'treasurer.fixture@ecclesia.test', 'test_fixture_password', now(), now(), now(), now(), '{"provider":"email"}', '{"fixture":"true"}', false, 'authenticated', 'authenticated', '', '', '', '', NULL, NULL, '', ''),
       (v_auditor, 'auditor.fixture@ecclesia.test', 'test_fixture_password', now(), now(), now(), now(), '{"provider":"email"}', '{"fixture":"true"}', false, 'authenticated', 'authenticated', '', '', '', '', NULL, NULL, '', ''),
       (v_viewer, 'viewer.fixture@ecclesia.test', 'test_fixture_password', now(), now(), now(), now(), '{"provider":"email"}', '{"fixture":"true"}', false, 'authenticated', 'authenticated', '', '', '', '', NULL, NULL, '', ''),
-      (v_b_treasurer, 'b_treasurer.fixture@ecclesia.test', 'test_fixture_password', now(), now(), now(), now(), '{"provider":"email"}', '{"fixture":"true"}', false, 'authenticated', 'authenticated', '', '', '', '', NULL, NULL, '', '')
+      (v_b_treasurer, 'b_treasurer.fixture@ecclesia.test', 'test_fixture_password', now(), now(), now(), now(), '{"provider":"email"}', '{"fixture":"true"}', false, 'authenticated', 'authenticated', '', '', '', '', NULL, NULL, '', ''),
+      (v_transfer_sender, 'transfer_sender.fixture@ecclesia.test', 'test_fixture_password', now(), now(), now(), now(), '{"provider":"email"}', '{"fixture":"true"}', false, 'authenticated', 'authenticated', '', '', '', '', NULL, NULL, '', '')
     ON CONFLICT (id) DO NOTHING;
   EXCEPTION WHEN OTHERS THEN
     RAISE EXCEPTION 'BLOCKED: auth.users fixtures cannot be created from this execution context. Use a service-role or authenticated admin context.';
@@ -79,6 +81,7 @@ BEGIN
     (v_treasurer, v_congregation_a, 'treasurer'),
     (v_auditor, v_congregation_a, 'auditor'),
     (v_viewer, v_congregation_a, 'viewer'),
+    (v_transfer_sender, v_congregation_a, 'treasurer'),
     (v_b_treasurer, v_headquarters_b, 'congregation_admin'),
     (v_b_treasurer, v_congregation_b, 'treasurer')
   ON CONFLICT DO NOTHING;
@@ -87,7 +90,7 @@ BEGIN
   FROM public.memberships
   WHERE congregation_id IN (v_headquarters, v_headquarters_b, v_congregation_a, v_congregation_b);
 
-  IF v_fixture_count < 8 THEN
+  IF v_fixture_count < 9 THEN
     RAISE EXCEPTION 'BLOCKED: fixture memberships not created as expected.';
   END IF;
 
