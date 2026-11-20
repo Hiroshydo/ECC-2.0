@@ -1,22 +1,44 @@
 {
   "collapse-filter": false,
-  "search": "path:docs -path:docs/assets",
+  "search": "-path:assets",
   "showTags": false,
   "showAttachments": false,
-  "hideUnresolved": false,
-  "showOrphans": true,
+  "hideUnresolved": true,
+  "showOrphans": false,
   "collapse-color-groups": false,
-  "colorGroups": [],
+  "colorGroups": [
+    {
+      "query": "file:\"00 - Visao Geral ECC\" OR file:\"01 - Arquitetura Viva ECC\"",
+      "color": {
+        "a": 1,
+        "rgb": 16165422
+      }
+    },
+    {
+      "query": "tag:#core",
+      "color": {
+        "a": 1,
+        "rgb": 1096065
+      }
+    },
+    {
+      "query": "tag:#plugin",
+      "color": {
+        "a": 1,
+        "rgb": 3899638
+      }
+    }
+  ],
   "collapse-display": false,
-  "showArrow": false,
-  "textFadeMultiplier": 0,
-  "nodeSizeMultiplier": 1,
-  "lineSizeMultiplier": 1,
+  "showArrow": true,
+  "textFadeMultiplier": -0.6,
+  "nodeSizeMultiplier": 1.4,
+  "lineSizeMultiplier": 1.25,
   "collapse-forces": false,
-  "centerStrength": 0.518713248970312,
-  "repelStrength": 10,
-  "linkStrength": 1,
-  "linkDistance": 250,
-  "scale": 0.0078125,
+  "centerStrength": 0.2,
+  "repelStrength": 15,
+  "linkStrength": 0.85,
+  "linkDistance": 220,
+  "scale": 0.45788569702133075,
   "close": false
 }

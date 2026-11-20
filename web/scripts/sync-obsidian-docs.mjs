@@ -423,7 +423,7 @@ writeCanvas();
 
 const graphSettings = {
   "collapse-filter": false,
-  search: "path:docs -path:docs/assets",
+  search: "-path:assets",
   showTags: false,
   showAttachments: false,
   hideUnresolved: false,
