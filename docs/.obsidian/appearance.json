@@ -1,4 +1,7 @@
 {
   "showRibbon": true,
-  "theme": "obsidian"
+  "theme": "obsidian",
+  "enabledCssSnippets": [
+    "ecc-futuristic"
+  ]
 }

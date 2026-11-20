@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const webDir = path.resolve(scriptDir, "..");
@@ -9,6 +10,12 @@ const docsDir = path.join(repoDir, "docs");
 const modulesSourceDir = path.join(webDir, "src", "modules");
 const brandingSourceDir = path.join(webDir, "public", "branding");
 const brandingTargetDir = path.join(docsDir, "assets", "branding");
+const sourceRoot = path.join(webDir, "src");
+const telemetryFile = path.join(docsDir, "02 - Telemetria & Contas Ao Vivo.md");
+const flowMapFile = path.join(modulesSourceDir, "core", "canaa", "components", "CongregationFlowMap.tsx");
+const noahOpsFile = path.join(webDir, "src", "app", "(authenticated)", "noah-ops", "page.tsx");
+let flowMapSource = fs.readFileSync(flowMapFile, "utf8");
+let noahOpsSource = fs.readFileSync(noahOpsFile, "utf8");
 
 const modules = [
   {
@@ -159,7 +166,9 @@ function copyBranding(source, target) {
   for (const file of walk(source, (item) => /\.(svg|png)$/i.test(item))) {
     const destination = path.join(target, path.relative(source, file));
     fs.mkdirSync(path.dirname(destination), { recursive: true });
-    fs.copyFileSync(file, destination);
+    if (!fs.existsSync(destination) || !fs.readFileSync(file).equals(fs.readFileSync(destination))) {
+      fs.copyFileSync(file, destination);
+    }
     count += 1;
   }
   return count;
@@ -208,7 +217,221 @@ function ensureLayerTag(content) {
 
 function writeText(file, text) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
+  if (fs.existsSync(file) && fs.readFileSync(file, "utf8") === text) return;
   fs.writeFileSync(file, text, { encoding: "utf8" });
+}
+
+function readRuntimeEnvironment() {
+  const envFile = path.join(webDir, ".env.local");
+  const fileValues = {};
+  if (fs.existsSync(envFile)) {
+    for (const line of fs.readFileSync(envFile, "utf8").split(/\r?\n/)) {
+      const match = /^\s*([\w.-]+)\s*=\s*(.*)\s*$/.exec(line);
+      if (!match || match[1].startsWith("#")) continue;
+      let value = match[2].trim();
+      if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+        value = value.slice(1, -1);
+      } else {
+        value = value.replace(/\s+#.*$/, "");
+      }
+      fileValues[match[1]] = value;
+    }
+  }
+  return {
+    get(name) {
+      return process.env[name] || fileValues[name] || "";
+    },
+  };
+}
+
+function safeErrorCode(error) {
+  return typeof error?.code === "string" && /^[A-Za-z0-9_-]{1,32}$/.test(error.code)
+    ? error.code
+    : "query_failed";
+}
+
+async function fetchAllRows(queryFactory) {
+  const rows = [];
+  const pageSize = 500;
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await queryFactory().range(offset, offset + pageSize - 1);
+    if (error) return { rows: null, errorCode: safeErrorCode(error) };
+    rows.push(...(data ?? []));
+    if (!data || data.length < pageSize) return { rows, errorCode: null };
+  }
+}
+
+async function loadLiveSnapshot() {
+  const env = readRuntimeEnvironment();
+  const url = env.get("NEXT_PUBLIC_SUPABASE_URL");
+  const key =
+    env.get("SUPABASE_SERVICE_ROLE_KEY") ||
+    env.get("NEXT_PUBLIC_SUPABASE_ANON_KEY") ||
+    env.get("SUPABASE_ANON_KEY") ||
+    env.get("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY");
+
+  if (!url || !key) {
+    return {
+      status: "offline",
+      statusMessage: "Supabase indisponível: URL ou chave de leitura não configurada.",
+      updatedAt: new Date().toISOString(),
+      units: [],
+      licenses: [],
+      memberships: [],
+      audits: [],
+      issues: [],
+    };
+  }
+
+  try {
+    const supabase = createSupabaseClient(url, key, {
+      auth: { autoRefreshToken: false, persistSession: false },
+      global: {
+        fetch: (input, init) => fetch(input, { ...init, signal: AbortSignal.timeout(10000) }),
+      },
+    });
+    const [unitsResult, licenseResult, membershipsResult, auditResult] = await Promise.all([
+      fetchAllRows(() => supabase
+        .from("congregations")
+        .select("id, name, organization_type, organization_level, parent_id, active")
+        .order("name")),
+      fetchAllRows(() => supabase
+        .from("khatam_licenses")
+        .select("congregation_id, seats_total, expires_at")
+        .order("expires_at")),
+      fetchAllRows(() => supabase.from("memberships").select("congregation_id")),
+      supabase
+        .from("audit_events")
+        .select("occurred_at, action, congregation_id")
+        .order("occurred_at", { ascending: false })
+        .limit(10),
+    ]);
+
+    const issues = [];
+    if (unitsResult.errorCode) issues.push(`congregations:${unitsResult.errorCode}`);
+    if (licenseResult.errorCode) issues.push(`khatam_licenses:${licenseResult.errorCode}`);
+    if (membershipsResult.errorCode) issues.push(`memberships:${membershipsResult.errorCode}`);
+    if (auditResult.error) issues.push(`audit_events:${safeErrorCode(auditResult.error)}`);
+
+    return {
+      status: issues.length ? "partial" : "online",
+      statusMessage: issues.length
+        ? `Supabase respondeu parcialmente; consultas indisponíveis: ${issues.join(", ")}.`
+        : "Snapshot Supabase carregado; em modo watch, a leitura é repetida a cada 15 segundos.",
+      updatedAt: new Date().toISOString(),
+      units: unitsResult.rows ?? [],
+      licenses: licenseResult.rows ?? [],
+      memberships: membershipsResult.rows ?? [],
+      audits: auditResult.data ?? [],
+      issues,
+    };
+  } catch {
+    return {
+      status: "offline",
+      statusMessage: "Não foi possível consultar o Supabase. Verifique a conectividade e as permissões RLS.",
+      updatedAt: new Date().toISOString(),
+      units: [],
+      licenses: [],
+      memberships: [],
+      audits: [],
+      issues: ["connection_failed"],
+    };
+  }
+}
+
+function markdownCell(value) {
+  return String(value ?? "—").replace(/\|/g, "\\|").replace(/[\r\n]+/g, " ").trim() || "—";
+}
+
+function renderLiveTelemetry(snapshot) {
+  const unitById = new Map(snapshot.units.map((unit) => [unit.id, unit]));
+  const seatsByUnit = new Map();
+  for (const membership of snapshot.memberships) {
+    seatsByUnit.set(membership.congregation_id, (seatsByUnit.get(membership.congregation_id) ?? 0) + 1);
+  }
+  const levelLabels = {
+    national_hq: "Sede nacional",
+    state_hq: "Sede estadual",
+    sub_hq: "Sub-sede",
+    local_congregation: "Unidade local",
+  };
+  const statusClass = snapshot.status === "online" ? "ecc-status-active" : snapshot.status === "partial" ? "ecc-status-partial" : "ecc-status-planned";
+  const statusLabel = snapshot.status === "online" ? "🟢 ONLINE" : snapshot.status === "partial" ? "🟡 PARCIAL" : "🔵 OFFLINE";
+  const unitRows = snapshot.units.length
+    ? snapshot.units.map((unit) => {
+      const parent = unit.parent_id ? unitById.get(unit.parent_id)?.name ?? "Matriz não carregada" : "Unidade Raiz";
+      return `| ${markdownCell(unit.name)} | ${unit.organization_type === "ong" ? "ONG" : "Igreja"} | ${markdownCell(levelLabels[unit.organization_level] ?? unit.organization_level)} | ${markdownCell(parent)} | ${unit.active ? "Ativa" : "Inativa"} |`;
+    })
+    : ["| Sem unidades disponíveis | — | — | — | — |"];
+  const licenseRows = snapshot.licenses.length
+    ? snapshot.licenses.map((license) => {
+      const unit = unitById.get(license.congregation_id);
+      const used = seatsByUnit.get(license.congregation_id) ?? 0;
+      const total = Math.max(0, Number(license.seats_total) || 0);
+      const percent = total ? Math.min(100, Math.round(used / total * 100)) : 0;
+      const expiration = new Date(license.expires_at);
+      const daysRemaining = Number.isNaN(expiration.getTime()) ? null : Math.ceil((expiration.getTime() - Date.now()) / 86400000);
+      const daysLabel = daysRemaining === null ? "Data inválida" : daysRemaining < 0 ? `Vencida há ${Math.abs(daysRemaining)} dia(s)` : `${daysRemaining} dia(s)`;
+      return [
+        `### ${markdownCell(unit?.name ?? "Unidade sem acesso")}`,
+        "",
+        `- Validade: **${daysLabel}** (expira em ${Number.isNaN(expiration.getTime()) ? "data inválida" : expiration.toLocaleDateString("pt-BR")})`,
+        `- Assentos: **${used}/${total}** operadores`,
+        `<progress class="ecc-meter" max="${total || 1}" value="${Math.min(used, total)}"></progress> ${percent}%`,
+        "",
+      ].join("\n");
+    })
+    : [snapshot.status === "online"
+      ? "Nenhuma licença visível para as credenciais de leitura utilizadas."
+      : "Licenças indisponíveis enquanto a conexão/permissão não for restabelecida."];
+  const auditRows = snapshot.audits.length
+    ? snapshot.audits.map((event) => {
+      const unit = event.congregation_id ? unitById.get(event.congregation_id)?.name ?? "Unidade não carregada" : "Plataforma";
+      const date = new Date(event.occurred_at);
+      return `| ${Number.isNaN(date.getTime()) ? "Data inválida" : date.toLocaleString("pt-BR")} | ${markdownCell(event.action)} | ${markdownCell(unit)} |`;
+    })
+    : ["| Sem eventos visíveis | — | — |"];
+
+  return [
+    "---",
+    "title: Telemetria & Contas Ao Vivo",
+    "module: ecc-live-telemetry",
+    "layer: core",
+    "status: dinamico",
+    "tags: [ecc, core, telemetry, supabase]",
+    "---",
+    "",
+    "# Telemetria & Contas Ao Vivo",
+    "",
+    `<span class="ecc-status ${statusClass}">${statusLabel}</span>  Atualizado: ${new Date(snapshot.updatedAt).toLocaleString("pt-BR")}`,
+    "",
+    `> ${snapshot.statusMessage}`,
+    "",
+    "## Contas & unidades cadastradas — Hiram",
+    "",
+    "| Unidade | Natureza | Nível hierárquico | Vínculo de matriz (`parent_id`) | Status |",
+    "|---|---|---|---|---|",
+    ...unitRows,
+    "",
+    "## Licenças & cotas — Khatam",
+    "",
+    ...licenseRows,
+    "## Últimos eventos — Enoch Audit",
+    "",
+    "| Data/hora | Ação | Unidade |",
+    "|---|---|---|",
+    ...auditRows,
+    "",
+    "## Precisão do schema",
+    "",
+    "- A tabela `khatam_licenses` armazena `seats_total` e `expires_at`; `seats_total` é apresentado como limite de assentos (equivalente operacional ao `max_operators`, não nome literal de coluna).",
+    "- O schema atual não registra início nem duração do ciclo de 30 dias. A contagem exibida é de dias até `expires_at`; não é possível inferir o ciclo comercial de 30 dias com os campos existentes.",
+    "- Os registros de auditoria reais estão em `audit_events` (não `audit_logs`). Por privacidade, esta nota exibe apenas data/hora, ação e unidade; não inclui ator, motivo, payload ou UUIDs.",
+    "- Em modo anon/publishable, RLS pode limitar os dados visíveis. Uma consulta vazia não garante que não existam registros.",
+    "",
+    "> Esta nota é gerada localmente pelo sincronizador. Nenhuma URL/chave/token é gravada no Markdown.",
+    "",
+  ].join("\n");
 }
 
 function markdownPath(target, repoRelativePath) {
@@ -242,6 +465,7 @@ function autoBlock({ routes, apiRoutes, migrations, moduleSources }, target) {
     "",
     `- [${relative(flowMapFile)}](${markdownPath(target, relative(flowMapFile))}) — ${flowMapSource.includes("onConnect") ? "conexão React Flow habilitada" : "sem handler onConnect detectado"}; ${flowMapSource.includes("@dagrejs/dagre") ? "layout Dagre" : "layout não automatizado"}.`,
     `- [${relative(noahOpsFile)}](${markdownPath(target, relative(noahOpsFile))}) — ${noahOpsSource.includes("ModuleArchitectureMap") ? "inclui mapa de arquitetura ECC" : "mapa técnico não detectado"}.`,
+    `- [02 - Telemetria & Contas Ao Vivo.md](${markdownPath(target, relative(telemetryFile))}) — snapshot Supabase; atualização periódica disponível com \`npm run docs:watch\`.`,
     "",
     "<!-- AUTO-SYNC:END -->",
   ].join("\n");
@@ -330,6 +554,33 @@ function writeCanvas() {
     label: "Marca do núcleo",
   });
 
+  const telemetryNodeId = "live-telemetry";
+  nodes.push({
+    id: telemetryNodeId,
+    type: "file",
+    file: "02 - Telemetria & Contas Ao Vivo.md",
+    x: 1820,
+    y: 850,
+    width: 400,
+    height: 300,
+    color: "5",
+  });
+  for (const [moduleId, label] of [
+    ["noah", "Console / observabilidade"],
+    ["khatam", "Licenças e cotas"],
+    ["canaa", "Unidades e contas"],
+  ]) {
+    edges.push({
+      id: `telemetry-${moduleId}`,
+      fromNode: nodeIds[moduleId],
+      fromSide: "right",
+      toNode: telemetryNodeId,
+      toSide: "left",
+      label,
+      color: "5",
+    });
+  }
+
   flows.forEach(([source, target, label], index) => {
     edges.push({
       id: `flow-${index}-${source}-${target}`,
@@ -345,6 +596,9 @@ function writeCanvas() {
   writeText(path.join(docsDir, "01 - Arquitetura Viva ECC.canvas"), `${JSON.stringify({ nodes, edges }, null, 2)}\n`);
 }
 
+async function synchronize() {
+flowMapSource = fs.readFileSync(flowMapFile, "utf8");
+noahOpsSource = fs.readFileSync(noahOpsFile, "utf8");
 const copiedBrandingFiles = copyBranding(brandingSourceDir, brandingTargetDir);
 const badgeFiles = listFiles(brandingSourceDir, (file) =>
   file.endsWith(".svg") && file.includes("2_Badges_Com_Nome_Interno"),
@@ -374,10 +628,6 @@ for (const readme of moduleReadmes) {
 const authenticatedRoot = path.join(webDir, "src", "app", "(authenticated)");
 const apiRoot = path.join(webDir, "src", "app", "api");
 const migrationsRoot = path.join(webDir, "supabase", "migrations");
-const flowMapFile = path.join(modulesSourceDir, "core", "canaa", "components", "CongregationFlowMap.tsx");
-const noahOpsFile = path.join(authenticatedRoot, "noah-ops", "page.tsx");
-const flowMapSource = fs.readFileSync(flowMapFile, "utf8");
-const noahOpsSource = fs.readFileSync(noahOpsFile, "utf8");
 const authenticatedPages = listFiles(authenticatedRoot, (file) => /page\.(tsx|ts)$/.test(file))
   .map((file) => {
     const absolute = path.join(repoDir, file);
@@ -387,19 +637,19 @@ const apiRoutes = listFiles(apiRoot, (file) => /route\.(tsx|ts)$/.test(file));
 const migrations = listFiles(migrationsRoot, (file) => /\.sql$/i.test(file));
 const moduleSources = listFiles(modulesSourceDir, (file) => /\.(tsx?|md)$/.test(file));
 
-for (const module of modules) {
-  const file = path.join(docsDir, module.note);
+for (const moduleInfo of modules) {
+  const file = path.join(docsDir, moduleInfo.note);
   if (!fs.existsSync(file)) {
     const frontmatter = [
       "---",
-      `title: ${module.label}`,
-      `module: ${module.id}`,
-      `layer: ${module.layer}`,
-      `status: ${module.status.toLowerCase()}`,
-      `tags: [ecc, ${module.layer}, ${module.id}]`,
+      `title: ${moduleInfo.label}`,
+      `module: ${moduleInfo.id}`,
+      `layer: ${moduleInfo.layer}`,
+      `status: ${moduleInfo.status.toLowerCase()}`,
+      `tags: [ecc, ${moduleInfo.layer}, ${moduleInfo.id}]`,
       "---",
       "",
-      `# ${module.label}`,
+      `# ${moduleInfo.label}`,
       "",
     ].join("\n");
     writeText(file, frontmatter);
@@ -419,11 +669,13 @@ for (const target of markdownTargets) {
   writeText(target, syncBlock(content, autoBlock(inventory, target)));
 }
 
+const snapshot = await loadLiveSnapshot();
+writeText(telemetryFile, renderLiveTelemetry(snapshot));
 writeCanvas();
 
 const graphSettings = {
   "collapse-filter": false,
-  search: "-path:assets",
+  search: "path:docs -path:docs/assets",
   showTags: false,
   showAttachments: false,
   hideUnresolved: false,
@@ -450,3 +702,81 @@ const graphSettings = {
 writeText(path.join(docsDir, ".obsidian", "graph.json"), `${JSON.stringify(graphSettings, null, 2)}\n`);
 
 console.log(`Obsidian sincronizado: ${authenticatedPages.length} rotas, ${apiRoutes.length} APIs, ${migrations.length} migrations, ${moduleSources.length} arquivos de módulo, ${modules.length} módulos Canvas, ${copiedBrandingFiles} assets oficiais.`);
+}
+
+const watchMode = process.argv.includes("--watch");
+let synchronizationRunning = false;
+let synchronizationPending = false;
+let syncFailed = false;
+async function runSynchronization() {
+  if (synchronizationRunning) {
+    synchronizationPending = true;
+    return;
+  }
+  synchronizationRunning = true;
+  do {
+    synchronizationPending = false;
+    try {
+      await synchronize();
+      syncFailed = false;
+    } catch (error) {
+      syncFailed = true;
+      console.error(`Sincronização falhou: ${error instanceof Error ? error.message : "erro inesperado"}`);
+    }
+  } while (synchronizationPending);
+  synchronizationRunning = false;
+}
+
+await runSynchronization();
+if (watchMode) {
+  const watchers = [];
+  let recursiveWatcherAvailable = false;
+  let debounceTimer;
+
+  const closeWatchers = () => {
+    for (const watcher of watchers.splice(0)) watcher.close();
+  };
+  const scheduleSynchronization = () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      if (!recursiveWatcherAvailable) installWatchers();
+      void runSynchronization();
+    }, 500);
+  };
+  function installWatchers() {
+    closeWatchers();
+    try {
+      watchers.push(fs.watch(sourceRoot, { recursive: true }, scheduleSynchronization));
+      recursiveWatcherAvailable = true;
+    } catch {
+      recursiveWatcherAvailable = false;
+      const addDirectoryWatchers = (directory) => {
+        let entries;
+        try {
+          entries = fs.readdirSync(directory, { withFileTypes: true });
+          watchers.push(fs.watch(directory, scheduleSynchronization));
+        } catch {
+          return;
+        }
+        for (const entry of entries) {
+          if (entry.isDirectory()) addDirectoryWatchers(path.join(directory, entry.name));
+        }
+      };
+      addDirectoryWatchers(sourceRoot);
+    }
+  }
+
+  installWatchers();
+  const pollingTimer = setInterval(() => void runSynchronization(), 15000);
+  console.log("Modo watch ativo: Supabase a cada 15 s e alterações em web/src/ com debounce.");
+  const shutdown = () => {
+    clearInterval(pollingTimer);
+    clearTimeout(debounceTimer);
+    closeWatchers();
+    process.exit(syncFailed ? 1 : 0);
+  };
+  process.once("SIGINT", shutdown);
+  process.once("SIGTERM", shutdown);
+} else if (syncFailed) {
+  process.exitCode = 1;
+}

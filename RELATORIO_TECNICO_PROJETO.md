@@ -181,5 +181,6 @@ Migrations 0001 a 0013 foram versionadas em `web/supabase/migrations`. A descri�
 
 - [web/src/modules/core/canaa/components/CongregationFlowMap.tsx](web/src/modules/core/canaa/components/CongregationFlowMap.tsx) — conexão React Flow habilitada; layout Dagre.
 - [web/src/app/(authenticated)/noah-ops/page.tsx](web/src/app/(authenticated)/noah-ops/page.tsx) — inclui mapa de arquitetura ECC.
+- [02 - Telemetria & Contas Ao Vivo.md](docs/02 - Telemetria & Contas Ao Vivo.md) — snapshot Supabase; atualização periódica disponível com `npm run docs:watch`.
 
 <!-- AUTO-SYNC:END -->

@@ -247,6 +247,16 @@
       "y": 420,
       "width": 260,
       "height": 100
+    },
+    {
+      "id": "live-telemetry",
+      "type": "file",
+      "file": "02 - Telemetria & Contas Ao Vivo.md",
+      "x": 1820,
+      "y": 850,
+      "width": 400,
+      "height": 300,
+      "color": "5"
     }
   ],
   "edges": [
@@ -345,6 +355,33 @@
       "toNode": "module-ecclesia",
       "toSide": "top",
       "label": "Marca do núcleo"
+    },
+    {
+      "id": "telemetry-noah",
+      "fromNode": "module-noah",
+      "fromSide": "right",
+      "toNode": "live-telemetry",
+      "toSide": "left",
+      "label": "Console / observabilidade",
+      "color": "5"
+    },
+    {
+      "id": "telemetry-khatam",
+      "fromNode": "module-khatam",
+      "fromSide": "right",
+      "toNode": "live-telemetry",
+      "toSide": "left",
+      "label": "Licenças e cotas",
+      "color": "5"
+    },
+    {
+      "id": "telemetry-canaa",
+      "fromNode": "module-canaa",
+      "fromSide": "right",
+      "toNode": "live-telemetry",
+      "toSide": "left",
+      "label": "Unidades e contas",
+      "color": "5"
     },
     {
       "id": "flow-0-khatam-canaa",

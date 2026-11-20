@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "docs:sync": "node scripts/sync-obsidian-docs.mjs",
+    "docs:watch": "node scripts/sync-obsidian-docs.mjs --watch",
     "hooks:install": "node scripts/install-git-hooks.mjs"
   },
   "dependencies": {

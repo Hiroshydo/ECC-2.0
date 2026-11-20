@@ -1,0 +1,222 @@
+/* ECC Mission Control — Obsidian vault styling */
+
+.theme-dark {
+  --ecc-bg: #060a09;
+  --ecc-panel: rgba(13, 22, 20, 0.78);
+  --ecc-emerald: #10b981;
+  --ecc-cyan: #06b6d4;
+  --ecc-text: #d7eee7;
+  --ecc-muted: #83a69a;
+  --ecc-border: rgba(16, 185, 129, 0.35);
+  --ecc-glow: 0 0 24px rgba(16, 185, 129, 0.12);
+  --background-primary: var(--ecc-bg);
+  --background-primary-alt: #09110f;
+  --background-secondary: #08100e;
+  --background-secondary-alt: #0b1714;
+  --text-normal: var(--ecc-text);
+  --text-muted: var(--ecc-muted);
+  --text-accent: var(--ecc-emerald);
+  --text-accent-hover: var(--ecc-cyan);
+  --interactive-accent: var(--ecc-emerald);
+  --divider-color: rgba(16, 185, 129, 0.18);
+  --ecc-grid: radial-gradient(rgba(16, 185, 129, 0.12) 0.7px, transparent 0.7px);
+}
+
+.theme-dark .workspace,
+.theme-dark .workspace-tab-container,
+.theme-dark .view-content,
+.theme-dark .markdown-source-view,
+.theme-dark .markdown-preview-view {
+  background-color: var(--ecc-bg);
+  background-image: var(--ecc-grid);
+  background-size: 22px 22px;
+}
+
+.theme-dark body,
+.theme-dark .markdown-preview-view,
+.theme-dark .markdown-source-view {
+  font-family: "Segoe UI", "Cascadia Code", "Aptos", sans-serif;
+  letter-spacing: 0.01em;
+}
+
+.theme-dark .markdown-preview-view h1,
+.theme-dark .markdown-preview-view h2,
+.theme-dark .markdown-preview-view h3,
+.theme-dark .inline-title {
+  background: linear-gradient(90deg, #10b981, #06b6d4);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 20px rgba(16, 185, 129, 0.12);
+}
+
+.theme-dark .markdown-preview-view blockquote,
+.theme-dark .markdown-source-view .cm-quote,
+.theme-dark .metadata-container,
+.theme-dark .metadata-properties,
+.theme-dark .markdown-preview-view table {
+  border: 1px solid var(--ecc-border);
+  border-radius: 12px;
+  background: var(--ecc-panel);
+  box-shadow: var(--ecc-glow);
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.theme-dark .markdown-preview-view blockquote {
+  padding: 14px 18px;
+}
+
+.theme-dark .markdown-preview-view blockquote:hover,
+.theme-dark .markdown-preview-view table:hover,
+.theme-dark .metadata-container:hover {
+  border-color: rgba(6, 182, 212, 0.55);
+  box-shadow: 0 0 28px rgba(6, 182, 212, 0.16);
+  transform: translateY(-1px);
+}
+
+.theme-dark .markdown-preview-view table {
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+}
+
+.theme-dark .markdown-preview-view th {
+  color: #a7f3d0;
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.theme-dark .markdown-preview-view td,
+.theme-dark .markdown-preview-view th {
+  border-color: rgba(16, 185, 129, 0.16);
+}
+
+.theme-dark .metadata-property,
+.theme-dark .metadata-property-value {
+  color: var(--ecc-text);
+}
+
+.theme-dark .tag,
+.theme-dark .ecc-status {
+  border: 1px solid rgba(16, 185, 129, 0.42);
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.1);
+  color: #a7f3d0;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.1);
+}
+
+.theme-dark .ecc-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  font-size: 0.78em;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  animation: ecc-status-pulse 2.8s ease-in-out infinite;
+}
+
+.theme-dark .ecc-status-partial {
+  border-color: rgba(245, 158, 11, 0.5);
+  background: rgba(245, 158, 11, 0.1);
+  color: #fcd34d;
+}
+
+.theme-dark .ecc-status-planned {
+  border-color: rgba(6, 182, 212, 0.48);
+  background: rgba(6, 182, 212, 0.1);
+  color: #67e8f9;
+}
+
+.theme-dark .ecc-meter {
+  width: min(100%, 360px);
+  height: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  border-radius: 999px;
+  background: rgba(6, 10, 9, 0.85);
+  vertical-align: middle;
+  accent-color: var(--ecc-emerald);
+}
+
+.theme-dark .ecc-meter::-webkit-progress-bar {
+  border-radius: 999px;
+  background: rgba(6, 10, 9, 0.85);
+}
+
+.theme-dark .ecc-meter::-webkit-progress-value {
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--ecc-emerald), var(--ecc-cyan));
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.45);
+}
+
+.theme-dark .canvas-wrapper {
+  background-color: var(--ecc-bg);
+  background-image: var(--ecc-grid);
+  background-size: 22px 22px;
+}
+
+.theme-dark .canvas-node .canvas-node-container {
+  border: 1px solid rgba(16, 185, 129, 0.42);
+  border-radius: 14px;
+  background: rgba(8, 18, 15, 0.92);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.48), 0 0 20px rgba(16, 185, 129, 0.1);
+  backdrop-filter: blur(12px);
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.theme-dark .canvas-node:hover .canvas-node-container {
+  border-color: rgba(6, 182, 212, 0.75);
+  box-shadow: 0 12px 44px rgba(0, 0, 0, 0.54), 0 0 28px rgba(6, 182, 212, 0.19);
+}
+
+.theme-dark .canvas-node[data-color="4"] .canvas-node-container {
+  border-color: rgba(16, 185, 129, 0.65);
+  animation: ecc-core-glow 3.2s ease-in-out infinite;
+}
+
+.theme-dark .canvas-node[data-color="2"] .canvas-node-container {
+  border-color: rgba(245, 158, 11, 0.62);
+}
+
+.theme-dark .canvas-node[data-color="5"] .canvas-node-container {
+  border-color: rgba(6, 182, 212, 0.62);
+}
+
+.theme-dark .canvas-node[data-color="6"] .canvas-node-container {
+  border-color: rgba(167, 139, 250, 0.62);
+}
+
+.theme-dark .canvas-edges path {
+  stroke: rgba(16, 185, 129, 0.8);
+  stroke-width: 2px;
+  stroke-dasharray: 8 8;
+  filter: drop-shadow(0 0 4px rgba(16, 185, 129, 0.65));
+  animation: ecc-edge-flow 1.4s linear infinite;
+}
+
+.theme-dark .canvas-edges path[data-color="6"] {
+  stroke: rgba(167, 139, 250, 0.85);
+  filter: drop-shadow(0 0 4px rgba(167, 139, 250, 0.55));
+}
+
+@keyframes ecc-edge-flow {
+  to { stroke-dashoffset: -32; }
+}
+
+@keyframes ecc-core-glow {
+  0%, 100% { box-shadow: 0 12px 40px rgba(0, 0, 0, 0.48), 0 0 14px rgba(16, 185, 129, 0.1); }
+  50% { box-shadow: 0 12px 40px rgba(0, 0, 0, 0.48), 0 0 24px rgba(16, 185, 129, 0.22); }
+}
+
+@keyframes ecc-status-pulse {
+  0%, 100% { filter: brightness(0.96); }
+  50% { filter: brightness(1.16); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-dark .ecc-status,
+  .theme-dark .canvas-node[data-color="4"] .canvas-node-container,
+  .theme-dark .canvas-edges path {
+    animation: none;
+  }
+}

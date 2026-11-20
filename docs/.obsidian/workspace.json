@@ -11,10 +11,17 @@
             "id": "c6e8bcd65bcc91dc",
             "type": "leaf",
             "state": {
-              "type": "graph",
-              "state": {},
-              "icon": "lucide-git-fork",
-              "title": "Visualização em gráfico"
+              "type": "canvas",
+              "state": {
+                "file": "Sem título 2.canvas",
+                "viewState": {
+                  "x": 0,
+                  "y": 0,
+                  "zoom": 0
+                }
+              },
+              "icon": "lucide-layout-dashboard",
+              "title": "Sem título 2"
             }
           }
         ]
@@ -185,6 +192,8 @@
   },
   "active": "c6e8bcd65bcc91dc",
   "lastOpenFiles": [
+    "Sem título 2.canvas",
+    "02 - Telemetria & Contas Ao Vivo.md",
     "00 - Visao Geral ECC.md",
     "Sem título 1.canvas",
     "2026-11-20.md",
